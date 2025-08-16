@@ -1,0 +1,130 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+
+const JoinSection = () => {
+  const [email, setEmail] = useState("");
+
+  const handleMailingList = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement mailing list signup
+    console.log("Mailing list signup:", email);
+    setEmail("");
+  };
+
+  return (
+    <section className="py-20 bg-muted/30">
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-16">
+          <Badge variant="outline" className="mb-4 text-accent border-accent">
+            Join the Movement
+          </Badge>
+          <h2 className="text-4xl md:text-5xl font-bold mb-8">
+            Ready to Make a 
+            <span className="text-accent"> Difference?</span>
+          </h2>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
+          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary">
+            <CardHeader>
+              <CardTitle className="text-2xl text-primary">Join as a User</CardTitle>
+              <p className="text-muted-foreground">
+                Access expert reviews and make informed health decisions
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Create account with Gmail, email, or LinkedIn</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Browse expert reviews and ratings</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Rate review helpfulness</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Access educational materials</span>
+                </div>
+              </div>
+              <Button className="w-full mt-6 bg-primary hover:bg-primary/90">
+                Sign Up Now
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-accent">
+            <CardHeader>
+              <CardTitle className="text-2xl text-accent">Apply as an Expert</CardTitle>
+              <p className="text-muted-foreground">
+                Scientists and healthcare professionals - by invitation only
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Invitation-based exclusive access</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Review research across 4 key criteria</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Create your expert profile with photo</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Share your motivation and expertise</span>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full mt-6 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                Request Invitation
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Mailing List Section */}
+        <div className="max-w-2xl mx-auto text-center">
+          <Card className="bg-hero-gradient text-white border-0">
+            <CardHeader>
+              <CardTitle className="text-2xl">Stay Updated</CardTitle>
+              <p className="text-white/90">
+                Get notified about new expert reviews, platform updates, and women's health insights
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleMailingList} className="flex flex-col sm:flex-row gap-4">
+                <Input
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 bg-white/10 border-white/30 text-white placeholder:text-white/70"
+                  required
+                />
+                <Button 
+                  type="submit" 
+                  className="bg-white text-primary hover:bg-white/90 px-8"
+                >
+                  Join Mailing List
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default JoinSection;
