@@ -3,9 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const JoinSection = () => {
   const [email, setEmail] = useState("");
+  const { user } = useAuth();
 
   const handleMailingList = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +57,10 @@ const JoinSection = () => {
                   <span>Access educational materials</span>
                 </div>
               </div>
-              <Button className="w-full mt-6 bg-primary hover:bg-primary/90">
-                Sign Up Now
+              <Button asChild className="w-full mt-6 bg-primary hover:bg-primary/90">
+                <Link to="/auth">
+                  {user ? 'Welcome Back!' : 'Sign Up Now'}
+                </Link>
               </Button>
             </CardContent>
           </Card>

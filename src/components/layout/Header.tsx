@@ -1,0 +1,37 @@
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import UserMenu from '@/components/auth/UserMenu';
+
+const Header = () => {
+  const { user, loading } = useAuth();
+
+  return (
+    <header className="absolute top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-sm border-b border-white/10">
+      <div className="container mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          <Link 
+            to="/" 
+            className="text-2xl font-bold text-white hover:text-accent transition-colors"
+          >
+            What Data Says - Women Edition
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            {loading ? (
+              <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse" />
+            ) : user ? (
+              <UserMenu />
+            ) : (
+              <Button asChild variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20">
+                <Link to="/auth">Sign In</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
