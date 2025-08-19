@@ -18,7 +18,7 @@ const JoinSection = () => {
   };
 
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="pb-20 pt-8 bg-muted/30">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4 text-accent border-accent">
