@@ -15,14 +15,6 @@ const HeroSection = () => {
             Evaluate the quality of health and wellness products through rigorous scientific review. 
             Join experts and scientists in creating transparency for women's health decisions.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6">
-              Join as User
-            </Button>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary text-lg px-8 py-6">
-              Apply as Expert
-            </Button>
-          </div>
         </div>
         
         <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
