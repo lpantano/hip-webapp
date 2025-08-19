@@ -31,15 +31,15 @@ const JoinSection = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
-          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary">
+          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Join as a User</CardTitle>
               <p className="text-muted-foreground">
                 Access expert reviews and make informed health decisions
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Create account with Gmail, email, or LinkedIn</span>
@@ -65,15 +65,15 @@ const JoinSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-accent">
+          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-accent flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl text-accent">Apply as an Expert</CardTitle>
               <p className="text-muted-foreground">
                 Scientists and healthcare professionals - by invitation only
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Invitation-based exclusive access</span>
