@@ -17,6 +17,15 @@ const Header = () => {
             What Data Says - Women Edition
           </Link>
           
+          <nav className="hidden md:flex items-center gap-6">
+            <Link to="/" className="text-white/80 hover:text-white transition-colors">
+              Home
+            </Link>
+            <Link to="/team" className="text-white/80 hover:text-white transition-colors">
+              Team
+            </Link>
+          </nav>
+          
           <div className="flex items-center gap-4">
             {loading ? (
               <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse" />
