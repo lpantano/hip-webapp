@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -15,6 +16,12 @@ const HeroSection = () => {
             Evaluate the quality of health and wellness products through rigorous scientific review. 
             Join experts and scientists in creating transparency for women's health decisions.
           </p>
+          
+          <div className="mb-12">
+            <Button asChild size="lg" className="bg-white/10 text-white border border-white/30 hover:bg-white/20 text-lg px-8 py-3">
+              <Link to="/affirmations">What People Says</Link>
+            </Button>
+          </div>
         </div>
         
         <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
