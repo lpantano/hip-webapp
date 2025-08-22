@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient">
+    <section className="relative py-20 md:py-32 flex items-center justify-center bg-hero-gradient">
       <div className="absolute inset-0 bg-black/5"></div>
       <div className="relative z-10 container mx-auto px-6 text-center">
         <div className="max-w-4xl mx-auto animate-fade-in">
@@ -16,26 +16,6 @@ const HeroSection = () => {
             Evaluate the quality of health and wellness products through rigorous scientific review. 
             Join experts and scientists in creating transparency for women's health decisions.
           </p>
-          
-          <div className="mb-12">
-            <Button asChild size="lg" className="bg-white/10 text-white border border-white/30 hover:bg-white/20 text-lg px-8 py-3">
-              <Link to="/affirmations">What People Says</Link>
-            </Button>
-          </div>
-        </div>
-        
-        <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {[
-            { title: "Sample Size", desc: "Evaluate study participant numbers" },
-            { title: "Population", desc: "Assess representation diversity" },
-            { title: "Consensus", desc: "Review research agreement" },
-            { title: "Application", desc: "Validate product claims" }
-          ].map((item, index) => (
-            <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white hover:bg-white/20 transition-all duration-300">
-              <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
-              <p className="text-white/80 text-sm">{item.desc}</p>
-            </Card>
-          ))}
         </div>
       </div>
     </section>

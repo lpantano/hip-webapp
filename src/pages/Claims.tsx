@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ChevronUp, ExternalLink, Users, Info } from 'lucide-react';
 import Header from '@/components/layout/Header';
 
-interface Affirmation {
+interface Claims {
   id: string;
   claim: string;
   product: string;
@@ -43,7 +43,7 @@ interface Affirmation {
 }
 
 // Placeholder data - will come from database later
-const placeholderAffirmations: Affirmation[] = [
+const placeholderClaims: Claims[] = [
   {
     id: '1',
     claim: 'Turmeric reduces inflammation and joint pain during perimenopause',
@@ -256,16 +256,16 @@ const placeholderAffirmations: Affirmation[] = [
   }
 ];
 
-const Affirmations = () => {
-  const [affirmations, setAffirmations] = useState<Affirmation[]>(placeholderAffirmations);
+const Claims = () => {
+  const [claims, setClaims] = useState<Claims[]>(placeholderClaims);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
 
   const handleVote = (id: string) => {
-    setAffirmations(prev => 
-      prev.map(affirmation => 
-        affirmation.id === id 
-          ? { ...affirmation, votes: affirmation.votes + 1 }
-          : affirmation
+    setClaims(prev => 
+      prev.map(claim => 
+        claim.id === id 
+          ? { ...claim, votes: claim.votes + 1 }
+          : claim
       )
     );
   };
@@ -300,7 +300,7 @@ const Affirmations = () => {
     return colors[score];
   };
 
-  const sortedAffirmations = [...affirmations].sort((a, b) => {
+  const sortedClaims = [...claims].sort((a, b) => {
     if (sortBy === 'votes') {
       return b.votes - a.votes;
     }
@@ -316,17 +316,17 @@ const Affirmations = () => {
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Affirmations for Review
+              Claims for Review
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
               Community-driven claims about products and services for women's health conditions. 
-              Upvote affirmations with strong scientific backing to prioritize them for expert review.
+              Upvote Claims with strong scientific backing to prioritize them for expert review.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="w-4 h-4" />
-                <span>All affirmations must be linked to scientific publications</span>
+                <span>All Claims must be linked to scientific publications</span>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -347,30 +347,30 @@ const Affirmations = () => {
             </div>
           </div>
 
-          {/* Affirmations List */}
+          {/* Claims List */}
           <div className="max-w-4xl mx-auto space-y-6">
-            {sortedAffirmations.map((affirmation) => (
-              <Card key={affirmation.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
+            {sortedClaims.map((claim) => (
+              <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge className={getCategoryColor(affirmation.category)}>
-                          {affirmation.category}
+                        <Badge className={getCategoryColor(claim.category)}>
+                          {claim.category}
                         </Badge>
                         <Badge variant="outline">
-                          {affirmation.condition}
+                          {claim.condition}
                         </Badge>
                         <Badge variant="outline">
-                          {affirmation.stage}
+                          {claim.stage}
                         </Badge>
-                        <Badge className={getStatusColor(affirmation.status)}>
-                          {affirmation.status.replace('_', ' ')}
+                        <Badge className={getStatusColor(claim.status)}>
+                          {claim.status.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <CardTitle className="text-xl mb-2">{affirmation.claim}</CardTitle>
+                      <CardTitle className="text-xl mb-2">{claim.claim}</CardTitle>
                       <CardDescription className="text-base">
-                        Product: <span className="font-medium text-foreground">{affirmation.product}</span>
+                        Product: <span className="font-medium text-foreground">{claim.product}</span>
                       </CardDescription>
                     </div>
                     
@@ -378,11 +378,11 @@ const Affirmations = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleVote(affirmation.id)}
+                        onClick={() => handleVote(claim.id)}
                         className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground"
                       >
                         <ChevronUp className="w-4 h-4" />
-                        {affirmation.votes}
+                        {claim.votes}
                       </Button>
                     </div>
                   </div>
@@ -394,7 +394,7 @@ const Affirmations = () => {
                       Supporting Publications
                     </h4>
                     <div className="space-y-3">
-                      {affirmation.publications.map((pub, index) => (
+                      {claim.publications.map((pub, index) => (
                         <div key={index} className="p-3 bg-muted/30 rounded-lg">
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex-1">
@@ -516,12 +516,12 @@ const Affirmations = () => {
           <div className="max-w-2xl mx-auto mt-16 text-center">
             <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
               <CardContent className="p-8">
-                <h3 className="text-xl font-semibold mb-4">Want to Submit an Affirmation?</h3>
+                <h3 className="text-xl font-semibold mb-4">Want to Submit an Claims?</h3>
                 <p className="text-muted-foreground mb-6">
                   Have a claim backed by scientific research? Submit it for community review and expert evaluation.
                 </p>
                 <Button className="bg-primary hover:bg-primary/90">
-                  Submit Affirmation
+                  Submit Claims
                 </Button>
               </CardContent>
             </Card>
@@ -532,4 +532,4 @@ const Affirmations = () => {
   );
 };
 
-export default Affirmations;
+export default Claims;
