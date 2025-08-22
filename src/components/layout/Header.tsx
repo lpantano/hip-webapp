@@ -27,6 +27,12 @@ const Header = () => {
             <Link to="/team" className="text-white/80 hover:text-white transition-colors">
               Team
             </Link>
+            <Link to="/privacy" className="text-white/80 hover:text-white transition-colors">
+              Privacy
+            </Link>
+            <Link to="/terms" className="text-white/80 hover:text-white transition-colors">
+              Terms
+            </Link>
           </nav>
           
           <div className="flex items-center gap-4">
