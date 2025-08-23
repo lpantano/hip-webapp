@@ -199,7 +199,7 @@ const About = () => {
 
             <div className="bg-muted/30 rounded-lg p-8">
               <h3 className="text-2xl font-semibold mb-6 text-center">Investment & Support</h3>
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
                 <div className="text-center">
                   <h4 className="text-lg font-semibold mb-4 text-primary">Angel Investors</h4>
                   <p className="text-muted-foreground mb-4">
@@ -223,6 +223,12 @@ const About = () => {
                     accessible research analysis.
                   </p>
                 </div>
+              </div>
+              
+              <div className="text-center">
+                <Button asChild className="bg-primary hover:bg-primary/90">
+                  <Link to="/roadmap">View Our Roadmap & Support Options</Link>
+                </Button>
               </div>
             </div>
           </div>
