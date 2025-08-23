@@ -14,10 +14,9 @@ const Header = () => {
             to="/" 
             className="flex items-center gap-3 hover:text-accent transition-colors"
           >
-            <img src="/logov6.svg" alt="What Data Says logo" className="w-10 h-10 object-contain" />
-            <div>
-              <span className="text-lg font-bold text-white">What Data Says</span>
-              <span className="hidden sm:inline text-sm text-white/70"> - Women Edition</span>
+            <img src="/logov6.svg" alt="What Data Says logo" className="w-30 h-20 object-contain -mt-4 -mb-6" />
+            <div className="leading-none">
+              <span className="text-3xl md:text-6xl font-extrabold text-white/80 -mt-1">W</span>
             </div>
           </Link>
           
@@ -30,9 +29,6 @@ const Header = () => {
             </Link>
             <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
               Claims
-            </Link>
-            <Link to="/team" className="text-white/80 hover:text-white transition-colors">
-              Team
             </Link>
             <Link to="/privacy" className="text-white/80 hover:text-white transition-colors">
               Privacy
