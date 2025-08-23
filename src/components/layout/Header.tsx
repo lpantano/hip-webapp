@@ -12,9 +12,13 @@ const Header = () => {
         <div className="flex items-center justify-between">
           <Link 
             to="/" 
-            className="text-2xl font-bold text-white hover:text-accent transition-colors"
+            className="flex items-center gap-3 hover:text-accent transition-colors"
           >
-            What Data Says - Women Edition
+            <img src="/logov6.svg" alt="What Data Says logo" className="w-10 h-10 object-contain" />
+            <div>
+              <span className="text-lg font-bold text-white">What Data Says</span>
+              <span className="hidden sm:inline text-sm text-white/70"> - Women Edition</span>
+            </div>
           </Link>
           
           <nav className="hidden md:flex items-center gap-6">
