@@ -73,8 +73,8 @@ const Privacy = () => {
               <h2 className="text-2xl font-semibold text-white mb-4">Contact Us</h2>
               <p>
                 If you have questions about this Privacy Policy or your data, please contact us at{" "}
-                <a href="mailto:privacy@whatdatasays.com" className="text-accent hover:underline">
-                  privacy@whatdatasays.com
+                <a href="mailto:privacy@healthkorpus.com" className="text-accent hover:underline">
+                  privacy@healthkorpus.com
                 </a>
               </p>
             </section>

@@ -12,7 +12,7 @@ const Terms = () => {
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Platform Purpose</h2>
               <p className="mb-4">
-                What Data Says - Women Edition is an educational platform that provides research-backed affirmations 
+                Health Korpus - Women Edition is an educational platform that provides research-backed affirmations 
                 and insights specifically focused on women's experiences, health, and empowerment. Our mission is to 
                 bridge the gap between scientific research and practical self-empowerment tools.
               </p>
@@ -90,8 +90,8 @@ const Terms = () => {
               <h2 className="text-2xl font-semibold text-white mb-4">Contact</h2>
               <p>
                 For questions about these terms or our data usage policies, contact us at{" "}
-                <a href="mailto:terms@whatdatasays.com" className="text-accent hover:underline">
-                  terms@whatdatasays.com
+                <a href="mailto:terms@healthkorpus.com" className="text-accent hover:underline">
+                  terms@healthkorpus.com
                 </a>
               </p>
             </section>
