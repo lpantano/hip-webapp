@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronUp, ExternalLink, Users, Info } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign } from 'lucide-react';
 import Header from '@/components/layout/Header';
 
 interface Claims {
@@ -259,6 +259,7 @@ const placeholderClaims: Claims[] = [
 const Claims = () => {
   const [claims, setClaims] = useState<Claims[]>(placeholderClaims);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
+  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
 
   const handleVote = (id: string) => {
     setClaims(prev => 
@@ -269,6 +270,29 @@ const Claims = () => {
       )
     );
   };
+
+  const handleReaction = (claimId: string, pubIndex: number, scoreType: string, reactionType: string) => {
+    const key = `${claimId}-${pubIndex}-${scoreType}`;
+    setReactions(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [reactionType]: (prev[key]?.[reactionType] || 0) + 1
+      }
+    }));
+  };
+
+  const getReactionCount = (claimId: string, pubIndex: number, scoreType: string, reactionType: string) => {
+    const key = `${claimId}-${pubIndex}-${scoreType}`;
+    return reactions[key]?.[reactionType] || 0;
+  };
+
+  const reactionButtons = [
+    { type: 'helpful', icon: Heart, label: 'Helpful', color: 'text-pink-600' },
+    { type: 'eyeopening', icon: Eye, label: 'Eye-opening', color: 'text-blue-600' },
+    { type: 'wantmore', icon: BookOpen, label: 'Want more', color: 'text-green-600' },
+    { type: 'moneysaver', icon: DollarSign, label: 'Money saver', color: 'text-yellow-600' }
+  ];
 
   const getCategoryColor = (category: string) => {
     const colors = {
@@ -435,9 +459,30 @@ const Claims = () => {
                                   </div>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 text-sm">
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     <div className="font-medium">Sample Size Score</div>
                                     <p>{pub.scores.sampleSize.explanation}</p>
+                                    <div className="border-t pt-2">
+                                      <div className="text-xs text-muted-foreground mb-2">How useful was this?</div>
+                                      <div className="flex flex-wrap gap-1">
+                                        {reactionButtons.map((reaction) => {
+                                          const count = getReactionCount(claim.id, index, 'sampleSize', reaction.type);
+                                          const Icon = reaction.icon;
+                                          return (
+                                            <Button
+                                              key={reaction.type}
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 px-2 text-xs"
+                                              onClick={() => handleReaction(claim.id, index, 'sampleSize', reaction.type)}
+                                            >
+                                              <Icon className={`w-3 h-3 mr-1 ${reaction.color}`} />
+                                              <span>{count > 0 && count}</span>
+                                            </Button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   </div>
                                 </PopoverContent>
                               </Popover>
@@ -455,9 +500,30 @@ const Claims = () => {
                                   </div>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 text-sm">
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     <div className="font-medium">Population Representation</div>
                                     <p>{pub.scores.populationRepresentation.explanation}</p>
+                                    <div className="border-t pt-2">
+                                      <div className="text-xs text-muted-foreground mb-2">How useful was this?</div>
+                                      <div className="flex flex-wrap gap-1">
+                                        {reactionButtons.map((reaction) => {
+                                          const count = getReactionCount(claim.id, index, 'populationRepresentation', reaction.type);
+                                          const Icon = reaction.icon;
+                                          return (
+                                            <Button
+                                              key={reaction.type}
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 px-2 text-xs"
+                                              onClick={() => handleReaction(claim.id, index, 'populationRepresentation', reaction.type)}
+                                            >
+                                              <Icon className={`w-3 h-3 mr-1 ${reaction.color}`} />
+                                              <span>{count > 0 && count}</span>
+                                            </Button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   </div>
                                 </PopoverContent>
                               </Popover>
@@ -475,9 +541,30 @@ const Claims = () => {
                                   </div>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 text-sm">
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     <div className="font-medium">Research Consensus</div>
                                     <p>{pub.scores.consensus.explanation}</p>
+                                    <div className="border-t pt-2">
+                                      <div className="text-xs text-muted-foreground mb-2">How useful was this?</div>
+                                      <div className="flex flex-wrap gap-1">
+                                        {reactionButtons.map((reaction) => {
+                                          const count = getReactionCount(claim.id, index, 'consensus', reaction.type);
+                                          const Icon = reaction.icon;
+                                          return (
+                                            <Button
+                                              key={reaction.type}
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 px-2 text-xs"
+                                              onClick={() => handleReaction(claim.id, index, 'consensus', reaction.type)}
+                                            >
+                                              <Icon className={`w-3 h-3 mr-1 ${reaction.color}`} />
+                                              <span>{count > 0 && count}</span>
+                                            </Button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   </div>
                                 </PopoverContent>
                               </Popover>
@@ -495,9 +582,30 @@ const Claims = () => {
                                   </div>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 text-sm">
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     <div className="font-medium">Evidence Quality</div>
                                     <p>{pub.scores.evidence.explanation}</p>
+                                    <div className="border-t pt-2">
+                                      <div className="text-xs text-muted-foreground mb-2">How useful was this?</div>
+                                      <div className="flex flex-wrap gap-1">
+                                        {reactionButtons.map((reaction) => {
+                                          const count = getReactionCount(claim.id, index, 'evidence', reaction.type);
+                                          const Icon = reaction.icon;
+                                          return (
+                                            <Button
+                                              key={reaction.type}
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 px-2 text-xs"
+                                              onClick={() => handleReaction(claim.id, index, 'evidence', reaction.type)}
+                                            >
+                                              <Icon className={`w-3 h-3 mr-1 ${reaction.color}`} />
+                                              <span>{count > 0 && count}</span>
+                                            </Button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   </div>
                                 </PopoverContent>
                               </Popover>
