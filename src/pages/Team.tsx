@@ -32,17 +32,35 @@ const Team = () => {
     {
       title: "Chief Financial Officer (CFO)",
       department: "Finance",
-      description: "Strategic financial leadership for scaling operations and growth initiatives."
+      description: "Handle financial operations, tax compliance, and ensure proper money management for our cooperative structure.",
+      timeCommitment: "3 hours/week",
+      requirements: [
+        "Experience with tax filing and financial compliance",
+        "Understanding of cooperative business structures",
+        "Strong attention to detail and organizational skills"
+      ]
     },
     {
       title: "Chief Business Officer (CBO)", 
       department: "Business Development",
-      description: "Drive business strategy, partnerships, and revenue growth across all channels."
+      description: "Lead fundraising efforts, secure donations, and establish relationships with angel investors to support our mission.",
+      timeCommitment: "3 hours/week",
+      requirements: [
+        "Experience in fundraising or business development",
+        "Network of potential investors or donors",
+        "Strong communication and presentation skills"
+      ]
     },
     {
-      title: "Head of Human Resources",
-      department: "People & Culture", 
-      description: "Build and nurture our team culture while scaling talent acquisition and retention."
+      title: "Head of Marketing",
+      department: "Marketing & Engagement", 
+      description: "Manage social media accounts, create engaging content, and build our community presence across platforms.",
+      timeCommitment: "3 hours/week",
+      requirements: [
+        "Experience managing social media accounts",
+        "Creative content creation skills",
+        "Understanding of user engagement strategies"
+      ]
     }
   ];
 
@@ -111,6 +129,26 @@ const Team = () => {
                     <CardDescription className="text-sm leading-relaxed">
                       {position.description}
                     </CardDescription>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Time Commitment:</span>
+                        <Badge variant="secondary">{position.timeCommitment}</Badge>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Requirements:</h4>
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          {position.requirements.map((req, reqIndex) => (
+                            <li key={reqIndex} className="flex items-start gap-2">
+                              <span className="text-accent mt-1">•</span>
+                              <span>{req}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    
                     <Button className="w-full" variant="outline">
                       <Mail className="h-4 w-4 mr-2" />
                       Apply Now
