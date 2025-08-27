@@ -7,22 +7,22 @@ import Header from '@/components/layout/Header';
 const Team = () => {
   const founders = [
     {
-      name: "Sarah Johnson",
+      name: "Lorena Pantano",
       role: "CEO / Chief Product Officer",
       bio: "Leading product strategy and company vision with 10+ years in health tech innovation.",
     },
     {
-      name: "Dr. Maria Rodriguez", 
-      role: "Chief Learning Officer",
+      name: "Meeta Mistry", 
+      role: "Chief Scientific Officer",
       bio: "PhD in Data Science, specializing in health data analysis and women's health research.",
     },
     {
-      name: "Alexandra Chen",
+      name: "Judit Flo Gaya",
       role: "Chief Security Officer", 
       bio: "Cybersecurity expert ensuring the highest standards of data protection and privacy.",
     },
     {
-      name: "Jennifer Kim",
+      name: "Lina Faller",
       role: "Chief Technology Officer",
       bio: "Full-stack engineer with expertise in scalable health platforms and AI integration.",
     }
