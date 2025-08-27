@@ -124,9 +124,19 @@ const Experts = () => {
 
   const ExpertCard = ({ expert }: { expert: Expert }) => (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer"
+      className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer relative"
       onClick={() => openProfile(expert)}
     >
+      {/* Experience Badges */}
+      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+        <Badge variant="secondary" className="text-xs font-bold bg-primary/90 text-primary-foreground hover:bg-primary">
+          {expert.yearsExperience}y exp
+        </Badge>
+        <Badge variant="outline" className="text-xs font-bold bg-background/90 border-accent text-accent">
+          {expert.yearsOnPlatform}y here
+        </Badge>
+      </div>
+      
       <CardHeader className="text-center pb-4">
         <Avatar className="w-20 h-20 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
           <AvatarImage src={expert.avatar} alt={expert.name} />
@@ -141,14 +151,6 @@ const Experts = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4" />
           {expert.location}
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Experience:</span>
-          <span className="font-medium">{expert.yearsExperience} years</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">On Platform:</span>
-          <span className="font-medium">{expert.yearsOnPlatform} years</span>
         </div>
         <div className="flex flex-wrap gap-1 mt-3">
           {expert.expertise.slice(0, 3).map((skill, index) => (
