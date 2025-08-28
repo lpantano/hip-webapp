@@ -111,7 +111,7 @@ const FeatureRequests = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Feature Requests</h1>
@@ -266,6 +266,15 @@ const FeatureRequests = () => {
                         <div className="text-xs text-muted-foreground">Experts</div>
                       </div>
                     </div>
+
+                    {!user && (
+                      <>
+                        <Separator orientation="vertical" className="h-12" />
+                        <Button size="sm" variant="outline" className="text-xs">
+                          Sign in to vote
+                        </Button>
+                      </>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -273,14 +282,6 @@ const FeatureRequests = () => {
                     <span className="text-sm">{request.comments}</span>
                   </div>
                 </div>
-                
-                {!user && (
-                  <div className="mt-4 p-3 bg-muted rounded-md text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Sign in to vote on feature requests
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
