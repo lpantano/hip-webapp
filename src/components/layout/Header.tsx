@@ -34,11 +34,11 @@ const Header = () => {
             <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
               Claims
             </Link>
-            <Link to="/privacy" className="text-white/80 hover:text-white transition-colors">
-              Privacy
+            <Link to="/features" className="text-white/80 hover:text-white transition-colors">
+              Features
             </Link>
-            <Link to="/terms" className="text-white/80 hover:text-white transition-colors">
-              Terms
+            <Link to="/legal" className="text-white/80 hover:text-white transition-colors">
+              Legal
             </Link>
           </nav>
           

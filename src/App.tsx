@@ -10,8 +10,7 @@ import About from "./pages/About";
 import Team from "./pages/Team";
 import Experts from "./pages/Experts";
 import Claims from "./pages/Claims";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
+import Legal from "./pages/Legal";
 import Roadmap from "./pages/Roadmap";
 import FeatureRequests from "./pages/FeatureRequests";
 import NotFound from "./pages/NotFound";
@@ -32,8 +31,7 @@ const App = () => (
             <Route path="/team" element={<Team />} />
             <Route path="/experts" element={<Experts />} />
             <Route path="/claims" element={<Claims />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
+            <Route path="/legal" element={<Legal />} />
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/features" element={<FeatureRequests />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
