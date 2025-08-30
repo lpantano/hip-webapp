@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      expert_applications: {
+        Row: {
+          created_at: string
+          credentials: string
+          email: string
+          expertise_area: Database["public"]["Enums"]["expertise_area"]
+          full_name: string
+          id: string
+          motivation: string
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          credentials: string
+          email: string
+          expertise_area: Database["public"]["Enums"]["expertise_area"]
+          full_name: string
+          id?: string
+          motivation: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          credentials?: string
+          email?: string
+          expertise_area?: Database["public"]["Enums"]["expertise_area"]
+          full_name?: string
+          id?: string
+          motivation?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -43,6 +85,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      social_media_links: {
+        Row: {
+          created_at: string
+          expert_application_id: string
+          id: string
+          platform: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          expert_application_id: string
+          id?: string
+          platform: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          expert_application_id?: string
+          id?: string
+          platform?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_links_expert_application_id_fkey"
+            columns: ["expert_application_id"]
+            isOneToOne: false
+            referencedRelation: "expert_applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -80,6 +154,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "expert" | "ambassador" | "admin"
+      expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -208,6 +283,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "expert", "ambassador", "admin"],
+      expertise_area: ["health", "fitness", "nutrition", "mental_health"],
     },
   },
 } as const
