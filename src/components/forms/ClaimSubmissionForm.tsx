@@ -28,6 +28,14 @@ const formSchema = z.object({
     abstract: z.string().optional(),
     url: z.string().optional(),
   })).min(1, 'At least one publication is required'),
+  sources: z.array(z.object({
+    source_type: z.enum(['webpage', 'instagram', 'tiktok', 'youtube', 'twitter', 'facebook', 'reddit', 'podcast', 'book', 'research_paper', 'other']),
+    source_url: z.string().url('Please enter a valid URL').optional(),
+    source_title: z.string().optional(),
+    source_description: z.string().optional(),
+    author_name: z.string().optional(),
+    published_date: z.string().optional(),
+  })).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -50,12 +58,18 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       description: '',
       category: 'general_health',
       publications: [{ doi: '' }],
+      sources: [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'publications',
+  });
+
+  const { fields: sourceFields, append: appendSource, remove: removeSource } = useFieldArray({
+    control: form.control,
+    name: 'sources',
   });
 
   const fetchPublicationData = async (doi: string, index: number) => {
@@ -145,6 +159,33 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       }
 
       console.log('Publications inserted successfully');
+
+      // Insert sources if any
+      if (data.sources && data.sources.length > 0) {
+        const sourcesToInsert = data.sources.map(source => ({
+          claim_id: claimData.id,
+          user_id: user.id,
+          source_type: source.source_type,
+          source_url: source.source_url || null,
+          source_title: source.source_title || null,
+          source_description: source.source_description || null,
+          author_name: source.author_name || null,
+          published_date: source.published_date || null,
+        }));
+
+        console.log('Inserting sources:', sourcesToInsert);
+
+        const { error: sourcesError } = await supabase
+          .from('sources')
+          .insert(sourcesToInsert);
+
+        if (sourcesError) {
+          console.error('Sources insert error:', sourcesError);
+          throw sourcesError;
+        }
+
+        console.log('Sources inserted successfully');
+      }
 
       toast({
         title: "Claim Submitted Successfully",
@@ -352,6 +393,145 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                   </Card>
                 );
               })}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-base">Additional Sources</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendSource({ source_type: 'webpage', source_url: '', source_title: '', source_description: '', author_name: '', published_date: '' })}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Source
+                </Button>
+              </div>
+
+              {sourceFields.map((field, index) => (
+                <Card key={field.id} className="p-4 bg-muted/20">
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`sources.${index}.source_type`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>Source Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select source type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="webpage">Webpage</SelectItem>
+                                <SelectItem value="instagram">Instagram</SelectItem>
+                                <SelectItem value="tiktok">TikTok</SelectItem>
+                                <SelectItem value="youtube">YouTube</SelectItem>
+                                <SelectItem value="twitter">Twitter</SelectItem>
+                                <SelectItem value="facebook">Facebook</SelectItem>
+                                <SelectItem value="reddit">Reddit</SelectItem>
+                                <SelectItem value="podcast">Podcast</SelectItem>
+                                <SelectItem value="book">Book</SelectItem>
+                                <SelectItem value="research_paper">Research Paper</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="mt-8"
+                        onClick={() => removeSource(index)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name={`sources.${index}.source_url`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`sources.${index}.source_title`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Source title" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`sources.${index}.source_description`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Brief description of the source content"
+                              className="min-h-[80px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`sources.${index}.author_name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Author (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Author name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`sources.${index}.published_date`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Published Date (Optional)</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
 
             <div className="flex gap-3 pt-4">
