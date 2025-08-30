@@ -229,11 +229,11 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
   if (!user) {
     return (
-      <div className="w-full max-w-md mx-auto">
-        <Alert className="mb-4">
-          <AlertCircle className="h-4 w-4" />
+      <div className="w-full max-w-xs mx-auto">
+        <Alert className="mb-3">
+          <AlertCircle className="h-4 w-3" />
           <AlertDescription>
-            You must be signed in to submit a claim. Please sign in and try again.
+        You must be signed in to submit a claim. Please sign in and try again.
           </AlertDescription>
         </Alert>
       </div>
@@ -536,7 +536,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="flex-1"
+                size="sm"
+                className="w-32 text-sm px-3"
               >
                 {isSubmitting ? (
                   <>
@@ -553,6 +554,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                   variant="outline" 
                   onClick={onCancel}
                   disabled={isSubmitting}
+                  size="sm"
+                  className="w-24 text-sm px-3"
                 >
                   Cancel
                 </Button>
