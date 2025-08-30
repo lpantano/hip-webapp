@@ -180,11 +180,12 @@ FOR SELECT
 TO authenticated
 USING (true);
 
-CREATE POLICY "Experts can create publications"
+-- Allow any authenticated user to create publications (site allows community submissions)
+CREATE POLICY "Authenticated users can create publications"
 ON public.publications
 FOR INSERT
 TO authenticated
-WITH CHECK (has_role(auth.uid(), 'expert') OR has_role(auth.uid(), 'admin'));
+WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Experts can update publications"
 ON public.publications

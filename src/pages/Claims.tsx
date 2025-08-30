@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign,
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
+import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
   id: string;
@@ -15,7 +16,7 @@ interface ClaimRow {
   title: string;
   description?: string | null;
   product?: string | null;
-  category: string; // nutrition | fitness | mental_heath | pregnancy | menopause | general_health | perimenopause
+  category: Database['public']['Enums']['claim_category'];
   condition?: string | null;
   stage?: string | null;
   vote_count: number;
@@ -40,7 +41,7 @@ interface PublicationScoreRow {
   id: string;
   publication_id: string;
   expert_user_id: string;
-  category: string; // study_size | population | consensus | interpretation
+  category: Database['public']['Enums']['evidence_score_category']; // study_size | population | consensus | interpretation
   score: number;
   notes?: string | null;
 }
@@ -64,7 +65,7 @@ interface ClaimUI {
   id: string;
   claim: string;
   // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
-  category: string;
+  category: Database['public']['Enums']['claim_category'];
   votes: number;
   publications: {
     title: string;
@@ -100,7 +101,7 @@ const Claims = () => {
     return 'low';
   };
 
-  const mapEvidenceRowToScores = (rows: PublicationScoreRow[] = []) => {
+  const mapEvidenceRowToScores = useCallback((rows: PublicationScoreRow[] = []) => {
     const scoresTemplate: {
       sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
       populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
@@ -122,10 +123,10 @@ const Claims = () => {
       else if (cat === 'interpretation') scoresTemplate.evidence = { score: label, explanation: r.notes || '' };
     });
     return scoresTemplate;
-  };
+  }, []);
 
   // Move fetchData outside useEffect so it can be called from form submission
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
@@ -163,7 +164,7 @@ const Claims = () => {
         });
 
         // map DB category directly to UI category (show DB value)
-        const uiCategory: ClaimUI['category'] = c.category || '';
+        const uiCategory = c.category;
 
         const statusMap: Record<string, ClaimUI['status']> = {
           pending: 'pending',
@@ -190,11 +191,11 @@ const Claims = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sb, mapEvidenceRowToScores]);
 
   useEffect(() => {
     fetchData();
-  }, [sb]);
+  }, [fetchData]);
 
   // Persist votes to Supabase: toggle user's vote
   const handleVote = async (id: string) => {
@@ -282,7 +283,7 @@ const Claims = () => {
 
   const humanize = (s?: string) => (s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
 
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = (category: Database['public']['Enums']['claim_category'] | string) => {
     // Only map colors for DB-backed categories. Any unknown category falls back to neutral styling.
     const colors: Record<string, string> = {
       nutrition: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
