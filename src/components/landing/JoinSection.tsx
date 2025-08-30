@@ -56,6 +56,14 @@ const JoinSection = () => {
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Access educational materials</span>
                 </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Voting rights</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Learn how we review science</span>
+                </div>
               </div>
               <Button asChild className="w-full mt-6 bg-primary hover:bg-primary/90">
                 <Link to="/auth">
@@ -84,11 +92,23 @@ const JoinSection = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Create your expert profile with photo</span>
+                  <span>Free membership</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Share your motivation and expertise</span>
+                  <span>Data insights</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Promote services</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Voting rights</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
+                  <span>Distribution profit</span>
                 </div>
               </div>
               <Button variant="outline" className="w-full mt-6 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
