@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
+import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 
 interface ClaimRow {
   id: string;
@@ -87,6 +89,7 @@ const Claims = () => {
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
   // component-scoped Supabase client
   const sb = supabase;
@@ -283,7 +286,7 @@ const Claims = () => {
     const colors: Record<string, string> = {
       nutrition: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       fitness: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      mental_heath: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      mental_health: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       pregnancy: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
       menopause: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
       general_health: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -340,6 +343,24 @@ const Claims = () => {
                 <span>All Claims must be linked to scientific publications</span>
               </div>
               <div className="flex gap-2">
+                <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Submit New Claim
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <ClaimSubmissionForm 
+                      onSuccess={() => {
+                        setShowSubmissionForm(false);
+                        // Refresh the claims data
+                        window.location.reload();
+                      }}
+                      onCancel={() => setShowSubmissionForm(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
                 <Button
                   variant={sortBy === 'votes' ? 'default' : 'outline'}
                   size="sm"
