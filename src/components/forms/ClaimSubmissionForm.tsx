@@ -229,16 +229,14 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
   if (!user) {
     return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="py-8">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              You must be signed in to submit a claim. Please sign in and try again.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-md mx-auto">
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You must be signed in to submit a claim. Please sign in and try again.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
