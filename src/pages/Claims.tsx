@@ -362,10 +362,10 @@ const Claims = () => {
           <div className="max-w-4xl mx-auto space-y-6">
             {sortedClaims.map((claim) => (
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex flex-wrap gap-2 mb-3">
+                      <div className="flex flex-wrap gap-2 mb-1">
                         <Badge className={getCategoryColor(claim.category)}>
                           {humanize(claim.category)}
                         </Badge>
@@ -373,10 +373,10 @@ const Claims = () => {
                           {claim.status.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <CardTitle className="text-xl mb-2">{claim.claim}</CardTitle>
+                      <CardTitle className="text-lg mb-1">{claim.claim}</CardTitle>
                     </div>
-                    
-                    <div className="flex flex-col items-center gap-2">
+
+                    <div className="flex flex-col items-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -386,9 +386,9 @@ const Claims = () => {
                         <ChevronUp className="w-4 h-4" />
                         {claim.votes}
                       </Button>
-                      
-                      {/* Reaction buttons */}
-                      <div className="flex flex-col gap-1 mt-2">
+
+                      {/* Reaction buttons: moved to the right and rendered horizontally under the vote button */}
+                      <div className="flex items-center gap-2 mt-1">
                         {reactionButtons.map((reaction) => {
                           const count = getReactionCount(claim.id, reaction.type);
                           const Icon = reaction.icon;
@@ -397,12 +397,12 @@ const Claims = () => {
                               key={reaction.type}
                               variant="ghost"
                               size="sm"
-                              className="h-7 px-2 text-xs justify-start"
+                              className="h-7 px-2 text-xs flex items-center gap-1"
                               onClick={() => handleReaction(claim.id, reaction.type)}
                               title={reaction.label}
                             >
-                              <Icon className={`w-3 h-3 mr-1 ${reaction.color}`} />
-                              <span className="text-xs">{count > 0 && count}</span>
+                              <Icon className={`w-4 h-4 ${reaction.color}`} />
+                              <span className="text-xs">{count > 0 ? count : ''}</span>
                             </Button>
                           );
                         })}
@@ -410,120 +410,111 @@ const Claims = () => {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div>
-                    <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                    <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">
                       Supporting Publications
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {claim.publications.map((pub, index) => (
-                        <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                          <div className="flex items-start justify-between gap-3 mb-3">
+                        <div key={index} className="p-2 bg-muted/20 rounded-md">
+                          <div className="flex items-start justify-between gap-3 mb-2">
                             <div className="flex-1">
-                              <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
-                              <p className="text-xs text-muted-foreground mb-1">
+                              <h5 className="font-medium text-sm mb-0">{pub.title}</h5>
+                              <p className="text-xs text-muted-foreground mb-0">
                                 {pub.authors} • {pub.journal} ({pub.year})
                               </p>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              asChild
-                              className="shrink-0"
-                            >
-                              <a 
-                                href={pub.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1"
+
+                            <div className="flex flex-col items-end gap-2">
+                              {/* Score icons row (right-aligned, single-line) */}
+                              <div className="flex items-center gap-2">
+                                {/* Sample Size */}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <div className="flex items-center gap-1 cursor-pointer">
+                                      <Badge className={getScoreColor(pub.scores.sampleSize.score)} variant="outline">
+                                        Size
+                                      </Badge>
+                                    </div>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 text-sm">
+                                    <div className="space-y-2">
+                                      <div className="font-medium">Sample Size</div>
+                                      <p className="text-sm">{pub.scores.sampleSize.explanation || 'No details provided.'}</p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+
+                                {/* Population */}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <div className="flex items-center gap-1 cursor-pointer">
+                                      <Badge className={getScoreColor(pub.scores.populationRepresentation.score)} variant="outline">
+                                        Pop
+                                      </Badge>
+                                    </div>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 text-sm">
+                                    <div className="space-y-2">
+                                      <div className="font-medium">Population Representation</div>
+                                      <p className="text-sm">{pub.scores.populationRepresentation.explanation || 'No details provided.'}</p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+
+                                {/* Consensus */}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <div className="flex items-center gap-1 cursor-pointer">
+                                      <Badge className={getScoreColor(pub.scores.consensus.score)} variant="outline">
+                                        Cons
+                                      </Badge>
+                                    </div>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 text-sm">
+                                    <div className="space-y-2">
+                                      <div className="font-medium">Consensus</div>
+                                      <p className="text-sm">{pub.scores.consensus.explanation || 'No details provided.'}</p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+
+                                {/* Evidence */}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <div className="flex items-center gap-1 cursor-pointer">
+                                      <Badge className={getScoreColor(pub.scores.evidence.score)} variant="outline">
+                                        Evd
+                                      </Badge>
+                                    </div>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 text-sm">
+                                    <div className="space-y-2">
+                                      <div className="font-medium">Evidence Quality</div>
+                                      <p className="text-sm">{pub.scores.evidence.explanation || 'No details provided.'}</p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="shrink-0"
                               >
-                                <ExternalLink className="w-3 h-3" />
-                                View
-                              </a>
-                            </Button>
-                          </div>
-                          
-                          {/* Score Metrics */}
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">Sample Size:</span>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <div className="flex items-center gap-1 cursor-pointer">
-                                    <Badge className={getScoreColor(pub.scores.sampleSize.score)} variant="outline">
-                                      {pub.scores.sampleSize.score}
-                                    </Badge>
-                                    <Info className="w-3 h-3 text-muted-foreground hover:text-foreground" />
-                                  </div>
-                                </PopoverTrigger>
-                                 <PopoverContent className="w-64 text-sm">
-                                   <div className="space-y-3">
-                                     <div className="font-medium">Sample Size Score</div>
-                                     <p>{pub.scores.sampleSize.explanation}</p>
-                                   </div>
-                                 </PopoverContent>
-                              </Popover>
-                            </div>
-                            
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">Population:</span>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <div className="flex items-center gap-1 cursor-pointer">
-                                    <Badge className={getScoreColor(pub.scores.populationRepresentation.score)} variant="outline">
-                                      {pub.scores.populationRepresentation.score}
-                                    </Badge>
-                                    <Info className="w-3 h-3 text-muted-foreground hover:text-foreground" />
-                                  </div>
-                                </PopoverTrigger>
-                                 <PopoverContent className="w-64 text-sm">
-                                   <div className="space-y-3">
-                                     <div className="font-medium">Population Representation</div>
-                                     <p>{pub.scores.populationRepresentation.explanation}</p>
-                                   </div>
-                                 </PopoverContent>
-                              </Popover>
-                            </div>
-                            
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">Consensus:</span>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <div className="flex items-center gap-1 cursor-pointer">
-                                    <Badge className={getScoreColor(pub.scores.consensus.score)} variant="outline">
-                                      {pub.scores.consensus.score}
-                                    </Badge>
-                                    <Info className="w-3 h-3 text-muted-foreground hover:text-foreground" />
-                                  </div>
-                                </PopoverTrigger>
-                                 <PopoverContent className="w-64 text-sm">
-                                   <div className="space-y-3">
-                                     <div className="font-medium">Research Consensus</div>
-                                     <p>{pub.scores.consensus.explanation}</p>
-                                   </div>
-                                 </PopoverContent>
-                              </Popover>
-                            </div>
-                            
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">Evidence:</span>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <div className="flex items-center gap-1 cursor-pointer">
-                                    <Badge className={getScoreColor(pub.scores.evidence.score)} variant="outline">
-                                      {pub.scores.evidence.score}
-                                    </Badge>
-                                    <Info className="w-3 h-3 text-muted-foreground hover:text-foreground" />
-                                  </div>
-                                </PopoverTrigger>
-                                 <PopoverContent className="w-64 text-sm">
-                                   <div className="space-y-3">
-                                     <div className="font-medium">Evidence Quality</div>
-                                     <p>{pub.scores.evidence.explanation}</p>
-                                   </div>
-                                 </PopoverContent>
-                              </Popover>
+                                <a 
+                                  href={pub.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  View
+                                </a>
+                              </Button>
                             </div>
                           </div>
                         </div>

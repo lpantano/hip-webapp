@@ -53,3 +53,27 @@ INSERT INTO public.claim_reactions (id, claim_id, user_id, reaction_type, create
 ('r0000000-0000-0000-0000-000000000001','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','11111111-1111-1111-1111-111111111111','helpful','2025-08-12T12:20:00Z'),
 ('r0000000-0000-0000-0000-000000000002','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','22222222-2222-2222-2222-222222222222','insightful','2025-08-12T12:22:00Z'),
 ('r0000000-0000-0000-0000-000000000003','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','11111111-1111-1111-1111-111111111111','wantmore','2025-08-13T10:00:00Z');
+
+-- ------------------------------------------------------------------
+-- MOCK DATA (development)
+-- NOTE: The profiles table has a FK to auth.users. If you want to insert
+-- mock profiles directly, create matching rows in auth.users first or
+-- replace the user_id values below with real auth.user ids from your
+-- Supabase project. Inserts for expert_applications and social_media_links
+-- do not require auth.users entries and can be used as-is for UI testing.
+-- ------------------------------------------------------------------
+
+-- Example mock expert users (for expert_applications)
+INSERT INTO public.expert_applications (id, user_id, full_name, email, credentials, expertise_area, motivation, website, status, created_at, updated_at)
+VALUES
+  ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000001', 'Dr. Alice Smith', 'alice@example.com', 'MD, MPH', 'health', 'Improve evidence access for patients', 'https://alice.example.com', 'approved', now(), now()),
+  ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000002', 'Prof. Beatrice Lee', 'beatrice@example.com', 'PhD (Epidemiology)', 'nutrition', 'Advance nutrition evidence synthesis', 'https://beatrice.example.com', 'approved', now(), now()),
+  ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000003', 'Dr. Carla Gomez', 'carla@example.com', 'MD, PhD', 'mental_health', 'Focus on perimenopause mental health research', 'https://carla.example.com', 'approved', now(), now());
+
+-- Social links for those expert applications
+INSERT INTO public.social_media_links (id, expert_application_id, platform, url, created_at)
+VALUES
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 'linkedin', 'https://linkedin.com/in/alice-smith', now()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 'twitter', 'https://twitter.com/alice_smith', now()),
+  (gen_random_uuid(), '22222222-2222-2222-2222-222222222222', 'linkedin', 'https://linkedin.com/in/beatrice-lee', now()),
+  (gen_random_uuid(), '33333333-3333-3333-3333-333333333333', 'twitter', 'https://twitter.com/carla_gomez', now());

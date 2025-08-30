@@ -1,6 +1,6 @@
 -- Create enum types for claims
 CREATE TYPE claim_status AS ENUM ('proposed','pending', 'verified', 'disputed', 'needs_more_evidence');
-CREATE TYPE claim_category AS ENUM ('nutrition', 'fitness', 'mental_heath', 'pregnancy', 'menopause', 'general_health', 'perimenopause');
+CREATE TYPE claim_category AS ENUM ('nutrition', 'fitness', 'mental_health', 'pregnancy', 'menopause', 'general_health', 'perimenopause');
 CREATE TYPE evidence_score_category AS ENUM ('study_size', 'population', 'consensus', 'interpretation');
 CREATE TYPE public.source_type AS ENUM (
   'webpage',

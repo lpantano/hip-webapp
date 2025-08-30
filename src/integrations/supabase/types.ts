@@ -348,7 +348,7 @@ export type Database = {
       app_role: "user" | "expert" | "ambassador" | "admin"
       expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
       claim_status: "proposed" | "pending" | "verified" | "disputed" | "needs_more_evidence"
-      claim_category: "nutrition" | "fitness" | "mental_heath" | "pregnancy" | "menopause" | "general_health" | "perimenopause"
+      claim_category: "nutrition" | "fitness" | "mental_health" | "pregnancy" | "menopause" | "general_health" | "perimenopause"
       evidence_score_category: "study_size" | "population" | "consensus" | "interpretation"
       source_type: "webpage" | "instagram" | "tiktok" | "youtube" | "twitter" | "facebook" | "reddit" | "podcast" | "book" | "research_paper" | "other"
     }
