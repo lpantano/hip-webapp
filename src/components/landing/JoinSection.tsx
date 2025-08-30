@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import ExpertApplicationForm from "@/components/forms/ExpertApplicationForm";
 
 const JoinSection = () => {
   const [email, setEmail] = useState("");
+  const [showExpertForm, setShowExpertForm] = useState(false);
   const { user } = useAuth();
 
   const handleMailingList = (e: React.FormEvent) => {
@@ -111,7 +113,11 @@ const JoinSection = () => {
                   <span>Distribution profit</span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full mt-6 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+              <Button 
+                variant="outline" 
+                className="w-full mt-6 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => setShowExpertForm(true)}
+              >
                 Request Invitation
               </Button>
             </CardContent>
@@ -148,6 +154,11 @@ const JoinSection = () => {
           </Card>
         </div>
       </div>
+      
+      <ExpertApplicationForm 
+        open={showExpertForm}
+        onOpenChange={setShowExpertForm}
+      />
     </section>
   );
 };
