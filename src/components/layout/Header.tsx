@@ -13,9 +13,9 @@ const Header = () => {
           <Link 
             to="/" 
             className="flex items-center gap-3 hover:text-accent transition-colors"
-            aria-label="Health Korpus home"
+            aria-label="Kenkotek home"
           >
-            <img src="/logo-only-transparent.png" alt="Health Korpus logo" className="w-12 h-12 object-contain -mt-2 -mb-2" />
+            <img src="/logo-only-transparent.png" alt="Kenkotek logo" className="w-12 h-12 object-contain -mt-2 -mb-2" />
             <div className="leading-none">
               <span className="text-3xl md:text-6xl font-extrabold text-white/80 -mt-1">W</span>
             </div>
