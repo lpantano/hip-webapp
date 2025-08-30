@@ -56,33 +56,207 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      claims: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string
-          display_name: string | null
           id: string
-          updated_at: string
           user_id: string
+          title: string
+          description: string | null
+          product: string | null
+          category: Database["public"]["Enums"]["claim_category"]
+          status: Database["public"]["Enums"]["claim_status"]
+          vote_count: number
+          condition: string | null
+          stage: string | null
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          display_name?: string | null
           id?: string
-          updated_at?: string
           user_id: string
+          title: string
+          description?: string | null
+          product?: string | null
+          category: Database["public"]["Enums"]["claim_category"]
+          status?: Database["public"]["Enums"]["claim_status"]
+          vote_count?: number
+          condition?: string | null
+          stage?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          display_name?: string | null
           id?: string
-          updated_at?: string
           user_id?: string
+          title?: string
+          description?: string | null
+          product?: string | null
+          category?: Database["public"]["Enums"]["claim_category"]
+          status?: Database["public"]["Enums"]["claim_status"]
+          vote_count?: number
+          condition?: string | null
+          stage?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      publications: {
+        Row: {
+          id: string
+          claim_id: string
+          title: string
+          journal: string | null
+          publication_year: number | null
+          doi: string | null
+          url: string | null
+          authors: string | null
+          abstract: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          claim_id: string
+          title: string
+          journal?: string | null
+          publication_year?: number | null
+          doi?: string | null
+          url?: string | null
+          authors?: string | null
+          abstract?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          claim_id?: string
+          title?: string
+          journal?: string | null
+          publication_year?: number | null
+          doi?: string | null
+          url?: string | null
+          authors?: string | null
+          abstract?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      publication_scores: {
+        Row: {
+          id: string
+          publication_id: string
+          expert_user_id: string
+          category: Database["public"]["Enums"]["evidence_score_category"]
+          score: number
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          publication_id: string
+          expert_user_id: string
+          category: Database["public"]["Enums"]["evidence_score_category"]
+          score: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          publication_id?: string
+          expert_user_id?: string
+          category?: Database["public"]["Enums"]["evidence_score_category"]
+          score?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      claim_votes: {
+        Row: {
+          id: string
+          claim_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          claim_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          claim_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      claim_reactions: {
+        Row: {
+          id: string
+          claim_id: string
+          user_id: string
+          reaction_type: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          claim_id: string
+          user_id: string
+          reaction_type: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          claim_id?: string
+          user_id?: string
+          reaction_type?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      sources: {
+        Row: {
+          id: string
+          claim_id: string
+          user_id: string
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url: string | null
+          source_title: string | null
+          source_description: string | null
+          author_name: string | null
+          published_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          claim_id: string
+          user_id: string
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          source_title?: string | null
+          source_description?: string | null
+          author_name?: string | null
+          published_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          claim_id?: string
+          user_id?: string
+          source_type?: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          source_title?: string | null
+          source_description?: string | null
+          author_name?: string | null
+          published_date?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -141,7 +315,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      claims_full: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          product: string | null
+          category: Database["public"]["Enums"]["claim_category"]
+          status: Database["public"]["Enums"]["claim_status"]
+          vote_count: number
+          condition: string | null
+          stage: string | null
+          created_at: string
+          updated_at: string
+          publications: Json
+          claim_reactions: Json
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -155,6 +347,10 @@ export type Database = {
     Enums: {
       app_role: "user" | "expert" | "ambassador" | "admin"
       expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
+      claim_status: "proposed" | "pending" | "verified" | "disputed" | "needs_more_evidence"
+      claim_category: "nutrition" | "fitness" | "mental_heath" | "pregnancy" | "menopause" | "general_health" | "perimenopause"
+      evidence_score_category: "study_size" | "population" | "consensus" | "interpretation"
+      source_type: "webpage" | "instagram" | "tiktok" | "youtube" | "twitter" | "facebook" | "reddit" | "podcast" | "book" | "research_paper" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -175,7 +371,7 @@ export type Tables<
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

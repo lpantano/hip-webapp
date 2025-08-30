@@ -1,18 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import { supabase } from '@/integrations/supabase/client';
 
-interface Claims {
+interface ClaimRow {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  product?: string | null;
+  category: string; // nutrition | fitness | mental_heath | pregnancy | menopause | general_health | perimenopause
+  condition?: string | null;
+  stage?: string | null;
+  vote_count: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PublicationRow {
+  id: string;
+  claim_id: string;
+  title: string;
+  journal?: string | null;
+  publication_year?: number | null;
+  doi?: string | null;
+  url?: string | null;
+  authors?: string | null;
+  created_at: string;
+}
+
+interface PublicationScoreRow {
+  id: string;
+  publication_id: string;
+  expert_user_id: string;
+  category: string; // study_size | population | consensus | interpretation
+  score: number;
+  notes?: string | null;
+}
+
+interface ReactionRow {
+  id: string;
+  claim_id: string;
+  user_id: string;
+  reaction_type: string; // helpful | insightful | wantmore | moneysaver
+  created_at: string;
+}
+
+interface VoteRow {
+  id: string;
+  claim_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+interface ClaimUI {
   id: string;
   claim: string;
-  product: string;
-  category: 'medicine' | 'supplement' | 'food' | 'exercise' | 'diet' | 'service';
-  condition: string;
-  stage: string;
+  // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
+  category: string;
   votes: number;
   publications: {
     title: string;
@@ -21,257 +71,170 @@ interface Claims {
     year: number;
     url: string;
     scores: {
-      sampleSize: {
-        score: 'low' | 'medium' | 'high';
-        explanation: string;
-      };
-      populationRepresentation: {
-        score: 'low' | 'medium' | 'high';
-        explanation: string;
-      };
-      consensus: {
-        score: 'low' | 'medium' | 'high';
-        explanation: string;
-      };
-      evidence: {
-        score: 'low' | 'medium' | 'high';
-        explanation: string;
-      };
+      sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
+      populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
+      consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
+      evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
     };
   }[];
   status: 'pending' | 'under_review' | 'approved';
 }
 
-// Placeholder data - will come from database later
-const placeholderClaims: Claims[] = [
-  {
-    id: '1',
-    claim: 'Turmeric reduces inflammation and joint pain during perimenopause',
-    product: 'Turmeric (Curcumin)',
-    category: 'supplement',
-    condition: 'Joint Pain',
-    stage: 'Perimenopause',
-    votes: 156,
-    publications: [
-      {
-        title: 'Curcumin: A Review of Its Effects on Human Health',
-        authors: 'Hewlings SJ, Kalman DS',
-        journal: 'Foods',
-        year: 2017,
-        url: 'https://pubmed.ncbi.nlm.nih.gov/28914794/',
-        scores: {
-          sampleSize: {
-            score: 'high',
-            explanation: 'Meta-analysis including 11 studies with over 1,500 participants total'
-          },
-          populationRepresentation: {
-            score: 'medium',
-            explanation: 'Studies included diverse populations but limited representation of perimenopausal women specifically'
-          },
-          consensus: {
-            score: 'high',
-            explanation: 'Strong consensus across multiple studies showing anti-inflammatory benefits'
-          },
-          evidence: {
-            score: 'medium',
-            explanation: 'Good evidence for anti-inflammatory effects, but specific perimenopause benefits need more research'
-          }
-        }
-      },
-      {
-        title: 'Anti-inflammatory effects of curcumin in menopausal women',
-        authors: 'Smith A, Johnson B',
-        journal: 'Menopause Research',
-        year: 2023,
-        url: 'https://example.com/study2',
-        scores: {
-          sampleSize: {
-            score: 'low',
-            explanation: 'Small study with only 45 participants'
-          },
-          populationRepresentation: {
-            score: 'high',
-            explanation: 'Specifically focused on perimenopausal women aged 45-55'
-          },
-          consensus: {
-            score: 'low',
-            explanation: 'Limited number of studies on this specific population'
-          },
-          evidence: {
-            score: 'medium',
-            explanation: 'Showed significant reduction in inflammatory markers in target population'
-          }
-        }
-      }
-    ],
-    status: 'pending'
-  },
-  {
-    id: '2',
-    claim: 'Regular yoga practice improves mood and reduces anxiety during menopause',
-    product: 'Yoga',
-    category: 'exercise',
-    condition: 'Anxiety & Mood',
-    stage: 'Menopause',
-    votes: 203,
-    publications: [
-      {
-        title: 'Yoga for menopausal symptoms: A systematic review',
-        authors: 'Cramer H, Lauche R, Langhorst J',
-        journal: 'Maturitas',
-        year: 2012,
-        url: 'https://pubmed.ncbi.nlm.nih.gov/22377186/',
-        scores: {
-          sampleSize: {
-            score: 'high',
-            explanation: 'Systematic review of 13 studies with over 1,300 participants'
-          },
-          populationRepresentation: {
-            score: 'high',
-            explanation: 'Studies included diverse menopausal populations across different countries'
-          },
-          consensus: {
-            score: 'high',
-            explanation: 'Strong consensus across reviewed studies for yoga benefits on mood and anxiety'
-          },
-          evidence: {
-            score: 'high',
-            explanation: 'Consistent evidence showing significant improvements in anxiety and mood scores'
-          }
-        }
-      }
-    ],
-    status: 'pending'
-  },
-  {
-    id: '3',
-    claim: 'Omega-3 fatty acids reduce hot flashes and night sweats',
-    product: 'Fish Oil Supplements',
-    category: 'supplement',
-    condition: 'Hot Flashes',
-    stage: 'Menopause',
-    votes: 89,
-    publications: [
-      {
-        title: 'Omega-3 fatty acids and menopausal symptoms',
-        authors: 'Lucas M, Asselin G, Mérette C',
-        journal: 'Menopause',
-        year: 2009,
-        url: 'https://pubmed.ncbi.nlm.nih.gov/19593153/',
-        scores: {
-          sampleSize: {
-            score: 'medium',
-            explanation: 'Cross-sectional study with 120 participants'
-          },
-          populationRepresentation: {
-            score: 'medium',
-            explanation: 'Canadian women aged 45-55, limited geographic diversity'
-          },
-          consensus: {
-            score: 'low',
-            explanation: 'Limited studies on omega-3 for hot flashes, mixed results in literature'
-          },
-          evidence: {
-            score: 'low',
-            explanation: 'Modest correlation found, but causation not established'
-          }
-        }
-      }
-    ],
-    status: 'under_review'
-  },
-  {
-    id: '4',
-    claim: 'Mediterranean diet supports bone health in postmenopausal women',
-    product: 'Mediterranean Diet',
-    category: 'diet',
-    condition: 'Bone Health',
-    stage: 'Postmenopause',
-    votes: 134,
-    publications: [
-      {
-        title: 'Mediterranean diet and bone density in postmenopausal women',
-        authors: 'Feart C, Lorrain S, Ginder Coupez V',
-        journal: 'Osteoporosis International',
-        year: 2013,
-        url: 'https://pubmed.ncbi.nlm.nih.gov/23161090/',
-        scores: {
-          sampleSize: {
-            score: 'high',
-            explanation: 'Large cohort study with 1,482 postmenopausal women'
-          },
-          populationRepresentation: {
-            score: 'medium',
-            explanation: 'French cohort, limited ethnic diversity but good age representation'
-          },
-          consensus: {
-            score: 'high',
-            explanation: 'Multiple studies consistently show Mediterranean diet benefits for bone health'
-          },
-          evidence: {
-            score: 'high',
-            explanation: 'Strong statistical association between diet adherence and bone mineral density'
-          }
-        }
-      }
-    ],
-    status: 'approved'
-  },
-  {
-    id: '5',
-    claim: 'Black cohosh may help reduce hot flash frequency and intensity',
-    product: 'Black Cohosh',
-    category: 'supplement',
-    condition: 'Hot Flashes',
-    stage: 'Menopause',
-    votes: 67,
-    publications: [
-      {
-        title: 'Black cohosh for menopausal symptoms: A systematic review',
-        authors: 'Leach MJ, Moore V',
-        journal: 'Cochrane Database',
-        year: 2012,
-        url: 'https://pubmed.ncbi.nlm.nih.gov/22895933/',
-        scores: {
-          sampleSize: {
-            score: 'medium',
-            explanation: 'Systematic review of 16 studies with varying sample sizes (50-304 participants each)'
-          },
-          populationRepresentation: {
-            score: 'medium',
-            explanation: 'Studies from multiple countries but predominantly Western populations'
-          },
-          consensus: {
-            score: 'low',
-            explanation: 'Mixed results across studies, some showing benefit while others show no effect'
-          },
-          evidence: {
-            score: 'low',
-            explanation: 'Insufficient evidence to determine effectiveness due to study quality limitations'
-          }
-        }
-      }
-    ],
-    status: 'pending'
-  }
-];
+// We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
 
 const Claims = () => {
-  const [claims, setClaims] = useState<Claims[]>(placeholderClaims);
+  const [claims, setClaims] = useState<ClaimUI[]>([]);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
+  const [loading, setLoading] = useState(true);
 
-  const handleVote = (id: string) => {
-    setClaims(prev => 
-      prev.map(claim => 
-        claim.id === id 
-          ? { ...claim, votes: claim.votes + 1 }
-          : claim
-      )
-    );
+  // component-scoped Supabase client
+  const sb = supabase;
+
+  useEffect(() => {
+    const mapScoreIntToLabel = (n: number): 'low' | 'medium' | 'high' => {
+      if (n >= 4) return 'high';
+      if (n === 3) return 'medium';
+      return 'low';
+    };
+
+    const mapEvidenceRowToScores = (rows: PublicationScoreRow[] = []) => {
+      const scoresTemplate: {
+        sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
+        populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
+        consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
+        evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
+      } = {
+        sampleSize: { score: 'low', explanation: '' },
+        populationRepresentation: { score: 'low', explanation: '' },
+        consensus: { score: 'low', explanation: '' },
+        evidence: { score: 'low', explanation: '' }
+      };
+
+      (rows || []).forEach((r) => {
+        const cat = r.category; // 'study_size' | 'population' | 'consensus' | 'interpretation'
+        const label = mapScoreIntToLabel(r.score);
+        if (cat === 'study_size') scoresTemplate.sampleSize = { score: label, explanation: r.notes || '' };
+        else if (cat === 'population') scoresTemplate.populationRepresentation = { score: label, explanation: r.notes || '' };
+        else if (cat === 'consensus') scoresTemplate.consensus = { score: label, explanation: r.notes || '' };
+        else if (cat === 'interpretation') scoresTemplate.evidence = { score: label, explanation: r.notes || '' };
+      });
+      return scoresTemplate;
+    };
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
+        const { data: joinedData, error: joinedError } = await sb.from('claims_full').select('*');
+
+        if (joinedError) throw joinedError;
+
+        const reactionsByClaim: Record<string, Record<string, number>> = {};
+
+        type JoinedClaim = ClaimRow & {
+          publications?: (PublicationRow & { publication_scores?: PublicationScoreRow[] })[];
+          claim_reactions?: ReactionRow[];
+        };
+
+        const joined = (joinedData || []) as unknown as JoinedClaim[];
+        const mappedClaims: ClaimUI[] = joined.map((c) => {
+          // build reaction counts per claim from nested claim_reactions
+          (c.claim_reactions || []).forEach((r) => {
+            reactionsByClaim[r.claim_id] = reactionsByClaim[r.claim_id] || {};
+            reactionsByClaim[r.claim_id][r.reaction_type] = (reactionsByClaim[r.claim_id][r.reaction_type] || 0) + 1;
+          });
+
+          // map nested publications and their scores
+          const pubs = (c.publications || []).map((p: PublicationRow & { publication_scores?: PublicationScoreRow[] }) => {
+            const scoresRows = p.publication_scores || [];
+            const scores = mapEvidenceRowToScores(scoresRows);
+            return {
+              title: p.title,
+              authors: p.authors || '',
+              journal: p.journal || '',
+              year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
+              url: p.url || p.doi || '',
+              scores
+            };
+          });
+
+          // map DB category directly to UI category (show DB value)
+          const uiCategory: ClaimUI['category'] = c.category || '';
+
+          const statusMap: Record<string, ClaimUI['status']> = {
+            pending: 'pending',
+            proposed: 'under_review',
+            needs_more_evidence: 'under_review',
+            verified: 'approved',
+            disputed: 'under_review'
+          };
+
+          return {
+            id: c.id,
+            claim: c.title || c.description || '',
+            category: uiCategory,
+            votes: c.vote_count || 0,
+            publications: pubs,
+            status: statusMap[c.status] || 'pending'
+          };
+        });
+
+        setClaims(mappedClaims);
+        setReactions(reactionsByClaim);
+      } catch (err) {
+        console.error('Error loading claims:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [sb]);
+
+  // Persist votes to Supabase: toggle user's vote
+  const handleVote = async (id: string) => {
+    // optimistic UI update
+    setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
+
+    try {
+      const { data: userResp } = await supabase.auth.getUser();
+      const userId = (userResp as { user?: { id?: string } })?.user?.id;
+      if (!userId) {
+        // revert
+        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
+        return;
+      }
+
+      // Check for existing vote
+      const { data: existingVotes, error: voteErr } = await sb.from('claim_votes').select('*').eq('claim_id', id).eq('user_id', userId).limit(1).maybeSingle();
+      if (voteErr) throw voteErr;
+
+      if (existingVotes) {
+        // user already voted -> remove vote
+        const { error: delError } = await sb.from('claim_votes').delete().eq('claim_id', id).eq('user_id', userId);
+        if (delError) throw delError;
+        // update local state (decrement)
+        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
+      } else {
+        // insert vote
+        const { error: insertError } = await sb.from('claim_votes').insert({ claim_id: id, user_id: userId });
+        if (insertError) throw insertError;
+        // vote_count trigger in DB will have incremented; we already optimistically incremented so nothing further to do
+      }
+    } catch (err) {
+      console.error('Vote failed:', err);
+      // revert optimistic increment
+      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
+    }
   };
 
-  const handleReaction = (claimId: string, reactionType: string) => {
+  const handleReaction = async (claimId: string, reactionType: string) => {
+    // ensure reaction type matches DB allowed list
+    const allowed = ['helpful', 'insightful', 'wantmore', 'moneysaver'];
+    if (!allowed.includes(reactionType)) reactionType = 'insightful';
+
+    // optimistic update
     setReactions(prev => ({
       ...prev,
       [claimId]: {
@@ -279,6 +242,27 @@ const Claims = () => {
         [reactionType]: (prev[claimId]?.[reactionType] || 0) + 1
       }
     }));
+
+    try {
+      const { data: userResp } = await supabase.auth.getUser();
+      const userId = (userResp as { user?: { id?: string } })?.user?.id;
+      if (!userId) return; // cannot persist without auth
+
+      const { error } = await sb
+        .from('claim_reactions')
+        .insert({ claim_id: claimId, user_id: userId, reaction_type: reactionType });
+      if (error) throw error;
+    } catch (err) {
+      console.error('Failed to persist reaction', err);
+      // revert optimistic update on failure
+      setReactions(prev => ({
+        ...prev,
+        [claimId]: {
+          ...prev[claimId],
+          [reactionType]: Math.max(0, (prev[claimId]?.[reactionType] || 1) - 1)
+        }
+      }));
+    }
   };
 
   const getReactionCount = (claimId: string, reactionType: string) => {
@@ -287,21 +271,26 @@ const Claims = () => {
 
   const reactionButtons = [
     { type: 'helpful', icon: Heart, label: 'Helpful', color: 'text-pink-600' },
-    { type: 'eyeopening', icon: Eye, label: 'Eye-opening', color: 'text-blue-600' },
+    { type: 'insightful', icon: Eye, label: 'Eye-opening', color: 'text-blue-600' },
     { type: 'wantmore', icon: BookOpen, label: 'Want more', color: 'text-green-600' },
     { type: 'moneysaver', icon: DollarSign, label: 'Money saver', color: 'text-yellow-600' }
   ];
 
+  const humanize = (s?: string) => (s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
+
   const getCategoryColor = (category: string) => {
-    const colors = {
-      medicine: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      supplement: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      food: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      exercise: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      diet: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      service: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
+    // Only map colors for DB-backed categories. Any unknown category falls back to neutral styling.
+    const colors: Record<string, string> = {
+      nutrition: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      fitness: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+      mental_heath: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      pregnancy: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+      menopause: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      general_health: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      perimenopause: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
     };
-    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+
+    return colors[category] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
   };
 
   const getStatusColor = (status: string) => {
@@ -378,22 +367,13 @@ const Claims = () => {
                     <div className="flex-1">
                       <div className="flex flex-wrap gap-2 mb-3">
                         <Badge className={getCategoryColor(claim.category)}>
-                          {claim.category}
-                        </Badge>
-                        <Badge variant="outline">
-                          {claim.condition}
-                        </Badge>
-                        <Badge variant="outline">
-                          {claim.stage}
+                          {humanize(claim.category)}
                         </Badge>
                         <Badge className={getStatusColor(claim.status)}>
                           {claim.status.replace('_', ' ')}
                         </Badge>
                       </div>
                       <CardTitle className="text-xl mb-2">{claim.claim}</CardTitle>
-                      <CardDescription className="text-base">
-                        Product: <span className="font-medium text-foreground">{claim.product}</span>
-                      </CardDescription>
                     </div>
                     
                     <div className="flex flex-col items-center gap-2">
