@@ -94,104 +94,105 @@ const Claims = () => {
   // component-scoped Supabase client
   const sb = supabase;
 
-  useEffect(() => {
-    const mapScoreIntToLabel = (n: number): 'low' | 'medium' | 'high' => {
-      if (n >= 4) return 'high';
-      if (n === 3) return 'medium';
-      return 'low';
+  const mapScoreIntToLabel = (n: number): 'low' | 'medium' | 'high' => {
+    if (n >= 4) return 'high';
+    if (n === 3) return 'medium';
+    return 'low';
+  };
+
+  const mapEvidenceRowToScores = (rows: PublicationScoreRow[] = []) => {
+    const scoresTemplate: {
+      sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
+      populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
+      consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
+      evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
+    } = {
+      sampleSize: { score: 'low', explanation: '' },
+      populationRepresentation: { score: 'low', explanation: '' },
+      consensus: { score: 'low', explanation: '' },
+      evidence: { score: 'low', explanation: '' }
     };
 
-    const mapEvidenceRowToScores = (rows: PublicationScoreRow[] = []) => {
-      const scoresTemplate: {
-        sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
-        populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
-        consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
-        evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
-      } = {
-        sampleSize: { score: 'low', explanation: '' },
-        populationRepresentation: { score: 'low', explanation: '' },
-        consensus: { score: 'low', explanation: '' },
-        evidence: { score: 'low', explanation: '' }
+    (rows || []).forEach((r) => {
+      const cat = r.category; // 'study_size' | 'population' | 'consensus' | 'interpretation'
+      const label = mapScoreIntToLabel(r.score);
+      if (cat === 'study_size') scoresTemplate.sampleSize = { score: label, explanation: r.notes || '' };
+      else if (cat === 'population') scoresTemplate.populationRepresentation = { score: label, explanation: r.notes || '' };
+      else if (cat === 'consensus') scoresTemplate.consensus = { score: label, explanation: r.notes || '' };
+      else if (cat === 'interpretation') scoresTemplate.evidence = { score: label, explanation: r.notes || '' };
+    });
+    return scoresTemplate;
+  };
+
+  // Move fetchData outside useEffect so it can be called from form submission
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
+      const { data: joinedData, error: joinedError } = await sb.from('claims_full').select('*');
+
+      if (joinedError) throw joinedError;
+
+      const reactionsByClaim: Record<string, Record<string, number>> = {};
+
+      type JoinedClaim = ClaimRow & {
+        publications?: (PublicationRow & { publication_scores?: PublicationScoreRow[] })[];
+        claim_reactions?: ReactionRow[];
       };
 
-      (rows || []).forEach((r) => {
-        const cat = r.category; // 'study_size' | 'population' | 'consensus' | 'interpretation'
-        const label = mapScoreIntToLabel(r.score);
-        if (cat === 'study_size') scoresTemplate.sampleSize = { score: label, explanation: r.notes || '' };
-        else if (cat === 'population') scoresTemplate.populationRepresentation = { score: label, explanation: r.notes || '' };
-        else if (cat === 'consensus') scoresTemplate.consensus = { score: label, explanation: r.notes || '' };
-        else if (cat === 'interpretation') scoresTemplate.evidence = { score: label, explanation: r.notes || '' };
-      });
-      return scoresTemplate;
-    };
+      const joined = (joinedData || []) as unknown as JoinedClaim[];
+      const mappedClaims: ClaimUI[] = joined.map((c) => {
+        // build reaction counts per claim from nested claim_reactions
+        (c.claim_reactions || []).forEach((r) => {
+          reactionsByClaim[r.claim_id] = reactionsByClaim[r.claim_id] || {};
+          reactionsByClaim[r.claim_id][r.reaction_type] = (reactionsByClaim[r.claim_id][r.reaction_type] || 0) + 1;
+        });
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
-        const { data: joinedData, error: joinedError } = await sb.from('claims_full').select('*');
-
-        if (joinedError) throw joinedError;
-
-        const reactionsByClaim: Record<string, Record<string, number>> = {};
-
-        type JoinedClaim = ClaimRow & {
-          publications?: (PublicationRow & { publication_scores?: PublicationScoreRow[] })[];
-          claim_reactions?: ReactionRow[];
-        };
-
-        const joined = (joinedData || []) as unknown as JoinedClaim[];
-        const mappedClaims: ClaimUI[] = joined.map((c) => {
-          // build reaction counts per claim from nested claim_reactions
-          (c.claim_reactions || []).forEach((r) => {
-            reactionsByClaim[r.claim_id] = reactionsByClaim[r.claim_id] || {};
-            reactionsByClaim[r.claim_id][r.reaction_type] = (reactionsByClaim[r.claim_id][r.reaction_type] || 0) + 1;
-          });
-
-          // map nested publications and their scores
-          const pubs = (c.publications || []).map((p: PublicationRow & { publication_scores?: PublicationScoreRow[] }) => {
-            const scoresRows = p.publication_scores || [];
-            const scores = mapEvidenceRowToScores(scoresRows);
-            return {
-              title: p.title,
-              authors: p.authors || '',
-              journal: p.journal || '',
-              year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
-              url: p.url || p.doi || '',
-              scores
-            };
-          });
-
-          // map DB category directly to UI category (show DB value)
-          const uiCategory: ClaimUI['category'] = c.category || '';
-
-          const statusMap: Record<string, ClaimUI['status']> = {
-            pending: 'pending',
-            proposed: 'under_review',
-            needs_more_evidence: 'under_review',
-            verified: 'approved',
-            disputed: 'under_review'
-          };
-
+        // map nested publications and their scores
+        const pubs = (c.publications || []).map((p: PublicationRow & { publication_scores?: PublicationScoreRow[] }) => {
+          const scoresRows = p.publication_scores || [];
+          const scores = mapEvidenceRowToScores(scoresRows);
           return {
-            id: c.id,
-            claim: c.title || c.description || '',
-            category: uiCategory,
-            votes: c.vote_count || 0,
-            publications: pubs,
-            status: statusMap[c.status] || 'pending'
+            title: p.title,
+            authors: p.authors || '',
+            journal: p.journal || '',
+            year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
+            url: p.url || p.doi || '',
+            scores
           };
         });
 
-        setClaims(mappedClaims);
-        setReactions(reactionsByClaim);
-      } catch (err) {
-        console.error('Error loading claims:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+        // map DB category directly to UI category (show DB value)
+        const uiCategory: ClaimUI['category'] = c.category || '';
 
+        const statusMap: Record<string, ClaimUI['status']> = {
+          pending: 'pending',
+          proposed: 'under_review',
+          needs_more_evidence: 'under_review',
+          verified: 'approved',
+          disputed: 'under_review'
+        };
+
+        return {
+          id: c.id,
+          claim: c.title || c.description || '',
+          category: uiCategory,
+          votes: c.vote_count || 0,
+          publications: pubs,
+          status: statusMap[c.status] || 'pending'
+        };
+      });
+
+      setClaims(mappedClaims);
+      setReactions(reactionsByClaim);
+    } catch (err) {
+      console.error('Error loading claims:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [sb]);
 
@@ -354,8 +355,8 @@ const Claims = () => {
                     <ClaimSubmissionForm 
                       onSuccess={() => {
                         setShowSubmissionForm(false);
-                        // Refresh the claims data
-                        window.location.reload();
+                        // Refresh the claims data by re-running the fetch
+                        fetchData();
                       }}
                       onCancel={() => setShowSubmissionForm(false)}
                     />

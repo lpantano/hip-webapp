@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { DOIService } from '@/services/DOIService';
 
 const formSchema = z.object({
@@ -39,6 +41,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDOI, setLoadingDOI] = useState<number | null>(null);
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -86,24 +89,25 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
   };
 
   const onSubmit = async (data: FormData) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to submit a claim.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please sign in to submit a claim.",
-          variant: "destructive",
-        });
-        return;
-      }
+      console.log('Submitting claim with data:', data);
 
       // Insert the claim
       const { data: claimData, error: claimError } = await supabase
         .from('claims')
         .insert({
-          user_id: user.user.id,
+          user_id: user.id,
           title: data.title,
           description: data.description,
           category: data.category,
@@ -111,7 +115,12 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         .select()
         .single();
 
-      if (claimError) throw claimError;
+      if (claimError) {
+        console.error('Claim insert error:', claimError);
+        throw claimError;
+      }
+
+      console.log('Claim inserted:', claimData);
 
       // Insert publications
       const publicationsToInsert = data.publications.map(pub => ({
@@ -124,11 +133,18 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         abstract: pub.abstract || '',
       }));
 
+      console.log('Inserting publications:', publicationsToInsert);
+
       const { error: pubError } = await supabase
         .from('publications')
         .insert(publicationsToInsert);
 
-      if (pubError) throw pubError;
+      if (pubError) {
+        console.error('Publications insert error:', pubError);
+        throw pubError;
+      }
+
+      console.log('Publications inserted successfully');
 
       toast({
         title: "Claim Submitted Successfully",
@@ -137,11 +153,11 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
       form.reset();
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting claim:', error);
       toast({
         title: "Submission Error",
-        description: "Failed to submit claim. Please try again.",
+        description: error.message || "Failed to submit claim. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -158,6 +174,32 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     { value: 'general_health', label: 'General Health' },
     { value: 'perimenopause', label: 'Perimenopause' },
   ];
+
+  if (authLoading) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <span>Loading...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="py-8">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You must be signed in to submit a claim. Please sign in and try again.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
