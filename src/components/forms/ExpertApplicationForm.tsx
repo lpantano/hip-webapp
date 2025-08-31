@@ -20,6 +20,7 @@ const expertApplicationSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   credentials: z.string().min(10, "Please provide detailed credentials (minimum 10 characters)"),
   expertiseArea: z.enum(["health", "fitness", "nutrition", "mental_health"]),
+  yearsOfExperience: z.number().min(0, "Years of experience must be 0 or greater").max(50, "Please enter a realistic number of years"),
   motivation: z.string().min(50, "Please provide detailed motivation (minimum 50 characters)"),
   website: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
   socialLinks: z.array(z.object({
@@ -92,6 +93,7 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
           email: data.email,
           credentials: data.credentials,
           expertise_area: data.expertiseArea,
+          years_of_experience: data.yearsOfExperience,
           motivation: data.motivation,
           website: data.website || null,
         })
@@ -206,6 +208,22 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
                 </Select>
                 {errors.expertiseArea && (
                   <p className="text-sm text-destructive">{errors.expertiseArea.message}</p>
+                )}
+              </div>
+
+              {/* Years of Experience */}
+              <div className="space-y-2">
+                <Label htmlFor="yearsOfExperience">Years of Experience *</Label>
+                <Input
+                  id="yearsOfExperience"
+                  type="number"
+                  min="0"
+                  max="50"
+                  {...register("yearsOfExperience", { valueAsNumber: true })}
+                  placeholder="e.g., 5"
+                />
+                {errors.yearsOfExperience && (
+                  <p className="text-sm text-destructive">{errors.yearsOfExperience.message}</p>
                 )}
               </div>
 

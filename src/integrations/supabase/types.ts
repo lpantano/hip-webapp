@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      claim_reactions: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_reactions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_reactions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims_full"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_votes: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_votes_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_votes_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims_full"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          category: Database["public"]["Enums"]["claim_category"]
+          created_at: string
+          description: string
+          id: string
+          status: Database["public"]["Enums"]["claim_status"]
+          title: string
+          updated_at: string
+          user_id: string
+          vote_count: number
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["claim_category"]
+          created_at?: string
+          description: string
+          id?: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+          vote_count?: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["claim_category"]
+          created_at?: string
+          description?: string
+          id?: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          vote_count?: number
+        }
+        Relationships: []
+      }
       expert_applications: {
         Row: {
           created_at: string
@@ -27,6 +138,7 @@ export type Database = {
           updated_at: string
           user_id: string
           website: string | null
+          years_of_experience: number | null
         }
         Insert: {
           created_at?: string
@@ -40,6 +152,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           website?: string | null
+          years_of_experience?: number | null
         }
         Update: {
           created_at?: string
@@ -53,212 +166,131 @@ export type Database = {
           updated_at?: string
           user_id?: string
           website?: string | null
+          years_of_experience?: number | null
         }
         Relationships: []
       }
-      claims: {
+      profiles: {
         Row: {
-          id: string
-          user_id: string
-          title: string
-          description: string | null
-          product: string | null
-          category: Database["public"]["Enums"]["claim_category"]
-          status: Database["public"]["Enums"]["claim_status"]
-          vote_count: number
-          condition: string | null
-          stage: string | null
+          avatar_url: string | null
+          bio: string | null
           created_at: string
+          display_name: string | null
+          id: string
           updated_at: string
-        }
-        Insert: {
-          id?: string
           user_id: string
-          title: string
-          description?: string | null
-          product?: string | null
-          category: Database["public"]["Enums"]["claim_category"]
-          status?: Database["public"]["Enums"]["claim_status"]
-          vote_count?: number
-          condition?: string | null
-          stage?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          description?: string | null
-          product?: string | null
-          category?: Database["public"]["Enums"]["claim_category"]
-          status?: Database["public"]["Enums"]["claim_status"]
-          vote_count?: number
-          condition?: string | null
-          stage?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      publications: {
-        Row: {
-          id: string
-          claim_id: string
-          title: string
-          journal: string | null
-          publication_year: number | null
-          doi: string | null
-          url: string | null
-          authors: string | null
-          abstract: string | null
-          created_at: string
         }
         Insert: {
-          id?: string
-          claim_id: string
-          title: string
-          journal?: string | null
-          publication_year?: number | null
-          doi?: string | null
-          url?: string | null
-          authors?: string | null
-          abstract?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          id?: string
-          claim_id?: string
-          title?: string
-          journal?: string | null
-          publication_year?: number | null
-          doi?: string | null
-          url?: string | null
-          authors?: string | null
-          abstract?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
       publication_scores: {
         Row: {
-          id: string
-          publication_id: string
-          expert_user_id: string
           category: Database["public"]["Enums"]["evidence_score_category"]
-          score: number
+          created_at: string
+          expert_user_id: string
+          id: string
           notes: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
           publication_id: string
-          expert_user_id: string
-          category: Database["public"]["Enums"]["evidence_score_category"]
           score: number
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          publication_id?: string
-          expert_user_id?: string
-          category?: Database["public"]["Enums"]["evidence_score_category"]
-          score?: number
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      claim_votes: {
-        Row: {
-          id: string
-          claim_id: string
-          user_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          claim_id: string
-          user_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          claim_id?: string
-          user_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      claim_reactions: {
-        Row: {
-          id: string
-          claim_id: string
-          user_id: string
-          reaction_type: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          claim_id: string
-          user_id: string
-          reaction_type: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          claim_id?: string
-          user_id?: string
-          reaction_type?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      sources: {
-        Row: {
-          id: string
-          claim_id: string
-          user_id: string
-          source_type: Database["public"]["Enums"]["source_type"]
-          source_url: string | null
-          source_title: string | null
-          source_description: string | null
-          author_name: string | null
-          published_date: string | null
-          created_at: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          claim_id: string
-          user_id: string
-          source_type: Database["public"]["Enums"]["source_type"]
-          source_url?: string | null
-          source_title?: string | null
-          source_description?: string | null
-          author_name?: string | null
-          published_date?: string | null
+          category: Database["public"]["Enums"]["evidence_score_category"]
           created_at?: string
+          expert_user_id: string
+          id?: string
+          notes?: string | null
+          publication_id: string
+          score: number
           updated_at?: string
         }
         Update: {
-          id?: string
-          claim_id?: string
-          user_id?: string
-          source_type?: Database["public"]["Enums"]["source_type"]
-          source_url?: string | null
-          source_title?: string | null
-          source_description?: string | null
-          author_name?: string | null
-          published_date?: string | null
+          category?: Database["public"]["Enums"]["evidence_score_category"]
           created_at?: string
+          expert_user_id?: string
+          id?: string
+          notes?: string | null
+          publication_id?: string
+          score?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "publication_scores_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      publications: {
+        Row: {
+          abstract: string | null
+          claim_id: string
+          created_at: string
+          doi: string | null
+          id: string
+          journal: string
+          publication_year: number
+          title: string
+          url: string | null
+        }
+        Insert: {
+          abstract?: string | null
+          claim_id: string
+          created_at?: string
+          doi?: string | null
+          id?: string
+          journal: string
+          publication_year: number
+          title: string
+          url?: string | null
+        }
+        Update: {
+          abstract?: string | null
+          claim_id?: string
+          created_at?: string
+          doi?: string | null
+          id?: string
+          journal?: string
+          publication_year?: number
+          title?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publications_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publications_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims_full"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       social_media_links: {
         Row: {
@@ -292,6 +324,63 @@ export type Database = {
           },
         ]
       }
+      sources: {
+        Row: {
+          author_name: string | null
+          claim_id: string
+          created_at: string
+          id: string
+          published_date: string | null
+          source_description: string | null
+          source_title: string | null
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author_name?: string | null
+          claim_id: string
+          created_at?: string
+          id?: string
+          published_date?: string | null
+          source_description?: string | null
+          source_title?: string | null
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author_name?: string | null
+          claim_id?: string
+          created_at?: string
+          id?: string
+          published_date?: string | null
+          source_description?: string | null
+          source_title?: string | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sources_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sources_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims_full"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -317,20 +406,43 @@ export type Database = {
     Views: {
       claims_full: {
         Row: {
-          id: string
-          user_id: string
-          title: string
+          category: Database["public"]["Enums"]["claim_category"] | null
+          claim_reactions: Json | null
+          created_at: string | null
           description: string | null
-          product: string | null
-          category: Database["public"]["Enums"]["claim_category"]
-          status: Database["public"]["Enums"]["claim_status"]
-          vote_count: number
-          condition: string | null
-          stage: string | null
-          created_at: string
-          updated_at: string
-          publications: Json
-          claim_reactions: Json
+          id: string | null
+          publications: Json | null
+          status: Database["public"]["Enums"]["claim_status"] | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+          vote_count: number | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["claim_category"] | null
+          claim_reactions?: never
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          publications?: never
+          status?: Database["public"]["Enums"]["claim_status"] | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          vote_count?: number | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["claim_category"] | null
+          claim_reactions?: never
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          publications?: never
+          status?: Database["public"]["Enums"]["claim_status"] | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          vote_count?: number | null
         }
         Relationships: []
       }
@@ -346,11 +458,39 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "expert" | "ambassador" | "admin"
+      claim_category:
+        | "nutrition"
+        | "fitness"
+        | "mental_heath"
+        | "pregnancy"
+        | "menopause"
+        | "general_health"
+        | "perimenopause"
+        | "mental_health"
+      claim_status:
+        | "proposed"
+        | "pending"
+        | "verified"
+        | "disputed"
+        | "needs_more_evidence"
+      evidence_score_category:
+        | "study_size"
+        | "population"
+        | "consensus"
+        | "interpretation"
       expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
-      claim_status: "proposed" | "pending" | "verified" | "disputed" | "needs_more_evidence"
-      claim_category: "nutrition" | "fitness" | "mental_health" | "pregnancy" | "menopause" | "general_health" | "perimenopause"
-      evidence_score_category: "study_size" | "population" | "consensus" | "interpretation"
-      source_type: "webpage" | "instagram" | "tiktok" | "youtube" | "twitter" | "facebook" | "reddit" | "podcast" | "book" | "research_paper" | "other"
+      source_type:
+        | "webpage"
+        | "instagram"
+        | "tiktok"
+        | "youtube"
+        | "twitter"
+        | "facebook"
+        | "reddit"
+        | "podcast"
+        | "book"
+        | "research_paper"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -371,7 +511,7 @@ export type Tables<
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -479,7 +619,43 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "expert", "ambassador", "admin"],
+      claim_category: [
+        "nutrition",
+        "fitness",
+        "mental_heath",
+        "pregnancy",
+        "menopause",
+        "general_health",
+        "perimenopause",
+        "mental_health",
+      ],
+      claim_status: [
+        "proposed",
+        "pending",
+        "verified",
+        "disputed",
+        "needs_more_evidence",
+      ],
+      evidence_score_category: [
+        "study_size",
+        "population",
+        "consensus",
+        "interpretation",
+      ],
       expertise_area: ["health", "fitness", "nutrition", "mental_health"],
+      source_type: [
+        "webpage",
+        "instagram",
+        "tiktok",
+        "youtube",
+        "twitter",
+        "facebook",
+        "reddit",
+        "podcast",
+        "book",
+        "research_paper",
+        "other",
+      ],
     },
   },
 } as const
