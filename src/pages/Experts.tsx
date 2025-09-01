@@ -20,6 +20,7 @@ interface Expert {
   location?: string;
   avatar_url?: string;
   created_at: string;
+  display_name?: string;
   social_media_links: {
     platform: string;
     url: string;
@@ -37,7 +38,8 @@ const Experts = () => {
 
   const fetchExperts = async () => {
     try {
-      const { data, error } = await supabase
+      // First get experts
+      const { data: expertsData, error: expertsError } = await supabase
         .from('experts')
         .select(`
           *,
@@ -45,9 +47,28 @@ const Experts = () => {
         `)
         .eq('status', 'accepted');
 
-      if (error) throw error;
+      if (expertsError) throw expertsError;
 
-      setExperts(data || []);
+      // Get profiles for these experts
+      if (expertsData && expertsData.length > 0) {
+        const userIds = expertsData.map(expert => expert.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Merge the data
+        const expertsWithNames = expertsData.map(expert => ({
+          ...expert,
+          display_name: profilesData?.find(profile => profile.user_id === expert.user_id)?.display_name
+        }));
+
+        setExperts(expertsWithNames);
+      } else {
+        setExperts([]);
+      }
     } catch (error) {
       console.error('Error fetching experts:', error);
     } finally {
@@ -80,7 +101,7 @@ const Experts = () => {
   };
 
   const ExpertCard = ({ expert }: { expert: Expert }) => {
-    const displayName = `${formatExpertiseArea(expert.expertise_area)} Expert`;
+    const displayName = expert.display_name || `${formatExpertiseArea(expert.expertise_area)} Expert`;
     const expertiseTitle = formatExpertiseArea(expert.expertise_area) + ' Specialist';
     const yearsOnPlatform = getYearsOnPlatform(expert.created_at);
     
@@ -198,13 +219,13 @@ const Experts = () => {
               <DialogHeader>
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="w-16 h-16">
-                    <AvatarImage src={selectedExpert.avatar_url} alt={`${formatExpertiseArea(selectedExpert.expertise_area)} Expert`} />
+                    <AvatarImage src={selectedExpert.avatar_url} alt={selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`} />
                     <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
-                      {formatExpertiseArea(selectedExpert.expertise_area).split(' ').map(n => n[0]).join('')}
+                      {selectedExpert.display_name ? selectedExpert.display_name.split(' ').map(n => n[0]).join('') : formatExpertiseArea(selectedExpert.expertise_area).split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <DialogTitle className="text-2xl">{formatExpertiseArea(selectedExpert.expertise_area)} Expert</DialogTitle>
+                    <DialogTitle className="text-2xl">{selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`}</DialogTitle>
                     <DialogDescription className="text-lg text-primary font-medium">
                       {formatExpertiseArea(selectedExpert.expertise_area)} Specialist
                     </DialogDescription>
