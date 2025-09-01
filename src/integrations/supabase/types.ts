@@ -491,6 +491,22 @@ export type Database = {
         }
         Relationships: []
       }
+      experts_full: {
+        Row: {
+          id: string | null;
+          user_id: string | null;
+          display_name: string | null;
+          profile_avatar_url: string | null;
+          education: string | null;
+          motivation: string | null;
+          bio: string | null;
+          expertise_area: Database["public"]["Enums"]["expertise_area"] | null;
+          social_media_links: Json | null;
+        }
+        Insert: unknown;
+        Update: unknown;
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -556,7 +572,7 @@ export type Tables<
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

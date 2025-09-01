@@ -39,41 +39,13 @@ const Experts = () => {
 
   const fetchExperts = async () => {
     try {
-      // First get experts
+      // Fetch from experts_full view
       const { data: expertsData, error: expertsError } = await supabase
-        .from('experts')
-        .select(`
-          *,
-          social_media_links(platform, url)
-        `)
-        .eq('status', 'accepted');
-
-      if (expertsError) throw expertsError;
-
-      // Get profiles for these experts
-      if (expertsData && expertsData.length > 0) {
-        const userIds = expertsData.map(expert => expert.user_id);
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', userIds);
-
-        if (profilesError) throw profilesError;
-
-        // Merge the data
-        const expertsWithNames = expertsData.map(expert => {
-          const profile = profilesData?.find(profile => profile.user_id === expert.user_id);
-          return {
-            ...expert,
-            display_name: profile?.display_name,
-            profile_avatar_url: profile?.avatar_url
-          };
-        });
-
-        setExperts(expertsWithNames);
-      } else {
-        setExperts([]);
-      }
+        .from('experts_full')
+        .select('*')
+      // console.log(expertsData);
+    if (expertsError) throw expertsError;
+        setExperts(expertsData || []);
     } catch (error) {
       console.error('Error fetching experts:', error);
     } finally {
