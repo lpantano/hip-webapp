@@ -21,6 +21,7 @@ interface Expert {
   avatar_url?: string;
   created_at: string;
   display_name?: string;
+  profile_avatar_url?: string;
   social_media_links: {
     platform: string;
     url: string;
@@ -54,16 +55,20 @@ const Experts = () => {
         const userIds = expertsData.map(expert => expert.user_id);
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, display_name')
+          .select('user_id, display_name, avatar_url')
           .in('user_id', userIds);
 
         if (profilesError) throw profilesError;
 
         // Merge the data
-        const expertsWithNames = expertsData.map(expert => ({
-          ...expert,
-          display_name: profilesData?.find(profile => profile.user_id === expert.user_id)?.display_name
-        }));
+        const expertsWithNames = expertsData.map(expert => {
+          const profile = profilesData?.find(profile => profile.user_id === expert.user_id);
+          return {
+            ...expert,
+            display_name: profile?.display_name,
+            profile_avatar_url: profile?.avatar_url
+          };
+        });
 
         setExperts(expertsWithNames);
       } else {
@@ -102,6 +107,7 @@ const Experts = () => {
 
   const ExpertCard = ({ expert }: { expert: Expert }) => {
     const displayName = expert.display_name || `${formatExpertiseArea(expert.expertise_area)} Expert`;
+    const avatarUrl = expert.profile_avatar_url || expert.avatar_url;
     const expertiseTitle = formatExpertiseArea(expert.expertise_area) + ' Specialist';
     const yearsOnPlatform = getYearsOnPlatform(expert.created_at);
     
@@ -122,7 +128,7 @@ const Experts = () => {
         
         <CardHeader className="text-center pb-4">
           <Avatar className="w-20 h-20 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
-            <AvatarImage src={expert.avatar_url} alt={displayName} />
+            <AvatarImage src={avatarUrl} alt={displayName} />
             <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
               {displayName.split(' ').map(n => n[0]).join('')}
             </AvatarFallback>
@@ -219,7 +225,7 @@ const Experts = () => {
               <DialogHeader>
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="w-16 h-16">
-                    <AvatarImage src={selectedExpert.avatar_url} alt={selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`} />
+                    <AvatarImage src={selectedExpert.profile_avatar_url || selectedExpert.avatar_url} alt={selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`} />
                     <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
                       {selectedExpert.display_name ? selectedExpert.display_name.split(' ').map(n => n[0]).join('') : formatExpertiseArea(selectedExpert.expertise_area).split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
