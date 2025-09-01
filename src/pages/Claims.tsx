@@ -590,21 +590,6 @@ const Claims = () => {
               </Card>
             ))}
           </div>
-
-          {/* Call to Action */}
-          <div className="max-w-2xl mx-auto mt-16 text-center">
-            <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-semibold mb-4">Want to Submit an Claims?</h3>
-                <p className="text-muted-foreground mb-6">
-                  Have a claim backed by scientific research? Submit it for community review and expert evaluation.
-                </p>
-                <Button className="bg-primary hover:bg-primary/90">
-                  Submit Claims
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
     </div>
