@@ -309,7 +309,10 @@ const Claims = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const getScoreColor = (score: 'low' | 'medium' | 'high') => {
+  const getScoreColor = (score: 'low' | 'medium' | 'high', hasScore: boolean = true) => {
+    if (!hasScore) {
+      return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+    }
     const colors = {
       low: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
       medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
@@ -459,7 +462,7 @@ const Claims = () => {
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <div className="flex items-center gap-1 cursor-pointer">
-                                      <Badge className={getScoreColor(pub.scores.sampleSize.score)} variant="outline">
+                                     <Badge className={getScoreColor(pub.scores.sampleSize.score, !!pub.scores.sampleSize.explanation)} variant="outline">
                                         Size
                                       </Badge>
                                     </div>
@@ -476,7 +479,7 @@ const Claims = () => {
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <div className="flex items-center gap-1 cursor-pointer">
-                                      <Badge className={getScoreColor(pub.scores.populationRepresentation.score)} variant="outline">
+                                     <Badge className={getScoreColor(pub.scores.populationRepresentation.score, !!pub.scores.populationRepresentation.explanation)} variant="outline">
                                         Pop
                                       </Badge>
                                     </div>
@@ -493,7 +496,7 @@ const Claims = () => {
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <div className="flex items-center gap-1 cursor-pointer">
-                                      <Badge className={getScoreColor(pub.scores.consensus.score)} variant="outline">
+                                     <Badge className={getScoreColor(pub.scores.consensus.score, !!pub.scores.consensus.explanation)} variant="outline">
                                         Cons
                                       </Badge>
                                     </div>
@@ -510,7 +513,7 @@ const Claims = () => {
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <div className="flex items-center gap-1 cursor-pointer">
-                                      <Badge className={getScoreColor(pub.scores.evidence.score)} variant="outline">
+                                     <Badge className={getScoreColor(pub.scores.evidence.score, !!pub.scores.evidence.explanation)} variant="outline">
                                         Evd
                                       </Badge>
                                     </div>
