@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -89,6 +90,7 @@ interface ClaimUI {
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
+  const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
@@ -321,12 +323,25 @@ const Claims = () => {
     return colors[score];
   };
 
-  const sortedClaims = [...claims].sort((a, b) => {
-    if (sortBy === 'votes') {
-      return b.votes - a.votes;
-    }
-    return 0; // For 'recent' we'd sort by date when we have real data
-  });
+  const categoryOptions = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'nutrition', label: 'Nutrition' },
+    { value: 'fitness', label: 'Fitness' },
+    { value: 'mental_health', label: 'Mental Health' },
+    { value: 'pregnancy', label: 'Pregnancy' },
+    { value: 'menopause', label: 'Menopause' },
+    { value: 'perimenopause', label: 'Perimenopause' },
+    { value: 'general_health', label: 'General Health' }
+  ];
+
+  const filteredAndSortedClaims = [...claims]
+    .filter(claim => filterByCategory === 'all' || claim.category === filterByCategory)
+    .sort((a, b) => {
+      if (sortBy === 'votes') {
+        return b.votes - a.votes;
+      }
+      return 0; // For 'recent' we'd sort by date when we have real data
+    });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
@@ -349,7 +364,7 @@ const Claims = () => {
                 <Users className="w-4 h-4" />
                 <span>All Claims must be linked to scientific publications</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 justify-center">
                 <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="gap-2" disabled={!user}>
@@ -368,6 +383,23 @@ const Claims = () => {
                     />
                   </DialogContent>
                 </Dialog>
+                
+                <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
                 <Button
                   variant={sortBy === 'votes' ? 'default' : 'outline'}
                   size="sm"
@@ -388,7 +420,12 @@ const Claims = () => {
 
           {/* Claims List */}
           <div className="max-w-4xl mx-auto space-y-6">
-            {sortedClaims.map((claim) => (
+            {filteredAndSortedClaims.length === 0 && !loading && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>No claims found for the selected category.</p>
+              </div>
+            )}
+            {filteredAndSortedClaims.map((claim) => (
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
