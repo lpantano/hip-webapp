@@ -170,6 +170,51 @@ export type Database = {
         }
         Relationships: []
       }
+      experts: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          education: string
+          expertise_area: Database["public"]["Enums"]["claim_category"]
+          id: string
+          location: string | null
+          motivation: string
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+          years_of_experience: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          education: string
+          expertise_area: Database["public"]["Enums"]["claim_category"]
+          id?: string
+          location?: string | null
+          motivation: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          years_of_experience?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          education?: string
+          expertise_area?: Database["public"]["Enums"]["claim_category"]
+          id?: string
+          location?: string | null
+          motivation?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          years_of_experience?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -295,31 +340,31 @@ export type Database = {
       social_media_links: {
         Row: {
           created_at: string
-          expert_application_id: string
+          expert_id: string
           id: string
           platform: string
           url: string
         }
         Insert: {
           created_at?: string
-          expert_application_id: string
+          expert_id: string
           id?: string
           platform: string
           url: string
         }
         Update: {
           created_at?: string
-          expert_application_id?: string
+          expert_id?: string
           id?: string
           platform?: string
           url?: string
         }
         Relationships: [
           {
-            foreignKeyName: "social_media_links_expert_application_id_fkey"
-            columns: ["expert_application_id"]
+            foreignKeyName: "social_media_links_expert_id_fkey"
+            columns: ["expert_id"]
             isOneToOne: false
-            referencedRelation: "expert_applications"
+            referencedRelation: "experts"
             referencedColumns: ["id"]
           },
         ]

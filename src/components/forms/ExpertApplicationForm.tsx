@@ -16,13 +16,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 // Form validation schema
 const expertApplicationSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  credentials: z.string().min(10, "Please provide detailed credentials (minimum 10 characters)"),
-  expertiseArea: z.enum(["health", "fitness", "nutrition", "mental_health"]),
+  education: z.string().min(10, "Please provide detailed education (minimum 10 characters)"),
+  expertiseArea: z.enum(["nutrition", "fitness", "mental_health", "pregnancy", "menopause", "general_health", "perimenopause"]),
   yearsOfExperience: z.number().min(0, "Years of experience must be 0 or greater").max(50, "Please enter a realistic number of years"),
   motivation: z.string().min(50, "Please provide detailed motivation (minimum 50 characters)"),
   website: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+  location: z.string().min(2, "Location must be at least 2 characters").optional().or(z.literal("")),
   socialLinks: z.array(z.object({
     platform: z.string().min(1, "Platform name is required"),
     url: z.string().url("Please enter a valid URL")
@@ -86,16 +85,15 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
     try {
       // Insert expert application
       const { data: applicationData, error: applicationError } = await supabase
-        .from("expert_applications")
+        .from("experts")
         .insert({
           user_id: user.id,
-          full_name: data.fullName,
-          email: data.email,
-          credentials: data.credentials,
+          education: data.education,
           expertise_area: data.expertiseArea,
           years_of_experience: data.yearsOfExperience,
           motivation: data.motivation,
           website: data.website || null,
+          location: data.location || null,
         })
         .select()
         .single();
@@ -107,7 +105,7 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
         const socialLinksData = socialLinks
           .filter(link => link.platform && link.url)
           .map(link => ({
-            expert_application_id: applicationData.id,
+            expert_id: applicationData.id,
             platform: link.platform,
             url: link.url,
           }));
@@ -144,10 +142,13 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
   };
 
   const expertiseAreaLabels = {
-    health: "Health",
-    fitness: "Fitness",
     nutrition: "Nutrition",
+    fitness: "Fitness", 
     mental_health: "Mental Health",
+    pregnancy: "Pregnancy",
+    menopause: "Menopause",
+    general_health: "General Health",
+    perimenopause: "Perimenopause",
   };
 
   return (
@@ -165,33 +166,6 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Full Name */}
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name *</Label>
-                <Input
-                  id="fullName"
-                  {...register("fullName")}
-                  placeholder="Dr. Jane Smith"
-                />
-                {errors.fullName && (
-                  <p className="text-sm text-destructive">{errors.fullName.message}</p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  placeholder="jane.smith@university.edu"
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
-
               {/* Expertise Area */}
               <div className="space-y-2">
                 <Label htmlFor="expertiseArea">Area of Expertise *</Label>
@@ -200,10 +174,13 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
                     <SelectValue placeholder="Select your primary expertise area" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="health">Health</SelectItem>
-                    <SelectItem value="fitness">Fitness</SelectItem>
                     <SelectItem value="nutrition">Nutrition</SelectItem>
+                    <SelectItem value="fitness">Fitness</SelectItem>
                     <SelectItem value="mental_health">Mental Health</SelectItem>
+                    <SelectItem value="pregnancy">Pregnancy</SelectItem>
+                    <SelectItem value="menopause">Menopause</SelectItem>
+                    <SelectItem value="general_health">General Health</SelectItem>
+                    <SelectItem value="perimenopause">Perimenopause</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.expertiseArea && (
@@ -227,17 +204,17 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
                 )}
               </div>
 
-              {/* Credentials */}
+              {/* Education */}
               <div className="space-y-2">
-                <Label htmlFor="credentials">Professional Credentials *</Label>
+                <Label htmlFor="education">Education & Professional Background *</Label>
                 <Textarea
-                  id="credentials"
-                  {...register("credentials")}
+                  id="education"
+                  {...register("education")}
                   placeholder="PhD in Nutrition Science, University of California, San Diego. Board-certified nutritionist with 10+ years of clinical experience..."
                   rows={4}
                 />
-                {errors.credentials && (
-                  <p className="text-sm text-destructive">{errors.credentials.message}</p>
+                {errors.education && (
+                  <p className="text-sm text-destructive">{errors.education.message}</p>
                 )}
               </div>
 
@@ -265,6 +242,19 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
                 />
                 {errors.website && (
                   <p className="text-sm text-destructive">{errors.website.message}</p>
+                )}
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label htmlFor="location">Location (Optional)</Label>
+                <Input
+                  id="location"
+                  {...register("location")}
+                  placeholder="Boston, MA"
+                />
+                {errors.location && (
+                  <p className="text-sm text-destructive">{errors.location.message}</p>
                 )}
               </div>
 
