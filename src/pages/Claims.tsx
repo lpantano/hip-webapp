@@ -8,6 +8,7 @@ import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign,
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
+import { useAuth } from '@/hooks/useAuth';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -91,6 +92,7 @@ const Claims = () => {
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const { user } = useAuth();
 
   // component-scoped Supabase client
   const sb = supabase;
@@ -347,9 +349,9 @@ const Claims = () => {
               <div className="flex gap-2">
                 <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="gap-2">
+                    <Button size="sm" className="gap-2" disabled={!user}>
                       <Plus className="w-4 h-4" />
-                      Submit New Claim
+                      {user ? 'Submit New Claim' : 'Sign in to Submit Claim'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
