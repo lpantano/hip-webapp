@@ -148,15 +148,15 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Shield className="h-5 w-5 text-primary" />
-                    Study Quality
+                    <Users className="h-5 w-5 text-primary" />
+                    Study Size
                   </CardTitle>
                   <Badge variant="outline">Score: 1-10</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Assess methodology, sample size, controls, and statistical rigor of the research
+                  Evaluate the sample size and whether it's adequate for drawing meaningful conclusions
                 </p>
               </CardContent>
             </Card>
@@ -166,14 +166,14 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Target className="h-5 w-5 text-accent" />
-                    Relevance
+                    Population Representation
                   </CardTitle>
                   <Badge variant="outline">Score: 1-10</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  How directly does this research apply to women's health and the specific claim?
+                  How well does the study population represent the target demographic for the claim?
                 </p>
               </CardContent>
             </Card>
@@ -182,15 +182,15 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    Recency
+                    <Vote className="h-5 w-5 text-muted-foreground" />
+                    Research Consensus
                   </CardTitle>
                   <Badge variant="outline">Score: 1-10</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Consider how recent the research is and whether newer studies might contradict findings
+                  Level of agreement among multiple studies and researchers on this topic
                 </p>
               </CardContent>
             </Card>
@@ -200,14 +200,14 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <CheckCircle className="h-5 w-5 text-primary" />
-                    Evidence Strength
+                    Valid Conclusion
                   </CardTitle>
                   <Badge variant="outline">Score: 1-10</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Overall strength of evidence supporting or refuting the claim based on all available research
+                  Whether the study's conclusions are logically supported by the data and methodology
                 </p>
               </CardContent>
             </Card>
