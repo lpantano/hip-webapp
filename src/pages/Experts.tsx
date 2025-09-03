@@ -16,16 +16,14 @@ interface Expert {
   education: string;
   motivation: string;
   website?: string;
-  years_of_experience: number;
+  years_of_experience?: number;
   location?: string;
   avatar_url?: string;
-  created_at: string;
+  created_at?: string;
   display_name?: string;
   profile_avatar_url?: string;
-  social_media_links: {
-    platform: string;
-    url: string;
-  }[];
+  bio?: string;
+  social_media_links: any;
 }
 
 const Experts = () => {

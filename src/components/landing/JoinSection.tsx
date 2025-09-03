@@ -6,10 +6,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ExpertApplicationForm from "@/components/forms/ExpertApplicationForm";
+import ExpertOnboardingDialog from "@/components/forms/ExpertOnboardingDialog";
 
 const JoinSection = () => {
   const [email, setEmail] = useState("");
   const [showExpertForm, setShowExpertForm] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { user } = useAuth();
 
   const handleMailingList = (e: React.FormEvent) => {
@@ -113,13 +115,22 @@ const JoinSection = () => {
                   <span>Distribution profit</span>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                className="w-full mt-6 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-                onClick={() => setShowExpertForm(true)}
-              >
-                Request Invitation
-              </Button>
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted"
+                  onClick={() => setShowOnboarding(true)}
+                >
+                  Learn How It Works
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => setShowExpertForm(true)}
+                >
+                  Request Invitation
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -154,6 +165,12 @@ const JoinSection = () => {
           </Card>
         </div>
       </div>
+      
+      <ExpertOnboardingDialog
+        open={showOnboarding}
+        onOpenChange={setShowOnboarding}
+        onApply={() => setShowExpertForm(true)}
+      />
       
       <ExpertApplicationForm 
         open={showExpertForm}
