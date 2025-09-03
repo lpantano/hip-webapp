@@ -172,9 +172,23 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  How well does the study population represent the target demographic for the claim?
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    How well does the study population represent the target demographic for the claim?
+                  </p>
+                  <div className="bg-accent/10 p-3 rounded-lg border-l-2 border-accent">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Why this matters:</strong> Population bias can completely invalidate study results. 
+                      For example, a study on heart disease conducted only on men may not apply to women due to 
+                      biological differences. Similarly, studies on predominantly white populations may not 
+                      generalize to other ethnic groups due to genetic, cultural, or socioeconomic factors.
+                    </p>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <strong>Consider:</strong> Age, gender, ethnicity, socioeconomic status, geographic location, 
+                    health status, and other relevant demographics
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
