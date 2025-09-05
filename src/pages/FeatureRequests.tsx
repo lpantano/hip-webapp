@@ -3,72 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowUp, ArrowDown, Plus, MessageSquare } from "lucide-react";
+import { ArrowUp, Plus, MessageSquare } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/hooks/useAuth";
-
-const mockFeatureRequests = [
-  {
-    id: 1,
-    title: "Advanced Search Filters",
-    description: "Add ability to filter claims by date range, expert level, and topic categories to help users find relevant information faster.",
-    status: "under_review",
-    priority: "high",
-    labels: ["enhancement", "search", "ux"],
-    userVotes: 45,
-    expertVotes: 12,
-    comments: 8,
-    createdAt: "2024-01-15"
-  },
-  {
-    id: 2,
-    title: "Mobile App Support",
-    description: "Develop native mobile applications for iOS and Android to provide better accessibility and push notifications.",
-    status: "planned",
-    priority: "medium",
-    labels: ["feature", "mobile", "accessibility"],
-    userVotes: 89,
-    expertVotes: 23,
-    comments: 15,
-    createdAt: "2024-01-12"
-  },
-  {
-    id: 3,
-    title: "Expert Verification System",
-    description: "Implement a more robust verification process for experts including credential validation and peer review.",
-    status: "in_progress",
-    priority: "critical",
-    labels: ["security", "verification", "experts"],
-    userVotes: 67,
-    expertVotes: 34,
-    comments: 22,
-    createdAt: "2024-01-10"
-  },
-  {
-    id: 4,
-    title: "Dark Mode Theme",
-    description: "Add a dark mode option for better user experience during night time usage and reduced eye strain.",
-    status: "completed",
-    priority: "low",
-    labels: ["ui", "theme", "accessibility"],
-    userVotes: 156,
-    expertVotes: 8,
-    comments: 31,
-    createdAt: "2024-01-08"
-  },
-  {
-    id: 5,
-    title: "Bulk Import Claims",
-    description: "Allow administrators to import multiple claims from CSV or JSON files for easier data migration.",
-    status: "rejected",
-    priority: "medium",
-    labels: ["admin", "import", "data"],
-    userVotes: 23,
-    expertVotes: 5,
-    comments: 12,
-    createdAt: "2024-01-05"
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const statusColors = {
   open: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -88,25 +28,130 @@ const priorityColors = {
 
 const FeatureRequests = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [sortBy, setSortBy] = useState<"votes" | "recent" | "comments">("votes");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const handleVote = (requestId: number, voteType: "up" | "down", voterType: "user" | "expert") => {
-    if (!user) return;
-    // This would update votes in the database
-    console.log(`Voting ${voteType} on request ${requestId} as ${voterType}`);
+  // Fetch feature requests
+  const { data: featureRequests = [], isLoading } = useQuery({
+    queryKey: ['feature-requests'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('feature_requests_full')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Check if user has voted on a feature
+  const { data: userVotes = [] } = useQuery({
+    queryKey: ['user-votes', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('feature_votes')
+        .select('feature_request_id')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data?.map(vote => vote.feature_request_id) || [];
+    },
+    enabled: !!user
+  });
+
+  // Check if user is an expert
+  const { data: isExpert = false } = useQuery({
+    queryKey: ['user-expert-status', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase
+        .rpc('has_role', { _user_id: user.id, _role: 'expert' });
+      return data || false;
+    },
+    enabled: !!user
+  });
+
+  const handleVote = async (requestId: string) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to be signed in to vote on features.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Check if user already voted
+      if (userVotes.includes(requestId)) {
+        // Remove vote
+        const { error } = await supabase
+          .from('feature_votes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('feature_request_id', requestId);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Vote removed",
+          description: "Your vote has been removed."
+        });
+      } else {
+        // Add vote
+        const { error } = await supabase
+          .from('feature_votes')
+          .insert({
+            user_id: user.id,
+            feature_request_id: requestId,
+            is_expert: isExpert
+          });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Vote added",
+          description: "Thank you for voting!"
+        });
+      }
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['feature-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['user-votes'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update vote. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const filteredRequests = mockFeatureRequests.filter(request => 
+  const filteredRequests = featureRequests.filter(request => 
     filterStatus === "all" || request.status === filterStatus
   );
 
   const sortedRequests = [...filteredRequests].sort((a, b) => {
-    if (sortBy === "votes") return (b.userVotes + b.expertVotes) - (a.userVotes + a.expertVotes);
-    if (sortBy === "recent") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (sortBy === "comments") return b.comments - a.comments;
+    if (sortBy === "votes") return (b.total_votes || 0) - (a.total_votes || 0);
+    if (sortBy === "recent") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortBy === "comments") return (b.comments_count || 0) - (a.comments_count || 0);
     return 0;
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
+          <div className="text-center">Loading feature requests...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,108 +228,85 @@ const FeatureRequests = () => {
         </div>
 
         <div className="grid gap-6">
-          {sortedRequests.map((request) => (
-            <Card key={request.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-xl">{request.title}</CardTitle>
-                      <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                        {request.status.replace("_", " ")}
-                      </Badge>
-                      <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
-                        {request.priority}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground mb-3">{request.description}</p>
-                    <div className="flex gap-1 flex-wrap">
-                      {request.labels.map((label) => (
-                        <Badge key={label} variant="outline" className="text-xs">
-                          {label}
+          {sortedRequests.map((request) => {
+            const hasVoted = userVotes.includes(request.id);
+            
+            return (
+              <Card key={request.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CardTitle className="text-xl">{request.title}</CardTitle>
+                        <Badge className={statusColors[request.status as keyof typeof statusColors]}>
+                          {request.status.replace("_", " ")}
                         </Badge>
-                      ))}
+                        <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
+                          {request.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground mb-3">{request.description}</p>
+                      <div className="flex gap-1 flex-wrap">
+                        {request.labels?.map((label: string) => (
+                          <Badge key={label} variant="outline" className="text-xs">
+                            {label}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <div className="flex flex-col items-center gap-1">
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      {/* Single upvote button */}
+                      <div className="flex items-center gap-3">
                         <Button
                           size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleVote(request.id, "up", "user")}
+                          variant={hasVoted ? "default" : "outline"}
+                          className="h-10 px-3 flex items-center gap-2"
+                          onClick={() => handleVote(request.id)}
                           disabled={!user}
                         >
-                          <ArrowUp className="h-3 w-3" />
+                          <ArrowUp className={`h-4 w-4 ${hasVoted ? 'text-white' : ''}`} />
+                          {hasVoted ? 'Voted' : 'Upvote'}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleVote(request.id, "down", "user")}
-                          disabled={!user}
-                        >
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
+                        
+                        {/* Vote counts display */}
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="font-medium">{request.member_votes || 0}</div>
+                            <div className="text-xs text-muted-foreground">Members</div>
+                          </div>
+                          
+                          <Separator orientation="vertical" className="h-8" />
+                          
+                          <div className="text-center">
+                            <div className="font-medium">{request.expert_votes || 0}</div>
+                            <div className="text-xs text-muted-foreground">Experts</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium">{request.userVotes}</div>
-                        <div className="text-xs text-muted-foreground">Users</div>
-                      </div>
-                    </div>
-                    
-                    <Separator orientation="vertical" className="h-12" />
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="flex flex-col items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleVote(request.id, "up", "expert")}
-                          disabled={!user}
-                        >
-                          <ArrowUp className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleVote(request.id, "down", "expert")}
-                          disabled={!user}
-                        >
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium">{request.expertVotes}</div>
-                        <div className="text-xs text-muted-foreground">Experts</div>
-                      </div>
-                    </div>
 
-                    {!user && (
-                      <>
-                        <Separator orientation="vertical" className="h-12" />
-                        <Button size="sm" variant="outline" className="text-xs">
-                          Sign in to vote
-                        </Button>
-                      </>
-                    )}
+                      {!user && (
+                        <>
+                          <Separator orientation="vertical" className="h-10" />
+                          <Button size="sm" variant="outline" className="text-xs">
+                            Sign in to vote
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="text-sm">{request.comments_count || 0}</span>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MessageSquare className="h-4 w-4" />
-                    <span className="text-sm">{request.comments}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>
