@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Users, TrendingUp, AlertTriangle, CheckCircle, BookOpen, BarChart3, Target, Globe } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, CheckCircle, BookOpen, BarChart3, Target, Globe, FileText, Award } from 'lucide-react';
 
 const EducationSection = () => {
   const [sampleSizeOpen, setSampleSizeOpen] = useState(false);
   const [populationOpen, setPopulationOpen] = useState(false);
+  const [consensusOpen, setConsensusOpen] = useState(false);
 
   return (
     <section className="py-16 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
@@ -429,22 +430,322 @@ const EducationSection = () => {
             </DialogContent>
           </Dialog>
 
-          <Card className="bg-card/50 backdrop-blur-sm">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-8 h-8 text-accent" />
+          {/* Research Consensus Card - Interactive */}
+          <Dialog open={consensusOpen} onOpenChange={setConsensusOpen}>
+            <DialogTrigger asChild>
+              <Card className="cursor-pointer hover:shadow-lg transition-all bg-card/50 backdrop-blur-sm hover:scale-105 border-2 hover:border-accent/50">
+                <CardHeader className="text-center">
+                  <div className="mx-auto mb-4 w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-8 h-8 text-accent" />
+                  </div>
+                  <CardTitle className="text-xl">Research Consensus</CardTitle>
+                  <CardDescription>
+                    When multiple studies agree
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <Button variant="ghost" className="text-accent hover:text-accent/80">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Learn More
+                  </Button>
+                </CardContent>
+              </Card>
+            </DialogTrigger>
+            
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border border-border z-50">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-2xl">
+                  <TrendingUp className="w-6 h-6 text-accent" />
+                  Understanding Research Consensus
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  Why multiple independent studies reaching the same conclusion provides stronger evidence
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 mt-6">
+                {/* Key Concept */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    What is Research Consensus?
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Research consensus occurs when multiple independent studies investigating the same question reach similar conclusions. This is considered the gold standard of scientific evidence.
+                      </p>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-l-4 border-green-500">
+                        <div className="font-semibold text-green-700 dark:text-green-400 mb-2">Strong Evidence Example</div>
+                        <div className="text-sm">15 studies on folic acid and birth defects all show 50-70% reduction in neural tube defects</div>
+                        <div className="text-xs text-green-600 mt-2">✓ Consistent findings across different populations and methods</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-l-4 border-red-500">
+                        <div className="font-semibold text-red-700 dark:text-red-400 mb-2">Conflicting Evidence Example</div>
+                        <div className="text-sm">Vitamin E studies: Some show benefits, others show no effect or harm</div>
+                        <div className="text-xs text-red-600 mt-2">⚠️ No clear consensus - more research needed</div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        When studies disagree significantly, it suggests the evidence is not yet strong enough for definitive conclusions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Types of Evidence Hierarchy */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Evidence Strength Hierarchy
+                  </h3>
+                  
+                  <div className="grid gap-3">
+                    <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Strongest Evidence
+                        </Badge>
+                      </div>
+                      <div className="font-medium mb-1">Systematic Reviews & Meta-Analyses</div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Combines data from multiple high-quality studies on the same topic
+                      </div>
+                      <div className="text-xs text-green-600">
+                        Example: Analysis of 50+ studies on exercise and depression shows consistent 25-30% improvement
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          Strong Evidence
+                        </Badge>
+                      </div>
+                      <div className="font-medium mb-1">Multiple Independent RCTs</div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Several randomized controlled trials reaching similar conclusions
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        Example: 8 separate RCTs showing probiotics improve digestive health
+                      </div>
+                    </div>
+                    
+                    <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                          Moderate Evidence
+                        </Badge>
+                      </div>
+                      <div className="font-medium mb-1">Single Large RCT or Few Small RCTs</div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Limited but promising evidence that needs confirmation
+                      </div>
+                      <div className="text-xs text-yellow-600">
+                        Example: One large study on ashwagandha for stress - promising but needs replication
+                      </div>
+                    </div>
+                    
+                    <div className="bg-red-50 dark:bg-red-950/30 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                          Weak Evidence
+                        </Badge>
+                      </div>
+                      <div className="font-medium mb-1">Observational Studies or Animal Studies</div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Can suggest relationships but cannot prove cause and effect
+                      </div>
+                      <div className="text-xs text-red-600">
+                        Example: Surveys showing tea drinkers have lower cancer rates - correlation, not causation
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Red Flags vs Good Signs */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card className="border-red-200 dark:border-red-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+                        <AlertTriangle className="w-5 h-5" />
+                        Red Flags: Weak Evidence
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Only one study supports the claim</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Studies show conflicting results</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Only observational or animal studies</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Studies funded by companies selling the product</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-green-200 dark:border-green-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
+                        <CheckCircle className="w-5 h-5" />
+                        Good Signs: Strong Consensus
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>Multiple independent studies agree</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>Studies replicated in different populations</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>Randomized controlled trials show effect</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>Independent researchers reach same conclusions</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Real World Examples */}
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/50 dark:to-indigo-950/50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4">Real-World Examples</h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <div className="font-medium text-green-700 dark:text-green-400">Strong Consensus</div>
+                        </div>
+                        <div className="text-sm font-medium mb-1">Exercise for Mental Health</div>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          100+ studies consistently show exercise improves depression and anxiety
+                        </div>
+                        <div className="text-xs text-green-600">
+                          ✓ Multiple meta-analyses confirm 25-30% improvement in symptoms
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <div className="font-medium text-green-700 dark:text-green-400">Strong Consensus</div>
+                        </div>
+                        <div className="text-sm font-medium mb-1">Mediterranean Diet for Heart Health</div>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Dozens of studies across different countries show cardiovascular benefits
+                        </div>
+                        <div className="text-xs text-green-600">
+                          ✓ Consistent 20-30% reduction in heart disease risk
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                          <div className="font-medium text-yellow-700 dark:text-yellow-400">Mixed Evidence</div>
+                        </div>
+                        <div className="text-sm font-medium mb-1">Vitamin D for COVID-19</div>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Some studies show benefits, others show no effect
+                        </div>
+                        <div className="text-xs text-yellow-600">
+                          ⚠️ No clear consensus yet - research ongoing
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className="w-4 h-4 text-red-500" />
+                          <div className="font-medium text-red-700 dark:text-red-400">Conflicting Evidence</div>
+                        </div>
+                        <div className="text-sm font-medium mb-1">Antioxidant Supplements</div>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Studies show benefits, no effect, or even harm
+                        </div>
+                        <div className="text-xs text-red-600">
+                          ⚠️ Major disagreement - likely no benefit for most people
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* How to Evaluate */}
+                <div className="bg-accent/5 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    How to Evaluate Research Consensus
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <h4 className="font-medium mb-3 text-accent">Questions to Ask:</h4>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>How many studies support this finding?</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Were the studies done by different research groups?</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Do the results hold across different populations?</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Are there any high-quality studies that disagree?</span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-3 text-accent">Red Flags:</h4>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Claims based on single studies</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Cherry-picking studies that support a claim</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Ignoring contradictory evidence</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-current rounded-full mt-2" />
+                          <span>Over-interpreting preliminary results</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <CardTitle className="text-xl">Research Consensus</CardTitle>
-              <CardDescription>
-                When multiple studies agree
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button variant="ghost" disabled className="text-muted-foreground">
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
 
           <Card className="bg-card/50 backdrop-blur-sm">
             <CardHeader className="text-center">
