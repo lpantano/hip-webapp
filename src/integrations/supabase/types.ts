@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      claim_comments: {
+        Row: {
+          claim_id: string
+          content: string
+          created_at: string
+          expert_user_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          claim_id: string
+          content: string
+          created_at?: string
+          expert_user_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          claim_id?: string
+          content?: string
+          created_at?: string
+          expert_user_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      claim_links: {
+        Row: {
+          claim_id: string
+          created_at: string
+          description: string | null
+          expert_user_id: string
+          id: string
+          link_type: string
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          description?: string | null
+          expert_user_id: string
+          id?: string
+          link_type?: string
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          description?: string | null
+          expert_user_id?: string
+          id?: string
+          link_type?: string
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       claim_reactions: {
         Row: {
           claim_id: string
