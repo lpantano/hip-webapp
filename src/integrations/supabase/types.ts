@@ -125,54 +125,8 @@ export type Database = {
         }
         Relationships: []
       }
-      expert_applications: {
-        Row: {
-          created_at: string
-          credentials: string
-          email: string
-          expertise_area: Database["public"]["Enums"]["expertise_area"]
-          full_name: string
-          id: string
-          motivation: string
-          status: string
-          updated_at: string
-          user_id: string
-          website: string | null
-          years_of_experience: number | null
-        }
-        Insert: {
-          created_at?: string
-          credentials: string
-          email: string
-          expertise_area: Database["public"]["Enums"]["expertise_area"]
-          full_name: string
-          id?: string
-          motivation: string
-          status?: string
-          updated_at?: string
-          user_id: string
-          website?: string | null
-          years_of_experience?: number | null
-        }
-        Update: {
-          created_at?: string
-          credentials?: string
-          email?: string
-          expertise_area?: Database["public"]["Enums"]["expertise_area"]
-          full_name?: string
-          id?: string
-          motivation?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-          website?: string | null
-          years_of_experience?: number | null
-        }
-        Relationships: []
-      }
       experts: {
         Row: {
-          avatar_url: string | null
           created_at: string
           education: string
           expertise_area: Database["public"]["Enums"]["claim_category"]
@@ -186,7 +140,6 @@ export type Database = {
           years_of_experience: number | null
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string
           education: string
           expertise_area: Database["public"]["Enums"]["claim_category"]
@@ -200,7 +153,6 @@ export type Database = {
           years_of_experience?: number | null
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string
           education?: string
           expertise_area?: Database["public"]["Enums"]["claim_category"]
@@ -213,7 +165,93 @@ export type Database = {
           website?: string | null
           years_of_experience?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "experts_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      feature_requests: {
+        Row: {
+          comments_count: number
+          created_at: string
+          description: string
+          id: string
+          labels: string[] | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_count?: number
+          created_at?: string
+          description: string
+          id?: string
+          labels?: string[] | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_count?: number
+          created_at?: string
+          description?: string
+          id?: string
+          labels?: string[] | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: []
+      }
+      feature_votes: {
+        Row: {
+          created_at: string
+          feature_request_id: string
+          id: string
+          is_expert: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature_request_id: string
+          id?: string
+          is_expert?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feature_request_id?: string
+          id?: string
+          is_expert?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_votes_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_votes_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests_full"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -365,7 +403,14 @@ export type Database = {
             columns: ["expert_id"]
             isOneToOne: false
             referencedRelation: "experts"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "social_media_links_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts_full"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -493,18 +538,45 @@ export type Database = {
       }
       experts_full: {
         Row: {
-          id: string | null;
-          user_id: string | null;
-          display_name: string | null;
-          profile_avatar_url: string | null;
-          education: string | null;
-          motivation: string | null;
-          bio: string | null;
-          expertise_area: Database["public"]["Enums"]["expertise_area"] | null;
-          social_media_links: Json | null;
+          created_at: string | null
+          display_name: string | null
+          education: string | null
+          expertise_area: Database["public"]["Enums"]["claim_category"] | null
+          id: string | null
+          location: string | null
+          motivation: string | null
+          profile_avatar_url: string | null
+          social_media_links: Json | null
+          user_id: string | null
+          website: string | null
+          years_of_experience: number | null
         }
-        Insert: unknown;
-        Update: unknown;
+        Relationships: [
+          {
+            foreignKeyName: "experts_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      feature_requests_full: {
+        Row: {
+          comments_count: number | null
+          created_at: string | null
+          description: string | null
+          expert_votes: number | null
+          id: string | null
+          labels: string[] | null
+          member_votes: number | null
+          priority: string | null
+          status: string | null
+          title: string | null
+          total_votes: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
         Relationships: []
       }
     }
@@ -572,7 +644,7 @@ export type Tables<
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
