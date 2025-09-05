@@ -13,6 +13,7 @@ import Claims from "./pages/Claims";
 import Legal from "./pages/Legal";
 import Roadmap from "./pages/Roadmap";
 import FeatureRequests from "./pages/FeatureRequests";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/legal" element={<Legal />} />
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/features" element={<FeatureRequests />} />
+            <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
