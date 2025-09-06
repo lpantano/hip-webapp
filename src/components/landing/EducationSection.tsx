@@ -9,6 +9,7 @@ const EducationSection = () => {
   const [sampleSizeOpen, setSampleSizeOpen] = useState(false);
   const [populationOpen, setPopulationOpen] = useState(false);
   const [consensusOpen, setConsensusOpen] = useState(false);
+  const [evidenceQualityOpen, setEvidenceQualityOpen] = useState(false);
 
   return (
     <section className="py-16 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
@@ -747,22 +748,274 @@ const EducationSection = () => {
             </DialogContent>
           </Dialog>
 
-          <Card className="bg-card/50 backdrop-blur-sm">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-primary" />
+          {/* Evidence Quality Card - Interactive */}
+          <Dialog open={evidenceQualityOpen} onOpenChange={setEvidenceQualityOpen}>
+            <DialogTrigger asChild>
+              <Card className="cursor-pointer hover:shadow-lg transition-all bg-card/50 backdrop-blur-sm hover:scale-105 border-2 hover:border-accent/50">
+                <CardHeader className="text-center">
+                  <div className="mx-auto mb-4 w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
+                    <Award className="w-8 h-8 text-accent" />
+                  </div>
+                  <CardTitle className="text-xl">Evidence Quality</CardTitle>
+                  <CardDescription>
+                    How conclusions align with claims
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <Button variant="ghost" className="text-accent hover:text-accent/80">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Learn More
+                  </Button>
+                </CardContent>
+              </Card>
+            </DialogTrigger>
+            
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-2xl">
+                  <Award className="w-6 h-6 text-accent" />
+                  Evidence Quality: Do Conclusions Match Claims?
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  Understanding how to evaluate whether research conclusions actually support the health claims being made
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 mt-6">
+                {/* Key Problem */}
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/50 dark:to-orange-950/50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    The Problem: Mismatched Claims & Evidence
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-l-4 border-red-500">
+                      <div className="font-semibold text-red-700 dark:text-red-400 mb-2">What Media Says</div>
+                      <div className="text-sm">"Green tea burns fat and helps you lose weight!"</div>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500">
+                      <div className="font-semibold text-blue-700 dark:text-blue-400 mb-2">What Study Actually Found</div>
+                      <div className="text-sm">"Green tea increased metabolism by 4% for 2 hours after consumption in laboratory conditions"</div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    <strong>The Gap:</strong> A small, temporary metabolic increase in a lab doesn't prove weight loss in real life!
+                  </div>
+                </div>
+
+                {/* Good vs Bad Examples */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card className="border-red-200 dark:border-red-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+                        <AlertTriangle className="w-5 h-5" />
+                        Poor Evidence Quality
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="font-medium text-red-600">Study Found:</div>
+                        <div className="bg-red-50 dark:bg-red-950/30 p-3 rounded">
+                          "Vitamin C reduced cold symptoms by 8% in marathon runners"
+                        </div>
+                        <div className="font-medium text-red-600">Claim Made:</div>
+                        <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded">
+                          "Vitamin C prevents colds in everyone!"
+                        </div>
+                        <div className="text-xs text-red-600 mt-2">
+                          ❌ Overgeneralized from specific population (athletes) to everyone
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-green-200 dark:border-green-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
+                        <CheckCircle className="w-5 h-5" />
+                        Good Evidence Quality
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="font-medium text-green-600">Study Found:</div>
+                        <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded">
+                          "Folic acid reduced neural tube defects by 70% in pregnant women"
+                        </div>
+                        <div className="font-medium text-green-600">Claim Made:</div>
+                        <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded">
+                          "Folic acid during pregnancy reduces birth defects"
+                        </div>
+                        <div className="text-xs text-green-600 mt-2">
+                          ✓ Claim directly matches what was studied and found
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Common Misinterpretations */}
+                <div className="bg-accent/5 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Common Misinterpretation Patterns
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">1</div>
+                      <div>
+                        <div className="font-medium text-red-600">Correlation → Causation</div>
+                        <div className="text-sm text-muted-foreground">Study: "People who eat chocolate have lower BMI"</div>
+                        <div className="text-sm text-red-600">Wrong claim: "Chocolate causes weight loss"</div>
+                        <div className="text-xs text-muted-foreground mt-1">Maybe healthier people can afford better chocolate, or they exercise more!</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">2</div>
+                      <div>
+                        <div className="font-medium text-red-600">Lab Results → Real World</div>
+                        <div className="text-sm text-muted-foreground">Study: "Compound X killed cancer cells in petri dish"</div>
+                        <div className="text-sm text-red-600">Wrong claim: "Compound X cures cancer"</div>
+                        <div className="text-xs text-muted-foreground mt-1">Many things kill cells in a dish but don't work in humans!</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">3</div>
+                      <div>
+                        <div className="font-medium text-red-600">Animal Studies → Humans</div>
+                        <div className="text-sm text-muted-foreground">Study: "Drug Y reduced tumors in mice by 50%"</div>
+                        <div className="text-sm text-red-600">Wrong claim: "Drug Y reduces cancer in humans"</div>
+                        <div className="text-xs text-muted-foreground mt-1">Mouse biology is different from human biology!</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* What to Look For */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-green-50 dark:bg-green-950/20 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700 dark:text-green-400">
+                      <CheckCircle className="w-5 h-5" />
+                      Red Flags to Avoid
+                    </h3>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Claims that go beyond what was studied (broader population, different conditions)</div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Definitive claims from preliminary or animal studies</div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Causal claims from observational studies</div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Dramatic claims from small statistical differences</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                      <TrendingUp className="w-5 h-5" />
+                      Good Signs to Look For
+                    </h3>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Claims match the exact population studied</div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Realistic effect sizes and practical significance</div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Human studies for human health claims</div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div>Modest, evidence-based language</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Real Example */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">Real-World Example: Omega-3 for Heart Health</h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <div className="font-medium text-blue-600 mb-2">What the Research Found:</div>
+                        <div className="text-sm text-muted-foreground">
+                          "In a 5-year study of 25,000 people with existing heart disease, those taking omega-3 supplements had 8% fewer heart attacks compared to placebo"
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg">
+                        <div className="font-medium text-green-600 mb-2">Good Interpretation:</div>
+                        <div className="text-sm">
+                          "Omega-3 supplements may provide modest heart benefits for people who already have heart disease"
+                        </div>
+                      </div>
+                      
+                      <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-lg">
+                        <div className="font-medium text-red-600 mb-2">Poor Interpretation:</div>
+                        <div className="text-sm">
+                          "Omega-3 prevents heart disease in healthy people"
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Evaluation Guide */}
+                <div className="bg-primary/5 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Quick Evaluation Questions
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <div className="font-medium mb-3">About the Study:</div>
+                      <div className="space-y-2 text-sm">
+                        <div>• Who was studied? (age, gender, health status)</div>
+                        <div>• What was actually measured?</div>
+                        <div>• How big was the effect?</div>
+                        <div>• Was this a controlled trial or observation?</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="font-medium mb-3">About the Claim:</div>
+                      <div className="space-y-2 text-sm">
+                        <div>• Does it match the study population?</div>
+                        <div>• Does it overstate the findings?</div>
+                        <div>• Does it claim causation from correlation?</div>
+                        <div>• Is the language appropriately cautious?</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <CardTitle className="text-xl">Evidence Quality</CardTitle>
-              <CardDescription>
-                What makes evidence strong
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button variant="ghost" disabled className="text-muted-foreground">
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </section>
