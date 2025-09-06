@@ -33,6 +33,7 @@ interface PublicationReviewFormProps {
   publication: Publication | null;
   isOpen: boolean;
   onClose: () => void;
+  onReviewSubmitted?: () => void;
 }
 
 interface ReviewCategory {
@@ -72,7 +73,7 @@ const scoreLabels = {
   5: 'Excellent'
 };
 
-const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationReviewFormProps) => {
+const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted }: PublicationReviewFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -158,6 +159,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
       });
       queryClient.invalidateQueries({ queryKey: ['publication-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['claims'] });
+      onReviewSubmitted?.();
       onClose();
     },
     onError: (error: any) => {

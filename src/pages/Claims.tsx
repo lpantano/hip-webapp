@@ -773,11 +773,12 @@ const Claims = () => {
             )}
             
             {/* Publication Review Dialog */}
-            <PublicationReviewForm
-              publication={reviewPublication}
-              isOpen={!!reviewPublication}
-              onClose={() => setReviewPublication(null)}
-            />
+        <PublicationReviewForm
+          publication={reviewPublication}
+          isOpen={!!reviewPublication}
+          onClose={() => setReviewPublication(null)}
+          onReviewSubmitted={fetchData}
+        />
           </div>
         </div>
       </main>
