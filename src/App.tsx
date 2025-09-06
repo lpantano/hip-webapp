@@ -14,6 +14,7 @@ import Legal from "./pages/Legal";
 import Roadmap from "./pages/Roadmap";
 import FeatureRequests from "./pages/FeatureRequests";
 import Admin from "./pages/Admin";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/features" element={<FeatureRequests />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
