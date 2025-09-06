@@ -475,7 +475,7 @@ const Claims = () => {
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Claims for Review
+              Community Reviewed Claims
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
               Community-driven claims about products and services for women's health conditions. 

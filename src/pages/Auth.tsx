@@ -51,7 +51,7 @@ const Auth = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <Link to="/" className="text-2xl font-bold text-primary hover:text-primary/80">
-            Kenkotek - Women Edition
+            TekaHealth
           </Link>
           <p className="text-muted-foreground">Join our community of informed women</p>
         </div>

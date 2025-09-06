@@ -21,7 +21,7 @@ const About = () => {
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              About Kenkotek
+              About TekaHealth
             </h1>
             <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
               Empowering women with evidence-based insights through collaborative research and transparent data analysis.
@@ -180,7 +180,7 @@ const About = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">
-                    Kenkotek operates as a cooperative where every member has a weighted vote 
+                    TekaHealth operates as a cooperative where every member has a weighted vote 
                     in the company's direction. This ensures that decisions reflect the community's 
                     needs and values.
                   </p>
