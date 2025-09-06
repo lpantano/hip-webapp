@@ -43,29 +43,24 @@ interface ReviewCategory {
 
 const reviewCategories: ReviewCategory[] = [
   {
-    key: 'study_design',
-    label: 'Study Design',
-    description: 'Quality of methodology, controls, randomization'
-  },
-  {
-    key: 'sample_size',  
-    label: 'Sample Size',
-    description: 'Adequacy of participant numbers for statistical power'
+    key: 'study_size',
+    label: 'Sample Size Analysis',
+    description: 'We examine study participant numbers across multiple research papers, ensuring adequate statistical power for reliable conclusions about women\'s health conditions.'
   },
   {
     key: 'population',
-    label: 'Population',
-    description: 'Representativeness and generalizability of study population'
+    label: 'Population Diversity',
+    description: 'Assessment of demographic representation including age groups, ethnicities, and geographic locations to ensure findings apply broadly to women\'s experiences.'
+  },
+  {
+    key: 'consensus',
+    label: 'Research Consensus',
+    description: 'Review of agreement across multiple independent studies and meta-analyses to identify consistent patterns in health condition research.'
   },
   {
     key: 'interpretation',
-    label: 'Interpretation',
-    description: 'Accuracy of conclusions drawn from results'
-  },
-  {
-    key: 'clinical_relevance',
-    label: 'Clinical Relevance',
-    description: 'Practical importance and applicability to patient care'
+    label: 'Clinical Application',
+    description: 'Validation of how research findings translate to real-world treatment outcomes and patient experiences in clinical settings.'
   }
 ];
 
