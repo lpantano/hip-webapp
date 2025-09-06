@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
 import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
+import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -106,6 +107,7 @@ const Claims = () => {
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const { user } = useAuth();
 
@@ -677,10 +679,47 @@ const Claims = () => {
                         </div>
                       ))}
                     </div>
+                    
+                    {/* Add Paper Button */}
+                    {user && (
+                      <div className="mt-4 pt-3 border-t border-border">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPaperForm(claim.id)}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Add Supporting Paper
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             ))}
+            
+            {/* Paper Submission Dialog */}
+            {showPaperForm && (
+              <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  {(() => {
+                    const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
+                    return claim ? (
+                      <PaperSubmissionForm
+                        claimId={claim.id}
+                        claimTitle={claim.claim}
+                        onSuccess={() => {
+                          setShowPaperForm(null);
+                          fetchData();
+                        }}
+                        onCancel={() => setShowPaperForm(null)}
+                      />
+                    ) : null;
+                  })()}
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </main>

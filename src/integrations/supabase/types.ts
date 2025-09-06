@@ -396,6 +396,8 @@ export type Database = {
           id: string
           journal: string
           publication_year: number
+          status: string
+          submitted_by: string | null
           title: string
           url: string | null
         }
@@ -407,6 +409,8 @@ export type Database = {
           id?: string
           journal: string
           publication_year: number
+          status?: string
+          submitted_by?: string | null
           title: string
           url?: string | null
         }
@@ -418,6 +422,8 @@ export type Database = {
           id?: string
           journal?: string
           publication_year?: number
+          status?: string
+          submitted_by?: string | null
           title?: string
           url?: string | null
         }
