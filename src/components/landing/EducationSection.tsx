@@ -223,7 +223,7 @@ const EducationSection = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <Button variant="ghost" className="text-secondary hover:text-secondary/80">
+                  <Button variant="ghost" className="text-primary hover:text-primary/80">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Learn More
                   </Button>
