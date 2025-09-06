@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Star, FileText, User } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
 interface Publication {
   id: string;
@@ -72,6 +73,15 @@ const scoreLabels = {
   5: 'Excellent'
 };
 
+interface ExistingReview {
+  id?: string;
+  publication_id?: string;
+  expert_user_id?: string;
+  category: Database['public']['Enums']['evidence_score_category'];
+  score: number;
+  notes?: string | null;
+}
+
 const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationReviewFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -80,7 +90,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
   const [scores, setScores] = useState<Record<string, { score: number; notes: string }>>({});
 
   // Fetch existing reviews for this publication by this expert
-  const { data: existingReviews } = useQuery({
+  const { data: existingReviews } = useQuery<ExistingReview[]>({
     queryKey: ['publication-reviews', publication?.id, user?.id],
     queryFn: async () => {
       if (!publication?.id || !user?.id) return [];
@@ -92,7 +102,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
         .eq('expert_user_id', user.id);
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as ExistingReview[];
     },
     enabled: !!publication?.id && !!user?.id && isOpen
   });
@@ -126,7 +136,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
       const reviews = Object.entries(scores).filter(([_, data]) => data.score > 0).map(([category, data]) => ({
         publication_id: publication.id,
         expert_user_id: user.id,
-        category: category as any,
+        category: category as Database['public']['Enums']['evidence_score_category'],
         score: data.score,
         notes: data.notes || null
       }));
@@ -135,35 +145,28 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
         throw new Error('Please provide at least one score');
       }
 
-      // Delete existing reviews for this publication by this expert
-      const { error: deleteError } = await supabase
+      // Use upsert to atomically insert or update existing rows and avoid unique-constraint 409 errors
+      const { error } = await supabase
         .from('publication_scores')
-        .delete()
-        .eq('publication_id', publication.id)
-        .eq('expert_user_id', user.id);
-      
-      if (deleteError) throw deleteError;
+        .upsert(reviews, { onConflict: 'publication_id,expert_user_id,category' });
 
-      // Insert new reviews
-      const { error: insertError } = await supabase
-        .from('publication_scores')
-        .insert(reviews);
-      
-      if (insertError) throw insertError;
+      if (error) throw error;
     },
     onSuccess: () => {
+      const wasUpdate = existingReviews && existingReviews.length > 0;
       toast({
-        title: "Review submitted",
-        description: "Your publication review has been saved successfully.",
+        title: wasUpdate ? "Review updated" : "Review submitted",
+        description: `Your publication review has been ${wasUpdate ? 'updated' : 'saved'} successfully.`,
       });
       queryClient.invalidateQueries({ queryKey: ['publication-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['claims'] });
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
       toast({
         title: "Error",
-        description: error.message || "Failed to submit review. Please try again.",
+        description: message || "Failed to submit review. Please try again.",
         variant: "destructive",
       });
     }
@@ -191,13 +194,15 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
 
   if (!publication) return null;
 
+  const isUpdate = (existingReviews && existingReviews.length > 0);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Review Publication
+            {isUpdate ? 'Update Publication Review' : 'Review Publication'}
           </DialogTitle>
           <DialogDescription>
             Provide expert scores for different aspects of this research publication
@@ -296,7 +301,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose }: PublicationRevi
                 onClick={() => submitReviewMutation.mutate()}
                 disabled={submitReviewMutation.isPending}
               >
-                {submitReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
+                {submitReviewMutation.isPending ? (isUpdate ? 'Updating...' : 'Submitting...') : (isUpdate ? 'Update Review' : 'Submit Review')}
               </Button>
             </div>
           </div>

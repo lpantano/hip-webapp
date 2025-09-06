@@ -86,6 +86,8 @@ interface ClaimUI {
       consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
       evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
     };
+    // raw individual score rows so we can detect if current expert already reviewed
+    rawScores?: PublicationScoreRow[];
   }[];
   status: 'pending' | 'under_review' | 'approved';
 }
@@ -111,7 +113,7 @@ const Claims = () => {
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
-  const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string } | null>(null);
+  const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const { user } = useAuth();
 
@@ -187,7 +189,8 @@ const Claims = () => {
       // Process the data to create distributions
       const distributionMap: Record<string, Record<string, { low: number; medium: number; high: number; }>> = {};
       
-      scoreData?.forEach((item: any) => {
+      type ScoreItem = { score: number; category: string; publications: { claim_id: string } };
+      scoreData?.forEach((item: ScoreItem) => {
         const claimId = item.publications.claim_id;
         const category = item.category;
         const score = item.score;
@@ -234,22 +237,6 @@ const Claims = () => {
     }
   }, [sb]);
 
-  // Move fetchData outside useEffect so it can be called from form submission
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Fetch claims data
-      await Promise.all([
-        fetchClaimsData(),
-        fetchExpertDistributions()
-      ]);
-    } catch (err) {
-      console.error('Error loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchExpertDistributions]);
-
   const fetchClaimsData = useCallback(async () => {
     try {
       // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
@@ -283,7 +270,9 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
-            scores
+            scores,
+            // include raw score rows so UI can detect whether current user already reviewed
+            rawScores: scoresRows
           };
         });
 
@@ -299,9 +288,9 @@ const Claims = () => {
         };
 
         return {
-          id: c.id,
+          id: c.id!,
           claim: c.title || c.description || '',
-          category: uiCategory,
+          category: uiCategory!,
           votes: c.vote_count || 0,
           publications: pubs,
           status: statusMap[c.status] || 'pending'
@@ -315,11 +304,27 @@ const Claims = () => {
     }
   }, [sb, mapEvidenceRowToScores]);
 
+  // Move fetchData outside useEffect so it can be called from form submission
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch claims data
+      await Promise.all([
+        fetchClaimsData(),
+        fetchExpertDistributions()
+      ]);
+    } catch (err) {
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchExpertDistributions, fetchClaimsData]);
+
+  // Ensure data is loaded on mount
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Persist votes to Supabase: toggle user's vote
   const handleVote = async (id: string) => {
     // optimistic UI update
     setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
@@ -616,97 +621,33 @@ const Claims = () => {
                             </div>
 
                             <div className="flex flex-col items-end gap-2">
-                              {/* Score icons row (right-aligned, single-line) */}
-                              <div className="flex items-center gap-2">
-                                {/* Sample Size */}
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <div className="flex items-center gap-1 cursor-pointer">
-                                     <Badge className={getScoreColor(pub.scores.sampleSize.score, !!pub.scores.sampleSize.explanation)} variant="outline">
-                                        Size
-                                      </Badge>
-                                    </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-56 text-sm">
-                                    <div className="space-y-2">
-                                      <div className="font-medium">Sample Size</div>
-                                      <p className="text-sm">{pub.scores.sampleSize.explanation || 'No details provided.'}</p>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
 
-                                {/* Population */}
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <div className="flex items-center gap-1 cursor-pointer">
-                                     <Badge className={getScoreColor(pub.scores.populationRepresentation.score, !!pub.scores.populationRepresentation.explanation)} variant="outline">
-                                        Pop
-                                      </Badge>
-                                    </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-56 text-sm">
-                                    <div className="space-y-2">
-                                      <div className="font-medium">Population Representation</div>
-                                      <p className="text-sm">{pub.scores.populationRepresentation.explanation || 'No details provided.'}</p>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-
-                                {/* Consensus */}
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <div className="flex items-center gap-1 cursor-pointer">
-                                     <Badge className={getScoreColor(pub.scores.consensus.score, !!pub.scores.consensus.explanation)} variant="outline">
-                                        Cons
-                                      </Badge>
-                                    </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-56 text-sm">
-                                    <div className="space-y-2">
-                                      <div className="font-medium">Consensus</div>
-                                      <p className="text-sm">{pub.scores.consensus.explanation || 'No details provided.'}</p>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-
-                                {/* Evidence */}
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <div className="flex items-center gap-1 cursor-pointer">
-                                     <Badge className={getScoreColor(pub.scores.evidence.score, !!pub.scores.evidence.explanation)} variant="outline">
-                                        Evd
-                                      </Badge>
-                                    </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-56 text-sm">
-                                    <div className="space-y-2">
-                                      <div className="font-medium">Evidence Quality</div>
-                                      <p className="text-sm">{pub.scores.evidence.explanation || 'No details provided.'}</p>
-                                    </div>
-                                  </PopoverContent>
-                                 </Popover>
-                               </div>
 
                                <div className="flex items-center gap-2">
                                  {/* Review Button for Experts */}
-                                 {isExpert && (
-                                   <Button
-                                     variant="outline"
-                                     size="sm"
-                                     onClick={() => setReviewPublication({
-                                       id: pub.id || '',
-                                       title: pub.title,
-                                       journal: pub.journal,
-                                       publication_year: pub.year,
-                                       authors: pub.authors,
-                                       url: pub.url
-                                     })}
-                                     className="shrink-0 text-xs"
-                                   >
-                                     <FileText className="w-3 h-3 mr-1" />
-                                     Review
-                                   </Button>
-                                 )}
+                                 {isExpert && (() => {
+                                   const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
+                                   const reviewButtonText = existingReview ? 'Update Review' : 'Review';
+                                   return (
+                                     <Button
+                                       variant="outline"
+                                       size="sm"
+                                       onClick={() => setReviewPublication({
+                                         id: pub.id || '',
+                                         title: pub.title,
+                                         journal: pub.journal,
+                                         publication_year: pub.year,
+                                         authors: pub.authors,
+                                         url: pub.url,
+                                         existingReview // pass existing review row (or null)
+                                       })}
+                                       className="shrink-0 text-xs"
+                                     >
+                                       <FileText className="w-3 h-3 mr-1" />
+                                       {reviewButtonText}
+                                     </Button>
+                                   );
+                                 })()}
 
                                  <Button
                                    variant="ghost"
