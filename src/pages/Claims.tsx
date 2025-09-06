@@ -10,6 +10,7 @@ import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
+import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -85,6 +86,17 @@ interface ClaimUI {
   status: 'pending' | 'under_review' | 'approved';
 }
 
+interface ExpertDistribution {
+  category: string;
+  categoryLabel: string;
+  totalExperts: number;
+  distribution: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+}
+
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
 
 const Claims = () => {
@@ -94,6 +106,7 @@ const Claims = () => {
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const { user } = useAuth();
 
   // component-scoped Supabase client
@@ -129,9 +142,85 @@ const Claims = () => {
     return scoresTemplate;
   }, []);
 
+  const fetchExpertDistributions = useCallback(async () => {
+    try {
+      // Fetch score distributions aggregated by claim and category
+      const { data: scoreData, error } = await sb.from('publication_scores')
+        .select(`
+          score,
+          category,
+          publications!inner(claim_id)
+        `);
+      
+      if (error) throw error;
+
+      // Process the data to create distributions
+      const distributionMap: Record<string, Record<string, { low: number; medium: number; high: number; }>> = {};
+      
+      scoreData?.forEach((item: any) => {
+        const claimId = item.publications.claim_id;
+        const category = item.category;
+        const score = item.score;
+        
+        if (!distributionMap[claimId]) {
+          distributionMap[claimId] = {};
+        }
+        
+        if (!distributionMap[claimId][category]) {
+          distributionMap[claimId][category] = { low: 0, medium: 0, high: 0 };
+        }
+        
+        // Map score to category (same logic as existing mapScoreIntToLabel)
+        const scoreLevel = score >= 4 ? 'high' : score === 3 ? 'medium' : 'low';
+        distributionMap[claimId][category][scoreLevel]++;
+      });
+
+      // Convert to the format expected by the component
+      const distributions: Record<string, ExpertDistribution[]> = {};
+      
+      Object.entries(distributionMap).forEach(([claimId, categories]) => {
+        distributions[claimId] = Object.entries(categories).map(([category, dist]) => {
+          const totalExperts = dist.low + dist.medium + dist.high;
+          
+          const categoryLabels: Record<string, string> = {
+            'study_size': 'Sample Size',
+            'population': 'Population',
+            'consensus': 'Consensus', 
+            'interpretation': 'Evidence Quality'
+          };
+          
+          return {
+            category,
+            categoryLabel: categoryLabels[category] || category,
+            totalExperts,
+            distribution: dist
+          };
+        });
+      });
+
+      setExpertDistributions(distributions);
+    } catch (error) {
+      console.error('Error fetching expert distributions:', error);
+    }
+  }, [sb]);
+
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async () => {
     setLoading(true);
+    try {
+      // Fetch claims data
+      await Promise.all([
+        fetchClaimsData(),
+        fetchExpertDistributions()
+      ]);
+    } catch (err) {
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchExpertDistributions]);
+
+  const fetchClaimsData = useCallback(async () => {
     try {
       // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
       const { data: joinedData, error: joinedError } = await sb.from('claims_full').select('*');
@@ -192,8 +281,6 @@ const Claims = () => {
       setReactions(reactionsByClaim);
     } catch (err) {
       console.error('Error loading claims:', err);
-    } finally {
-      setLoading(false);
     }
   }, [sb, mapEvidenceRowToScores]);
 
@@ -474,6 +561,11 @@ const Claims = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Expert Score Distributions */}
+                  {expertDistributions[claim.id] && (
+                    <ExpertScoreDistribution distributions={expertDistributions[claim.id]} />
+                  )}
                 </CardHeader>
 
                 <CardContent>
