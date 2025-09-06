@@ -214,8 +214,8 @@ const EducationSection = () => {
             <DialogTrigger asChild>
               <Card className="cursor-pointer hover:shadow-lg transition-all bg-card/50 backdrop-blur-sm hover:scale-105 border-2 hover:border-secondary/50">
                 <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
-                    <Target className="w-8 h-8 text-secondary" />
+                  <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Globe className="w-8 h-8 text-primary" />
                   </div>
                   <CardTitle className="text-xl">Population Representation</CardTitle>
                   <CardDescription>
@@ -234,7 +234,7 @@ const EducationSection = () => {
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border border-border z-50">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-2xl">
-                  <Target className="w-6 h-6 text-secondary" />
+                  <Globe className="w-6 h-6 text-primary" />
                   Why Population Representation Matters
                 </DialogTitle>
                 <DialogDescription className="text-base">
