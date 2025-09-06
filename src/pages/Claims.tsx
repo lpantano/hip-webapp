@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
 import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
+import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -72,6 +74,7 @@ interface ClaimUI {
   category: Database['public']['Enums']['claim_category'];
   votes: number;
   publications: {
+    id: string; // Add publication ID
     title: string;
     authors: string;
     journal: string;
@@ -108,11 +111,36 @@ const Claims = () => {
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
+  const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string } | null>(null);
   const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const { user } = useAuth();
 
   // component-scoped Supabase client
   const sb = supabase;
+
+  // Check if user is expert
+  const [isExpert, setIsExpert] = useState(false);
+  useEffect(() => {
+    const checkExpertStatus = async () => {
+      if (!user) {
+        setIsExpert(false);
+        return;
+      }
+      
+      try {
+        const { data } = await sb.rpc('has_role', { 
+          _user_id: user.id, 
+          _role: 'expert' 
+        });
+        setIsExpert(data || false);
+      } catch (error) {
+        console.error('Error checking expert status:', error);
+        setIsExpert(false);
+      }
+    };
+    
+    checkExpertStatus();
+  }, [user, sb]);
 
   const mapScoreIntToLabel = (n: number): 'low' | 'medium' | 'high' => {
     if (n >= 4) return 'high';
@@ -249,6 +277,7 @@ const Claims = () => {
           const scoresRows = p.publication_scores || [];
           const scores = mapEvidenceRowToScores(scoresRows);
           return {
+            id: p.id, // Add publication ID
             title: p.title,
             authors: p.authors || '',
             journal: p.journal || '',
@@ -655,25 +684,47 @@ const Claims = () => {
                                       <p className="text-sm">{pub.scores.evidence.explanation || 'No details provided.'}</p>
                                     </div>
                                   </PopoverContent>
-                                </Popover>
-                              </div>
+                                 </Popover>
+                               </div>
 
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                                className="shrink-0"
-                              >
-                                <a 
-                                  href={pub.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                  View
-                                </a>
-                              </Button>
+                               <div className="flex items-center gap-2">
+                                 {/* Review Button for Experts */}
+                                 {isExpert && (
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => setReviewPublication({
+                                       id: pub.id || '',
+                                       title: pub.title,
+                                       journal: pub.journal,
+                                       publication_year: pub.year,
+                                       authors: pub.authors,
+                                       url: pub.url
+                                     })}
+                                     className="shrink-0 text-xs"
+                                   >
+                                     <FileText className="w-3 h-3 mr-1" />
+                                     Review
+                                   </Button>
+                                 )}
+
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   asChild
+                                   className="shrink-0"
+                                 >
+                                   <a 
+                                     href={pub.url} 
+                                     target="_blank" 
+                                     rel="noopener noreferrer"
+                                     className="flex items-center gap-1"
+                                   >
+                                     <ExternalLink className="w-3 h-3" />
+                                     View
+                                   </a>
+                                 </Button>
+                               </div>
                             </div>
                           </div>
                         </div>
@@ -720,6 +771,13 @@ const Claims = () => {
                 </DialogContent>
               </Dialog>
             )}
+            
+            {/* Publication Review Dialog */}
+            <PublicationReviewForm
+              publication={reviewPublication}
+              isOpen={!!reviewPublication}
+              onClose={() => setReviewPublication(null)}
+            />
           </div>
         </div>
       </main>
