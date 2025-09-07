@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { User, Shield, FileText, MapPin, Calendar } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import type { Database } from '@/integrations/supabase/types';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -32,6 +33,8 @@ const Profile = () => {
   const [website, setWebsite] = useState('');
   const [yearsOfExperience, setYearsOfExperience] = useState('');
   const [expertiseArea, setExpertiseArea] = useState('');
+  // Social media links for expert profile
+  const [socialLinks, setSocialLinks] = useState<{ id?: string; platform: string; url: string }[]>([]);
 
   // Fetch profile data
   const { data: profile } = useQuery({
@@ -99,6 +102,51 @@ const Profile = () => {
     }
   }, [expertData]);
 
+  // Fetch existing social links for this expert
+  const { data: socialLinksData } = useQuery({
+    queryKey: ['expert-social-links', expertData?.user_id],
+    queryFn: async () => {
+      if (!expertData?.user_id) return [];
+      const { data, error } = await supabase
+        .from('social_media_links')
+        .select('*')
+        .eq('expert_id', expertData.user_id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!expertData?.user_id
+  });
+
+  useEffect(() => {
+    if (socialLinksData) {
+      setSocialLinks((socialLinksData as Database['public']['Tables']['social_media_links']['Row'][]).map(s => ({ id: s.id, platform: s.platform, url: s.url })));
+    }
+  }, [socialLinksData]);
+
+  const addSocialLink = () => setSocialLinks(prev => [...prev, { platform: '', url: '' }]);
+  const removeSocialLink = (index: number) => setSocialLinks(prev => prev.filter((_, i) => i !== index));
+  const updateSocialLink = (index: number, field: 'platform' | 'url', value: string) => {
+    setSocialLinks(prev => prev.map((link, i) => i === index ? { ...link, [field]: value } : link));
+  };
+
+  // Helper: map platform to canonical URL prefix so users only type their username
+  const platformPrefixes: Record<string, string> = {
+    twitter: 'https://twitter.com/',
+    linkedin: 'https://www.linkedin.com/in/',
+    instagram: 'https://www.instagram.com/',
+    tiktok: 'https://www.tiktok.com/@',
+    youtube: 'https://www.youtube.com/@',
+    facebook: 'https://www.facebook.com/',
+    reddit: 'https://www.reddit.com/user/',
+    podcast: 'https://podcasts.apple.com/',
+    other: 'https://'
+  };
+
+  const getPlatformPrefix = (platform?: string) => {
+    if (!platform || platform === 'none') return 'https://';
+    return platformPrefixes[platform.toLowerCase()] || 'https://';
+  };
+
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
@@ -111,7 +159,7 @@ const Profile = () => {
           display_name: displayName,
           bio: bio,
           avatar_url: avatarUrl
-        });
+        }, { onConflict: 'user_id' });
       
       if (error) throw error;
     },
@@ -122,7 +170,8 @@ const Profile = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
+      console.error('Profile update error', error);
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again.",
@@ -136,7 +185,7 @@ const Profile = () => {
     mutationFn: async () => {
       if (!user) throw new Error('No user');
       
-      const { error } = await supabase
+      const res = await supabase
         .from('experts')
         .upsert({
           user_id: user.id,
@@ -145,26 +194,60 @@ const Profile = () => {
           location: location,
           website: website,
           years_of_experience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
-          expertise_area: expertiseArea as any
-        });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Expert profile updated",
-        description: "Your expert information has been updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['expert-data'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update expert profile. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
+          expertise_area: expertiseArea as Database['public']['Enums']['claim_category']
+        }, { onConflict: 'user_id' })
+        .select()
+        .maybeSingle();
+
+      const { data: expertRow, error: upsertError } = res as { data: Database['public']['Tables']['experts']['Row'] | null; error: unknown };
+
+      if (upsertError) throw upsertError;
+
+      // social_media_links.expert_id references experts.user_id, so use the expert user_id or current user id
+      const expertUserId = expertRow?.user_id || expertData?.user_id || user.id;
+
+      // Replace social links: delete existing then insert new ones if provided
+      if (expertUserId) {
+        const { error: delError } = await supabase
+          .from('social_media_links')
+          .delete()
+          .eq('expert_id', expertUserId);
+        if (delError) throw delError;
+
+        const linksToInsert = socialLinks
+          .filter(l => l.platform?.trim() && l.platform !== 'none' && l.url?.trim())
+          .map(l => {
+            const username = l.url.trim();
+            const prefix = getPlatformPrefix(l.platform);
+            const fullUrl = username.startsWith('http') ? username : `${prefix}${username}`;
+            return { expert_id: expertUserId, platform: l.platform.trim(), url: fullUrl };
+          });
+
+        if (linksToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('social_media_links')
+            .insert(linksToInsert);
+          if (insertError) throw insertError;
+        }
+      }
+     },
+     onSuccess: () => {
+       toast({
+         title: "Expert profile updated",
+         description: "Your expert information has been updated successfully.",
+       });
+       queryClient.invalidateQueries({ queryKey: ['expert-data'] });
+       queryClient.invalidateQueries({ queryKey: ['expert-social-links'] });
+     },
+     onError: (error: unknown) => {
+       console.error('Expert update error', error);
+       toast({
+         title: "Error",
+         description: "Failed to update expert profile. Please try again.",
+         variant: "destructive",
+       });
+     }
+   });
 
   if (!user) {
     return (
@@ -340,6 +423,60 @@ const Profile = () => {
                       rows={3}
                     />
                   </div>
+
+                {/* Social Media Links */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Social Media Links (Optional)</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addSocialLink} className="text-sm">
+                      Add Link
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {socialLinks.map((link, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <div className="w-[160px] flex-shrink-0">
+                          <Select value={link.platform} onValueChange={(v) => updateSocialLink(index, 'platform', v)}>
+                            <SelectTrigger className="h-8 w-full">
+                              <SelectValue placeholder="Platform" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="twitter">Twitter</SelectItem>
+                              <SelectItem value="linkedin">LinkedIn</SelectItem>
+                              <SelectItem value="instagram">Instagram</SelectItem>
+                              <SelectItem value="tiktok">TikTok</SelectItem>
+                              <SelectItem value="youtube">YouTube</SelectItem>
+                              <SelectItem value="facebook">Facebook</SelectItem>
+                              <SelectItem value="reddit">Reddit</SelectItem>
+                              <SelectItem value="podcast">Podcast</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-0">
+                            <span className="inline-flex items-center px-2 h-9 rounded-l-md bg-muted/20 text-xs text-muted-foreground select-none">
+                              {getPlatformPrefix(link.platform)}
+                            </span>
+                            <Input
+                              className="rounded-l-none flex-1 h-9"
+                              placeholder="username or handle"
+                              value={link.url}
+                              onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
+                            />
+                          </div>
+                          {/* <p className="text-xs text-muted-foreground mt-1">Type only your username or handle — the URL prefix on the left will be used.</p> */}
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => removeSocialLink(index)} className="shrink-0">
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                   <Button 
                     onClick={() => updateExpertMutation.mutate()} 
