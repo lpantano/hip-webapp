@@ -718,6 +718,10 @@ const Claims = () => {
               publication={reviewPublication}
               isOpen={!!reviewPublication}
               onClose={() => setReviewPublication(null)}
+              onReviewSubmitted={() => {
+                // refresh claims and expert distributions after an expert submits/updates a review
+                fetchData();
+              }}
             />
           </div>
         </div>
