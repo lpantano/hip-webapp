@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Calendar, Users, ExternalLink, MessageSquare, ThumbsUp, FileText, Linkedin, Instagram, Globe, Mail } from 'lucide-react';
+import { MapPin, Calendar, Users, ExternalLink, MessageSquare, ThumbsUp, FileText, Linkedin, Instagram, Globe, Mail, Twitter, Youtube, Facebook, Hash, Podcast, Link } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,6 +71,21 @@ const Experts = () => {
     )?.url;
   };
 
+  const getSocialIcon = (platform: string) => {
+    const platformLower = platform.toLowerCase();
+    switch (platformLower) {
+      case 'twitter': return Twitter;
+      case 'linkedin': return Linkedin;
+      case 'instagram': return Instagram;
+      case 'youtube': return Youtube;
+      case 'facebook': return Facebook;
+      case 'tiktok': return Hash; // TikTok uses # symbol
+      case 'reddit': return MessageSquare; // Reddit discussion icon
+      case 'podcast': return Podcast;
+      default: return Link; // Generic link icon for 'other'
+    }
+  };
+
   const openProfile = (expert: Expert) => {
     setSelectedExpert(expert);
   };
@@ -119,24 +134,29 @@ const Experts = () => {
             </Badge>
           </div>
           <div className="flex gap-2 mt-3">
-            {getSocialLink(expert.social_media_links, 'linkedin') && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                <Linkedin className="h-4 w-4" />
-              </Button>
-            )}
-            {getSocialLink(expert.social_media_links, 'instagram') && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                <Instagram className="h-4 w-4" />
-              </Button>
-            )}
+            {expert.social_media_links.map((link: { platform: string; url: string }) => {
+              if (!link.platform || !link.url) return null;
+              const Icon = getSocialIcon(link.platform);
+              return (
+                <Button 
+                  key={link.platform}
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8" 
+                  onClick={(e) => e.stopPropagation()}
+                  asChild
+                >
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">
+                    <Icon className="h-4 w-4" />
+                  </a>
+                </Button>
+              );
+            })}
             {expert.website && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                <Globe className="h-4 w-4" />
-              </Button>
-            )}
-            {getSocialLink(expert.social_media_links, 'twitter') && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                <Mail className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()} asChild>
+                <a href={expert.website} target="_blank" rel="noopener noreferrer">
+                  <Globe className="h-4 w-4" />
+                </a>
               </Button>
             )}
           </div>
@@ -259,38 +279,25 @@ const Experts = () => {
                   <div>
                     <h4 className="font-semibold mb-3">Connect</h4>
                     <div className="flex flex-wrap gap-2">
-                      {getSocialLink(selectedExpert.social_media_links, 'linkedin') && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={getSocialLink(selectedExpert.social_media_links, 'linkedin')} target="_blank" rel="noopener noreferrer">
-                            <Linkedin className="h-4 w-4 mr-2" />
-                            LinkedIn
-                            <ExternalLink className="h-3 w-3 ml-1" />
-                          </a>
-                        </Button>
-                      )}
-                      {getSocialLink(selectedExpert.social_media_links, 'instagram') && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={getSocialLink(selectedExpert.social_media_links, 'instagram')} target="_blank" rel="noopener noreferrer">
-                            <Instagram className="h-4 w-4 mr-2" />
-                            Instagram
-                            <ExternalLink className="h-3 w-3 ml-1" />
-                          </a>
-                        </Button>
-                      )}
+                      {selectedExpert.social_media_links.map((link: { platform: string; url: string }) => {
+                        if (!link.platform || !link.url) return null;
+                        const Icon = getSocialIcon(link.platform);
+                        const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);
+                        return (
+                          <Button key={link.platform} variant="outline" size="sm" asChild>
+                            <a href={link.url} target="_blank" rel="noopener noreferrer">
+                              <Icon className="h-4 w-4 mr-2" />
+                              {platformName}
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          </Button>
+                        );
+                      })}
                       {selectedExpert.website && (
                         <Button variant="outline" size="sm" asChild>
                           <a href={selectedExpert.website} target="_blank" rel="noopener noreferrer">
                             <Globe className="h-4 w-4 mr-2" />
                             Website
-                            <ExternalLink className="h-3 w-3 ml-1" />
-                          </a>
-                        </Button>
-                      )}
-                      {getSocialLink(selectedExpert.social_media_links, 'twitter') && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={getSocialLink(selectedExpert.social_media_links, 'twitter')} target="_blank" rel="noopener noreferrer">
-                            <Mail className="h-4 w-4 mr-2" />
-                            Twitter
                             <ExternalLink className="h-3 w-3 ml-1" />
                           </a>
                         </Button>
