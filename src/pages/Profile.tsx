@@ -203,15 +203,15 @@ const Profile = () => {
 
       if (upsertError) throw upsertError;
 
-      // social_media_links.expert_id references experts.user_id, so use the expert user_id or current user id
-      const expertUserId = expertRow?.user_id || expertData?.user_id || user.id;
+      // social_media_links.expert_id references experts.id, so use the expert record id
+      const expertId = expertRow?.id || expertData?.id;
 
       // Replace social links: delete existing then insert new ones if provided
-      if (expertUserId) {
+      if (expertId) {
         const { error: delError } = await supabase
           .from('social_media_links')
           .delete()
-          .eq('expert_id', expertUserId);
+          .eq('expert_id', expertId);
         if (delError) throw delError;
 
         const linksToInsert = socialLinks
@@ -220,7 +220,7 @@ const Profile = () => {
             const username = l.url.trim();
             const prefix = getPlatformPrefix(l.platform);
             const fullUrl = username.startsWith('http') ? username : `${prefix}${username}`;
-            return { expert_id: expertUserId, platform: l.platform.trim(), url: fullUrl };
+            return { expert_id: expertId, platform: l.platform.trim(), url: fullUrl };
           });
 
         if (linksToInsert.length > 0) {
