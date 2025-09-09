@@ -115,6 +115,7 @@ const Claims = () => {
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
+  const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const { user } = useAuth();
 
   // component-scoped Supabase client
@@ -446,6 +447,20 @@ const Claims = () => {
     return colors[score];
   };
 
+  const toggleClaimExpansion = (claimId: string) => {
+    setExpandedClaim(expandedClaim === claimId ? null : claimId);
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      'study_size': 'Sample Size',
+      'population': 'Population', 
+      'consensus': 'Consensus',
+      'interpretation': 'Evidence Quality'
+    };
+    return labels[category] || category;
+  };
+
   const categoryOptions = [
     { value: 'all', label: 'All Categories' },
     { value: 'nutrition', label: 'Nutrition' },
@@ -552,7 +567,7 @@ const Claims = () => {
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
+                    <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
                       <div className="flex flex-wrap gap-2 mb-1">
                         <Badge className={getCategoryColor(claim.category)}>
                           {humanize(claim.category)}
@@ -561,7 +576,12 @@ const Claims = () => {
                           {claim.status.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <CardTitle className="text-lg mb-1">{claim.claim}</CardTitle>
+                      <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                        {claim.claim}
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {expandedClaim === claim.id ? '▼' : '▶'}
+                        </span>
+                      </CardTitle>
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
@@ -603,6 +623,123 @@ const Claims = () => {
                     <ExpertScoreDistribution distributions={expertDistributions[claim.id]} />
                   )}
                 </CardHeader>
+
+                {/* Expanded view with individual reviews */}
+                {expandedClaim === claim.id && (
+                  <CardContent className="pt-0">
+                    <div className="border-t border-border pt-4">
+                      <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                        Individual Expert Reviews
+                      </h4>
+                      <div className="space-y-4">
+                        {claim.publications.map((pub, pubIndex) => (
+                          <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
+                                <p className="text-xs text-muted-foreground">
+                                  {pub.authors} • {pub.journal} ({pub.year})
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isExpert && (() => {
+                                  const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
+                                  const reviewButtonText = existingReview ? 'Update Review' : 'Review';
+                                  return (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setReviewPublication({
+                                        id: pub.id || '',
+                                        title: pub.title,
+                                        journal: pub.journal,
+                                        publication_year: pub.year,
+                                        authors: pub.authors,
+                                        url: pub.url,
+                                        existingReview
+                                      })}
+                                      className="shrink-0 text-xs"
+                                    >
+                                      <FileText className="w-3 h-3 mr-1" />
+                                      {reviewButtonText}
+                                    </Button>
+                                  );
+                                })()}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  asChild
+                                  className="shrink-0"
+                                >
+                                  <a 
+                                    href={pub.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Individual expert scores and comments */}
+                            {pub.rawScores && pub.rawScores.length > 0 && (
+                              <div className="space-y-2">
+                                <h6 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                  Expert Scores & Comments
+                                </h6>
+                                <div className="grid gap-2 text-xs">
+                                  {/* Group scores by expert */}
+                                  {(() => {
+                                    const expertGroups: Record<string, PublicationScoreRow[]> = {};
+                                    pub.rawScores.forEach(score => {
+                                      if (!expertGroups[score.expert_user_id]) {
+                                        expertGroups[score.expert_user_id] = [];
+                                      }
+                                      expertGroups[score.expert_user_id].push(score);
+                                    });
+
+                                    return Object.entries(expertGroups).map(([expertId, scores], expertIndex) => (
+                                      <div key={expertId} className="bg-background/50 rounded p-2 border border-border/50">
+                                        <div className="font-medium text-xs text-muted-foreground mb-2">
+                                          Expert {expertIndex + 1}
+                                        </div>
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                          {scores.map((score) => (
+                                            <div key={score.id} className="space-y-1">
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-xs font-medium">
+                                                  {getCategoryLabel(score.category)}:
+                                                </span>
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className={`text-xs px-2 py-0 ${getScoreColor(mapScoreIntToLabel(score.score))}`}
+                                                >
+                                                  {mapScoreIntToLabel(score.score)}
+                                                </Badge>
+                                              </div>
+                                              {score.notes && (
+                                                <p className="text-xs text-muted-foreground italic bg-muted/30 p-1 rounded">
+                                                  "{score.notes}"
+                                                </p>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ));
+                                  })()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
 
                 <CardContent>
                   <div>
