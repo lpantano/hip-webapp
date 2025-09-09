@@ -741,6 +741,23 @@ const Claims = () => {
                   </CardContent>
                 )}
 
+                {/* Add Paper Button - Always visible */}
+                <CardContent className="pt-2">
+                  {user && (
+                    <div className="border-t border-border pt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPaperForm(claim.id)}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Add Supporting Paper
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+
               </Card>
             ))}
             
