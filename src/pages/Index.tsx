@@ -1,6 +1,7 @@
 import HeroSection from "@/components/landing/HeroSection";
 import AboutSection from "@/components/landing/AboutSection";
 import EducationSection from "@/components/landing/EducationSection";
+import FeaturesSection from "@/components/landing/FeaturesSection";
 import JoinSection from "@/components/landing/JoinSection";
 import Header from "@/components/layout/Header";
 
@@ -11,6 +12,7 @@ const Index = () => {
       <HeroSection />
       <AboutSection />
       <EducationSection />
+      <FeaturesSection />
       <JoinSection />
     </div>
   );
