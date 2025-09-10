@@ -32,7 +32,7 @@ const EducationSection = () => {
                   <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                     <Users className="w-8 h-8 text-primary" />
                   </div>
-                  <CardTitle className="text-xl">Sample Size</CardTitle>
+                  <CardTitle className="text-xl">Study Size</CardTitle>
                   <CardDescription>
                     Why the number of participants matters
                   </CardDescription>
@@ -50,7 +50,7 @@ const EducationSection = () => {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-2xl">
                   <Users className="w-6 h-6 text-primary" />
-                  Why Sample Size Matters in Research
+                  Why Study Size Matters in Research
                 </DialogTitle>
                 <DialogDescription className="text-base">
                   Understanding how the number of study participants affects research reliability
@@ -150,7 +150,7 @@ const EducationSection = () => {
                 <div className="bg-primary/5 p-6 rounded-lg">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <TrendingUp className="w-5 h-5" />
-                    Sample Size Guidelines for Women's Health
+                    Study Size Guidelines for Women's Health
                   </h3>
                   
                   <div className="grid md:grid-cols-3 gap-4">

@@ -36,7 +36,7 @@ const AboutSection = () => {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">Sample Size Analysis</h4>
+                          <h4 className="font-semibold text-primary mb-2">Study Size Analysis</h4>
                           <p className="text-sm text-muted-foreground">We examine study participant numbers across multiple research papers, ensuring adequate statistical power for reliable conclusions about women's health conditions.</p>
                         </div>
                         <div>
@@ -75,7 +75,7 @@ const AboutSection = () => {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">Sample Size Analysis</h4>
+                          <h4 className="font-semibold text-primary mb-2">Study Size Analysis</h4>
                           <p className="text-sm text-muted-foreground">We examine study participant numbers across multiple research papers, ensuring adequate statistical power for reliable conclusions about women's health conditions.</p>
                         </div>
                         <div>
@@ -114,7 +114,7 @@ const AboutSection = () => {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">Sample Size Analysis</h4>
+                          <h4 className="font-semibold text-primary mb-2">Study Size Analysis</h4>
                           <p className="text-sm text-muted-foreground">We examine study participant numbers across multiple research papers, ensuring adequate statistical power for reliable conclusions about women's health conditions.</p>
                         </div>
                         <div>
