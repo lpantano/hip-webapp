@@ -577,32 +577,6 @@ export type Database = {
           user_id: string | null
           vote_count: number | null
         }
-        Insert: {
-          category?: Database["public"]["Enums"]["claim_category"] | null
-          claim_reactions?: never
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          publications?: never
-          status?: Database["public"]["Enums"]["claim_status"] | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          vote_count?: number | null
-        }
-        Update: {
-          category?: Database["public"]["Enums"]["claim_category"] | null
-          claim_reactions?: never
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          publications?: never
-          status?: Database["public"]["Enums"]["claim_status"] | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          vote_count?: number | null
-        }
         Relationships: []
       }
       experts_full: {
