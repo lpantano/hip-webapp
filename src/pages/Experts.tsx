@@ -86,6 +86,26 @@ const Experts = () => {
     }
   };
 
+  const getContributorBadge = (expert: Expert) => {
+    const yearsExperience = expert.years_of_experience || 0;
+    const yearsOnPlatform = getYearsOnPlatform(expert.created_at || new Date().toISOString());
+    
+    // Calculate contribution score based on experience and platform time
+    const contributionScore = yearsExperience + (yearsOnPlatform * 2);
+    
+    if (contributionScore >= 15) {
+      return { level: 'Luminary', emoji: '🌟', description: 'Top Contributor' };
+    } else if (contributionScore >= 10) {
+      return { level: 'Architect', emoji: '🏛️', description: 'Advanced Contributor' };
+    } else if (contributionScore >= 6) {
+      return { level: 'Navigator', emoji: '🧭', description: 'Trusted Contributor' };
+    } else if (contributionScore >= 3) {
+      return { level: 'Explorer', emoji: '🔬', description: 'Intermediate Contributor' };
+    } else {
+      return { level: 'Seedling', emoji: '🌱', description: 'Entry / New Contributor' };
+    }
+  };
+
   const openProfile = (expert: Expert) => {
     setSelectedExpert(expert);
   };
@@ -95,6 +115,7 @@ const Experts = () => {
     const avatarUrl = expert.profile_avatar_url || expert.avatar_url;
     const expertiseTitle = formatExpertiseArea(expert.expertise_area) + ' Specialist';
     const yearsOnPlatform = getYearsOnPlatform(expert.created_at);
+    const contributorBadge = getContributorBadge(expert);
     
     return (
       <Card 
@@ -108,6 +129,17 @@ const Experts = () => {
           </Badge>
           <Badge variant="outline" className="text-xs font-bold bg-background/90 border-accent text-accent">
             {yearsOnPlatform}y here
+          </Badge>
+        </div>
+
+        {/* Contributor Level Badge */}
+        <div className="absolute top-2 right-2 z-10">
+          <Badge 
+            variant="default" 
+            className="text-xs font-bold bg-gradient-to-r from-accent to-primary text-white shadow-md"
+            title={contributorBadge.description}
+          >
+            {contributorBadge.emoji} {contributorBadge.level}
           </Badge>
         </div>
         
@@ -220,10 +252,18 @@ const Experts = () => {
                       {selectedExpert.display_name ? selectedExpert.display_name.split(' ').map(n => n[0]).join('') : formatExpertiseArea(selectedExpert.expertise_area).split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <DialogTitle className="text-2xl">{selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`}</DialogTitle>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <DialogTitle className="text-2xl">{selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`}</DialogTitle>
+                      <Badge 
+                        variant="default" 
+                        className="bg-gradient-to-r from-accent to-primary text-white shadow-md"
+                      >
+                        {getContributorBadge(selectedExpert).emoji} {getContributorBadge(selectedExpert).level}
+                      </Badge>
+                    </div>
                     <DialogDescription className="text-lg text-primary font-medium">
-                      {formatExpertiseArea(selectedExpert.expertise_area)} Specialist
+                      {formatExpertiseArea(selectedExpert.expertise_area)} Specialist • {getContributorBadge(selectedExpert).description}
                     </DialogDescription>
                     {selectedExpert.location && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
