@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, Lock } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -117,6 +117,27 @@ const Claims = () => {
   const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+            <Lock className="h-16 w-16 text-muted-foreground mb-4" />
+            <h1 className="text-3xl font-bold mb-4">Authentication Required</h1>
+            <p className="text-lg text-muted-foreground mb-6 max-w-md">
+              You need to be logged in to view and interact with community claims.
+            </p>
+            <Button asChild size="lg">
+              <a href="/auth">Sign In / Sign Up</a>
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // component-scoped Supabase client
   const sb = supabase;
