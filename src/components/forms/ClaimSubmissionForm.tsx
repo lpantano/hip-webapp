@@ -15,11 +15,20 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { DOIService } from '@/services/DOIService';
+import { URLMetadataService } from '@/services/URLMetadataService';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   category: z.enum(['nutrition', 'fitness', 'mental_health', 'pregnancy', 'menopause', 'general_health', 'perimenopause']),
+  sources: z.array(z.object({
+    source_url: z.string().url('Please enter a valid URL'),
+    source_type: z.string().optional(),
+    source_title: z.string().optional(),
+    source_description: z.string().optional(),
+    author_name: z.string().optional(),
+    published_date: z.string().optional(),
+  })).optional(),
   publications: z.array(z.object({
     doi: z.string().min(1, 'DOI is required'),
     title: z.string().optional(),
@@ -28,14 +37,6 @@ const formSchema = z.object({
     abstract: z.string().optional(),
     url: z.string().optional(),
   })).min(1, 'At least one publication is required'),
-  sources: z.array(z.object({
-    source_type: z.enum(['webpage', 'instagram', 'tiktok', 'youtube', 'twitter', 'facebook', 'reddit', 'podcast', 'book', 'research_paper', 'other']),
-    source_url: z.string().url('Please enter a valid URL').optional(),
-    source_title: z.string().optional(),
-    source_description: z.string().optional(),
-    author_name: z.string().optional(),
-    published_date: z.string().optional(),
-  })).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -48,6 +49,7 @@ interface ClaimSubmissionFormProps {
 export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDOI, setLoadingDOI] = useState<number | null>(null);
+  const [loadingURL, setLoadingURL] = useState<number | null>(null);
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
@@ -57,8 +59,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       title: '',
       description: '',
       category: 'general_health',
-      publications: [{ doi: '' }],
       sources: [],
+      publications: [{ doi: '' }],
     },
   });
 
@@ -99,6 +101,36 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       });
     } finally {
       setLoadingDOI(null);
+    }
+  };
+
+  const fetchURLMetadata = async (url: string, index: number) => {
+    if (!url) return;
+    
+    setLoadingURL(index);
+    try {
+      const metadata = await URLMetadataService.fetchMetadata(url);
+      if (metadata) {
+        if (metadata.title) form.setValue(`sources.${index}.source_title`, metadata.title);
+        if (metadata.description) form.setValue(`sources.${index}.source_description`, metadata.description);
+        if (metadata.author) form.setValue(`sources.${index}.author_name`, metadata.author);
+        if (metadata.publishedDate) form.setValue(`sources.${index}.published_date`, metadata.publishedDate);
+        if (metadata.sourceType) form.setValue(`sources.${index}.source_type`, metadata.sourceType);
+        
+        toast({
+          title: "Source Data Retrieved",
+          description: `Successfully fetched details for: ${metadata.title?.substring(0, 50)}...`,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching URL metadata:', error);
+      toast({
+        title: "URL Fetch Error",
+        description: "Could not retrieve source data. Please enter details manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingURL(null);
     }
   };
 
@@ -165,7 +197,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         const sourcesToInsert = data.sources.map(source => ({
           claim_id: claimData.id,
           user_id: user.id,
-          source_type: source.source_type,
+          source_type: (source.source_type || 'webpage') as 'webpage' | 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'facebook' | 'reddit' | 'podcast' | 'book' | 'research_paper' | 'other',
           source_url: source.source_url || null,
           source_title: source.source_title || null,
           source_description: source.source_description || null,
@@ -307,6 +339,102 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
+                <FormLabel className="text-base">Additional Sources</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendSource({ source_url: '' })}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Source
+                </Button>
+              </div>
+
+              {sourceFields.map((field, index) => {
+                const source = form.watch(`sources.${index}`);
+                return (
+                  <Card key={field.id} className="p-4 bg-muted/20">
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`sources.${index}.source_url`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>Source URL</FormLabel>
+                              <div className="flex gap-2">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="https://..." 
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => fetchURLMetadata(field.value, index)}
+                                  disabled={!field.value || loadingURL === index}
+                                >
+                                  {loadingURL === index ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    'Fetch'
+                                  )}
+                                </Button>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="mt-8"
+                          onClick={() => removeSource(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {source?.source_title && (
+                        <div className="space-y-2 p-3 bg-background rounded border">
+                          <div>
+                            <Badge variant="secondary" className="mb-2">Auto-filled</Badge>
+                            <h4 className="font-medium text-sm">{source.source_title}</h4>
+                          </div>
+                          {source.source_type && (
+                            <p className="text-xs text-muted-foreground">
+                              Type: {source.source_type.charAt(0).toUpperCase() + source.source_type.slice(1)}
+                            </p>
+                          )}
+                          {source.author_name && (
+                            <p className="text-xs text-muted-foreground">
+                              Author: {source.author_name}
+                            </p>
+                          )}
+                          {source.published_date && (
+                            <p className="text-xs text-muted-foreground">
+                              Published: {source.published_date}
+                            </p>
+                          )}
+                          {source.source_description && (
+                            <p className="text-xs text-muted-foreground line-clamp-3">
+                              {source.source_description}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <FormLabel className="text-base">Supporting Publications</FormLabel>
                 <Button
                   type="button"
@@ -391,145 +519,6 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                   </Card>
                 );
               })}
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <FormLabel className="text-base">Additional Sources</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendSource({ source_type: 'webpage', source_url: '', source_title: '', source_description: '', author_name: '', published_date: '' })}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Source
-                </Button>
-              </div>
-
-              {sourceFields.map((field, index) => (
-                <Card key={field.id} className="p-4 bg-muted/20">
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <FormField
-                        control={form.control}
-                        name={`sources.${index}.source_type`}
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>Source Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select source type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="webpage">Webpage</SelectItem>
-                                <SelectItem value="instagram">Instagram</SelectItem>
-                                <SelectItem value="tiktok">TikTok</SelectItem>
-                                <SelectItem value="youtube">YouTube</SelectItem>
-                                <SelectItem value="twitter">Twitter</SelectItem>
-                                <SelectItem value="facebook">Facebook</SelectItem>
-                                <SelectItem value="reddit">Reddit</SelectItem>
-                                <SelectItem value="podcast">Podcast</SelectItem>
-                                <SelectItem value="book">Book</SelectItem>
-                                <SelectItem value="research_paper">Research Paper</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="mt-8"
-                        onClick={() => removeSource(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name={`sources.${index}.source_url`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Source URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`sources.${index}.source_title`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Source title" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`sources.${index}.source_description`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Brief description of the source content"
-                              className="min-h-[80px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`sources.${index}.author_name`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Author (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Author name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`sources.${index}.published_date`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Published Date (Optional)</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              ))}
             </div>
 
             <div className="flex gap-3 pt-4">
