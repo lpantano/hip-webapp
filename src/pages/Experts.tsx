@@ -48,7 +48,7 @@ const Experts = () => {
         .select('*')
       // console.log(expertsData);
     if (expertsError) throw expertsError;
-        setExperts(expertsData || []);
+        setExperts((expertsData || []) as Expert[]);
     } catch (error) {
       console.error('Error fetching experts:', error);
     } finally {
@@ -92,23 +92,17 @@ const Experts = () => {
   };
 
   const getContributorBadge = (expert: Expert) => {
-    const yearsExperience = expert.years_of_experience || 0;
-    const yearsOnPlatform = getYearsOnPlatform(expert.created_at || new Date().toISOString());
+    const level = expert.contributor_level || 'Seedling';
     
-    // Calculate contribution score based on experience and platform time
-    const contributionScore = yearsExperience + (yearsOnPlatform * 2);
+    const badgeMap = {
+      'Luminary': { level: 'Luminary', emoji: '🌟', description: 'Top Contributor' },
+      'Architect': { level: 'Architect', emoji: '🏛️', description: 'Advanced Contributor' },
+      'Navigator': { level: 'Navigator', emoji: '🧭', description: 'Trusted Contributor' },
+      'Explorer': { level: 'Explorer', emoji: '🔬', description: 'Intermediate Contributor' },
+      'Seedling': { level: 'Seedling', emoji: '🌱', description: 'Entry / New Contributor' }
+    };
     
-    if (contributionScore >= 15) {
-      return { level: 'Luminary', emoji: '🌟', description: 'Top Contributor' };
-    } else if (contributionScore >= 10) {
-      return { level: 'Architect', emoji: '🏛️', description: 'Advanced Contributor' };
-    } else if (contributionScore >= 6) {
-      return { level: 'Navigator', emoji: '🧭', description: 'Trusted Contributor' };
-    } else if (contributionScore >= 3) {
-      return { level: 'Explorer', emoji: '🔬', description: 'Intermediate Contributor' };
-    } else {
-      return { level: 'Seedling', emoji: '🌱', description: 'Entry / New Contributor' };
-    }
+    return badgeMap[level as keyof typeof badgeMap] || badgeMap['Seedling'];
   };
 
   const openProfile = (expert: Expert) => {

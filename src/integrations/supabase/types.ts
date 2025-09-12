@@ -632,17 +632,23 @@ export type Database = {
       expert_stats: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           contributor_level: string | null
           created_at: string | null
           display_name: string | null
+          education: string | null
           expertise_area: Database["public"]["Enums"]["claim_category"] | null
           id: string | null
           links_added: number | null
+          location: string | null
+          motivation: string | null
           new_claims: number | null
           publication_reviews: number | null
+          social_media_links: Json | null
           status: string | null
           total_contributions: number | null
           user_id: string | null
+          website: string | null
           years_of_experience: number | null
         }
         Relationships: [
