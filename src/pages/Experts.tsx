@@ -24,6 +24,11 @@ interface Expert {
   profile_avatar_url?: string;
   bio?: string;
   social_media_links: any;
+  total_contributions?: number;
+  publication_reviews?: number;
+  new_claims?: number;
+  links_added?: number;
+  contributor_level?: string;
 }
 
 const Experts = () => {
@@ -37,9 +42,9 @@ const Experts = () => {
 
   const fetchExperts = async () => {
     try {
-      // Fetch from experts_full view
+      // Fetch from expert_stats view
       const { data: expertsData, error: expertsError } = await supabase
-        .from('experts_full')
+        .from('expert_stats')
         .select('*')
       // console.log(expertsData);
     if (expertsError) throw expertsError;

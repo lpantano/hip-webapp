@@ -188,6 +188,49 @@ export type Database = {
         }
         Relationships: []
       }
+      expert_contributions: {
+        Row: {
+          contribution_type: string
+          created_at: string
+          expert_id: string
+          id: string
+        }
+        Insert: {
+          contribution_type: string
+          created_at?: string
+          expert_id: string
+          id?: string
+        }
+        Update: {
+          contribution_type?: string
+          created_at?: string
+          expert_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_contributions_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "expert_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_contributions_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expert_contributions_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts_full"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experts: {
         Row: {
           created_at: string
@@ -471,6 +514,13 @@ export type Database = {
             foreignKeyName: "social_media_links_expert_id_fkey"
             columns: ["expert_id"]
             isOneToOne: false
+            referencedRelation: "expert_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "social_media_links_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
             referencedRelation: "experts"
             referencedColumns: ["user_id"]
           },
@@ -578,6 +628,32 @@ export type Database = {
           vote_count: number | null
         }
         Relationships: []
+      }
+      expert_stats: {
+        Row: {
+          avatar_url: string | null
+          contributor_level: string | null
+          created_at: string | null
+          display_name: string | null
+          expertise_area: Database["public"]["Enums"]["claim_category"] | null
+          id: string | null
+          links_added: number | null
+          new_claims: number | null
+          publication_reviews: number | null
+          status: string | null
+          total_contributions: number | null
+          user_id: string | null
+          years_of_experience: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experts_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       experts_full: {
         Row: {
