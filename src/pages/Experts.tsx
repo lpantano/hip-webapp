@@ -168,7 +168,7 @@ const Experts = () => {
             </Badge>
           </div>
           <div className="flex gap-2 mt-3">
-            {expert.social_media_links.map((link: { platform: string; url: string }) => {
+            {(expert.social_media_links || []).map((link: { platform: string; url: string }) => {
               if (!link.platform || !link.url) return null;
               const Icon = getSocialIcon(link.platform);
               return (
