@@ -255,15 +255,9 @@ const Experts = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-          
                     <div className="flex items-center gap-3 mb-2">
                       <DialogTitle className="text-2xl">{selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`}</DialogTitle>
-                      <Badge 
-                        variant="default" 
-                        className="absolute -top-1 -right-1 flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-1.5 py-0.5 shadow-sm"
-                      >
-                        {getContributorBadge(selectedExpert).emoji} {getContributorBadge(selectedExpert).level}
-                      </Badge>
+                      
                     </div>
                     <DialogDescription className="text-lg text-primary font-medium">
                       {formatExpertiseArea(selectedExpert.expertise_area)} Specialist • {getContributorBadge(selectedExpert).description}
