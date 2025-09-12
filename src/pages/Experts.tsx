@@ -131,14 +131,15 @@ const Experts = () => {
           </Badge>
         </div>
 
-        {/* Contributor Level Badge - Diagonal Ribbon */}
-        <div className="absolute top-0 right-0 z-10 overflow-hidden">
+        {/* Contributor Level Badge - Bottom Corner */}
+        <div className="absolute bottom-3 right-3 z-10">
           <div 
-            className="relative bg-accent/20 text-accent-foreground px-8 py-1 transform rotate-45 translate-x-6 -translate-y-1 shadow-sm border border-accent/30"
+            className="flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-2 py-1 shadow-sm"
             title={contributorBadge.description}
           >
-            <span className="text-xs font-semibold whitespace-nowrap">
-              {contributorBadge.emoji} {contributorBadge.level}
+            <span className="text-sm">{contributorBadge.emoji}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {contributorBadge.level}
             </span>
           </div>
         </div>
