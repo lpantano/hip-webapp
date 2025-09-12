@@ -131,18 +131,7 @@ const Experts = () => {
           </Badge>
         </div>
 
-        {/* Contributor Level Badge - Bottom Corner */}
-        <div className="absolute bottom-3 right-3 z-10">
-          <div 
-            className="flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-2 py-1 shadow-sm"
-            title={contributorBadge.description}
-          >
-            <span className="text-sm">{contributorBadge.emoji}</span>
-            <span className="text-xs font-medium text-muted-foreground">
-              {contributorBadge.level}
-            </span>
-          </div>
-        </div>
+        
         
         <CardHeader className="text-center pb-4">
           <div className="relative w-20 h-20 mx-auto mb-4">
