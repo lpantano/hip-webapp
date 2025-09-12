@@ -145,12 +145,24 @@ const Experts = () => {
         </div>
         
         <CardHeader className="text-center pb-4">
-          <Avatar className="w-20 h-20 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
-            <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
-              {displayName.split(' ').map(n => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative w-20 h-20 mx-auto mb-4">
+            <Avatar className="w-full h-full group-hover:scale-105 transition-transform duration-300">
+              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
+                {displayName.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            {/* Contributor Level Badge - On Avatar */}
+            <div 
+              className="absolute -top-1 -right-1 flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-1.5 py-0.5 shadow-sm"
+              title={contributorBadge.description}
+            >
+              <span className="text-xs">{contributorBadge.emoji}</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {contributorBadge.level}
+              </span>
+            </div>
+          </div>
           <CardTitle className="text-lg">{displayName}</CardTitle>
           <CardDescription className="text-sm font-medium text-primary">{expertiseTitle}</CardDescription>
         </CardHeader>
