@@ -118,56 +118,51 @@ const Experts = () => {
     
     return (
       <Card 
-        className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer relative"
+        className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer relative max-w-[240px] p-4"
         onClick={() => openProfile(expert)}
       >
         {/* Experience Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-          <Badge variant="secondary" className="text-xs font-bold bg-primary/90 text-primary-foreground hover:bg-primary">
-            {expert.years_of_experience}y exp
+          <Badge variant="secondary" className="text-[11px] font-bold bg-primary/90 text-primary-foreground hover:bg-primary">
+            {expert.years_of_experience}y
           </Badge>
-          <Badge variant="outline" className="text-xs font-bold bg-background/90 border-accent text-accent">
-            {yearsOnPlatform}y here
+          <Badge variant="outline" className="text-[11px] font-bold bg-background/90 border-accent text-accent">
+            {yearsOnPlatform}y
           </Badge>
         </div>
 
-        
-        
-        <CardHeader className="text-center pb-4">
-          <div className="relative w-20 h-20 mx-auto mb-4">
+        <CardHeader className="text-center pb-2 pt-2">
+          <div className="relative w-14 h-14 mx-auto mb-2">
             <Avatar className="w-full h-full group-hover:scale-105 transition-transform duration-300">
               <AvatarImage src={avatarUrl} alt={displayName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-sm font-bold text-primary">
                 {displayName.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
-            {/* Contributor Level Badge - On Avatar */}
-            <div 
-              className="absolute -top-1 -right-1 flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-1.5 py-0.5 shadow-sm"
-              title={contributorBadge.description}
-            >
-              <span className="text-xs">{contributorBadge.emoji}</span>
-              <span className="text-xs font-medium text-muted-foreground">
-                {contributorBadge.level}
-              </span>
+
+            {/* Contributor status dot at avatar bottom-right */}
+            <div className="absolute -right-2 -bottom-2">
+              <div title={contributorBadge.description} className="flex items-center justify-center h-7 w-7 rounded-full bg-stone-200 text-white text-[12px] shadow-sm border-2 border-white">
+                <span className="leading-none">{contributorBadge.emoji}</span>
+              </div>
             </div>
           </div>
-          <CardTitle className="text-lg">{displayName}</CardTitle>
-          <CardDescription className="text-sm font-medium text-primary">{expertiseTitle}</CardDescription>
+          <CardTitle className="text-sm truncate">{displayName}</CardTitle>
+          <CardDescription className="text-[12px] font-medium text-primary truncate">{expertiseTitle}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 pb-3">
           {expert.location && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
               {expert.location}
             </div>
           )}
-          <div className="flex flex-wrap gap-1 mt-3">
+          <div className="flex flex-wrap gap-1 mt-2">
             <Badge variant="secondary" className="text-xs">
               {formatExpertiseArea(expert.expertise_area)}
             </Badge>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-1 mt-2">
             {(expert.social_media_links || []).map((link: { platform: string; url: string }) => {
               if (!link.platform || !link.url) return null;
               const Icon = getSocialIcon(link.platform);
@@ -176,20 +171,20 @@ const Experts = () => {
                   key={link.platform}
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8" 
+                  className="h-7 w-7 p-0" 
                   onClick={(e) => e.stopPropagation()}
                   asChild
                 >
                   <a href={link.url} target="_blank" rel="noopener noreferrer">
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3 w-3" />
                   </a>
                 </Button>
               );
             })}
             {expert.website && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()} asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 p-0" onClick={(e) => e.stopPropagation()} asChild>
                 <a href={expert.website} target="_blank" rel="noopener noreferrer">
-                  <Globe className="h-4 w-4" />
+                  <Globe className="h-3 w-3" />
                 </a>
               </Button>
             )}
@@ -231,7 +226,7 @@ const Experts = () => {
                 <p className="text-muted-foreground">No experts have been approved yet. Check back soon!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {experts.map((expert) => (
                   <ExpertCard key={expert.id} expert={expert} />
                 ))}
@@ -335,6 +330,7 @@ const Experts = () => {
                           <a href={selectedExpert.website} target="_blank" rel="noopener noreferrer">
                             <Globe className="h-4 w-4 mr-2" />
                             Website
+                 Twitter
                             <ExternalLink className="h-3 w-3 ml-1" />
                           </a>
                         </Button>
