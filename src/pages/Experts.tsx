@@ -142,7 +142,7 @@ const Experts = () => {
 
             {/* Contributor status dot at avatar bottom-right */}
             <div className="absolute -right-2 -bottom-2">
-              <div title={contributorBadge.description} className="flex items-center justify-center h-7 w-7 rounded-full bg-stone-200 text-white text-[12px] shadow-sm border-2 border-white">
+              <div title={contributorBadge.description} className="flex items-center justify-center h-7 w-7 rounded-full bg-lime-200 text-white text-[12px] shadow-sm border-2 border-white">
                 <span className="leading-none">{contributorBadge.emoji}</span>
               </div>
             </div>
