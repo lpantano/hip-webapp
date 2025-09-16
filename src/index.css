@@ -17,16 +17,21 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 220 90% 50%;
+    /* PRIMARY: Bright Sky (friendly / modern) */
+    --primary: 204 90% 65%; /* sky blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 20% 95%;
     --secondary-foreground: 220 50% 15%;
 
+    --terciary: 210 79% 46%;
+    --terciary-foreground: 210 50% 15%;
+
     --muted: 220 20% 95%;
     --muted-foreground: 220 15% 45%;
 
-    --accent: 25 95% 55%;
+    /* ACCENT: Tangerine */
+    --accent: 24 95% 55%; /* tangerine */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
@@ -34,19 +39,21 @@ All colors MUST be HSL.
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 220 90% 50%;
+    /* Use primary hue for ring to match theme */
+    --ring: 204 90% 65%;
 
     --radius: 0.75rem;
     
-    /* Custom gradients for the platform */
-    --hero-gradient: linear-gradient(135deg, hsl(220 90% 50%) 0%, hsl(25 95% 55%) 100%);
+    /* Theme gradients */
+    --hero-gradient: linear-gradient(135deg, hsl(210 79% 46%) 0%, hsl(165 78% 46%) 100%);
     --card-gradient: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
 
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Sidebar primary tuned to sky */
+    --sidebar-primary: 204 90% 50%;
 
     --sidebar-primary-foreground: 0 0% 98%;
 
@@ -56,7 +63,7 @@ All colors MUST be HSL.
 
     --sidebar-border: 220 13% 91%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 204 90% 65%;
   }
 
   .dark {
@@ -69,16 +76,21 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 220 90% 60%;
+    /* Dark primary uses a slightly deeper sky blue for contrast */
+    --primary: 204 90% 48%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 20%;
     --secondary-foreground: 220 20% 85%;
 
+    --terciary: 165 79% 46%;
+    --terciary-foreground: 165 50% 15%;
+
     --muted: 220 15% 20%;
     --muted-foreground: 220 10% 65%;
 
-    --accent: 25 95% 60%;
+    /* Dark accent (tangerine) */
+    --accent: 24 95% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
@@ -86,19 +98,19 @@ All colors MUST be HSL.
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 220 90% 60%;
+    --ring: 204 90% 48%;
     
-    /* Custom gradients for dark mode */
-    --hero-gradient: linear-gradient(135deg, hsl(220 90% 30%) 0%, hsl(25 95% 35%) 100%);
+    /* Dark mode gradients tuned to original brand */
+    --hero-gradient: linear-gradient(135deg, hsl(210 79% 26%) 0%, hsl(165 78% 26%) 100%);
     --card-gradient: linear-gradient(145deg, hsl(222.2 84% 4.9%) 0%, hsl(217.2 32.6% 17.5%) 100%);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 204 90% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 204 90% 48%;
   }
 }
 
