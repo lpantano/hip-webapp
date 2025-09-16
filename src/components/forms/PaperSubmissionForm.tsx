@@ -25,7 +25,6 @@ interface FormData {
   doi: string;
   url: string;
   abstract: string;
-  authors: string;
 }
 
 export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }: PaperSubmissionFormProps) => {
@@ -40,8 +39,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
     publicationYear: '',
     doi: '',
     url: '',
-    abstract: '',
-    authors: ''
+    abstract: ''
   });
 
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -70,8 +68,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
           journal: publicationData.journal || prev.journal,
           publicationYear: publicationData.year?.toString() || prev.publicationYear,
           url: publicationData.url || prev.url,
-          abstract: publicationData.abstract || prev.abstract,
-          authors: publicationData.authors?.join(', ') || prev.authors
+          abstract: publicationData.abstract || prev.abstract
         }));
         setFetchSuccess(true);
         toast.success('Paper information fetched successfully!');
@@ -226,16 +223,6 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="authors">Authors</Label>
-              <Input
-                id="authors"
-                placeholder="e.g., Smith J, Johnson M, Brown K"
-                value={formData.authors}
-                onChange={(e) => handleInputChange('authors', e.target.value)}
-                disabled={loading}
-              />
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
