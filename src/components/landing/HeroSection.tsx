@@ -13,8 +13,8 @@ const HeroSection = () => {
             <span className="text-accent"> - Women Edition</span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-8 leading-relaxed">
-            Evaluate the quality of health and wellness products through rigorous scientific review. 
-            Join experts and scientists in creating transparency for women's health decisions.
+            Building trust through transparency. Learn how to evaluate and trust health products 
+            with confidence through expert-backed scientific insights and community wisdom.
           </p>
         </div>
       </div>
