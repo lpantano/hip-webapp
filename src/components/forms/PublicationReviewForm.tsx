@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Star, FileText, User } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 interface Publication {
@@ -67,11 +67,9 @@ const reviewCategories: ReviewCategory[] = [
 ];
 
 const scoreLabels = {
-  1: 'Poor',
-  2: 'Fair', 
-  3: 'Good',
-  4: 'Very Good',
-  5: 'Excellent'
+  1: 'Low',
+  2: 'Medium',
+  3: 'High'
 };
 
 interface ExistingReview {
@@ -252,21 +250,21 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       <p className="text-xs text-muted-foreground mt-1">{category.description}</p>
                     </div>
                     
-                    {/* Star Rating */}
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
+                    {/* Dot Rating */}
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3].map((score) => (
                         <Button
-                          key={star}
+                          key={score}
                           variant="ghost"
                           size="sm"
                           className="p-1 h-8 w-8"
-                          onClick={() => updateScore(category.key, star)}
+                          onClick={() => updateScore(category.key, score)}
                         >
-                          <Star 
-                            className={`w-4 h-4 ${
-                              scores[category.key]?.score >= star 
-                                ? 'fill-primary text-primary' 
-                                : 'text-muted-foreground'
+                          <div 
+                            className={`w-3 h-3 rounded-full transition-colors ${
+                              scores[category.key]?.score >= score 
+                                ? 'bg-primary' 
+                                : 'bg-muted-foreground/30'
                             }`}
                           />
                         </Button>
