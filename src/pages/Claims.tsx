@@ -300,6 +300,28 @@ const Claims = () => {
 
       setClaims(mappedClaims);
       setReactions(reactionsByClaim);
+
+      // Fallback: ensure we have up-to-date reaction counts from the claim_reactions table
+      try {
+        const claimIds = joined.map(c => c.id).filter(Boolean);
+        if (claimIds.length > 0) {
+          const { data: reactionRows, error: reactionErr } = await sb
+            .from('claim_reactions')
+            .select('claim_id, reaction_type')
+            .in('claim_id', claimIds);
+          if (!reactionErr && reactionRows) {
+            const fallback: Record<string, Record<string, number>> = {};
+            reactionRows.forEach((r: { claim_id: string; reaction_type: string }) => {
+              fallback[r.claim_id] = fallback[r.claim_id] || {};
+              fallback[r.claim_id][r.reaction_type] = (fallback[r.claim_id][r.reaction_type] || 0) + 1;
+            });
+            // merge fallback counts (fallback wins if present)
+            setReactions(prev => ({ ...prev, ...fallback }));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load fallback reaction counts', e);
+      }
     } catch (err) {
       console.error('Error loading claims:', err);
     }
@@ -367,34 +389,65 @@ const Claims = () => {
     const allowed = ['helpful', 'insightful', 'wantmore', 'moneysaver'];
     if (!allowed.includes(reactionType)) reactionType = 'insightful';
 
-    // optimistic update
-    setReactions(prev => ({
-      ...prev,
-      [claimId]: {
-        ...prev[claimId],
-        [reactionType]: (prev[claimId]?.[reactionType] || 0) + 1
+    const refreshCountsForClaim = async (cId: string) => {
+      try {
+        const { data: rows, error } = await sb.from('claim_reactions').select('reaction_type').eq('claim_id', cId);
+        if (error) throw error;
+        const counts: Record<string, number> = {};
+        (rows || []).forEach((r: { reaction_type: string }) => {
+          counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1;
+        });
+        setReactions(prev => ({ ...prev, [cId]: counts }));
+      } catch (e) {
+        console.error('Failed to refresh reaction counts', e);
       }
-    }));
+    };
 
     try {
       const { data: userResp } = await supabase.auth.getUser();
       const userId = (userResp as { user?: { id?: string } })?.user?.id;
-      if (!userId) return; // cannot persist without auth
+      if (!userId) {
+        console.warn('User not authenticated, cannot persist reaction');
+        return;
+      }
 
-      const { error } = await sb
+      // Check for existing reaction by this user for this claim + type
+      const { data: existing, error: existingErr } = await sb
         .from('claim_reactions')
-        .insert({ claim_id: claimId, user_id: userId, reaction_type: reactionType });
-      if (error) throw error;
+        .select('id')
+        .eq('claim_id', claimId)
+        .eq('user_id', userId)
+        .eq('reaction_type', reactionType)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingErr) throw existingErr;
+
+      if (existing) {
+        // remove existing reaction
+        const { error: delErr } = await sb.from('claim_reactions').delete().eq('id', existing.id);
+        if (delErr) throw delErr;
+        await refreshCountsForClaim(claimId);
+      } else {
+        // insert reaction
+        const { error: insertErr } = await sb
+          .from('claim_reactions')
+          .insert({ claim_id: claimId, user_id: userId, reaction_type: reactionType });
+
+        if (insertErr) {
+          // unique-constraint race or similar - refresh counts to reflect actual state
+          if ((insertErr as unknown as { code?: string })?.code === '23505') {
+            await refreshCountsForClaim(claimId);
+            return;
+          }
+          throw insertErr;
+        }
+
+        // success - refresh counts to show accurate numbers
+        await refreshCountsForClaim(claimId);
+      }
     } catch (err) {
       console.error('Failed to persist reaction', err);
-      // revert optimistic update on failure
-      setReactions(prev => ({
-        ...prev,
-        [claimId]: {
-          ...prev[claimId],
-          [reactionType]: Math.max(0, (prev[claimId]?.[reactionType] || 1) - 1)
-        }
-      }));
     }
   };
 

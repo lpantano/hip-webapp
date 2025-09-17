@@ -27,15 +27,17 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
     );
   }
 
+  // Updated: only show agreement when there are more than 3 expert reviews for that category
   const getAgreementLevel = (dist: ScoreDistribution['distribution'], total: number) => {
-    if (total === 0) return { level: 'none', color: 'bg-gray-200' };
-    
+    if (total === 0) return { level: 'none', color: 'bg-gray-200', showAgreement: false };
+    if (total <= 3) return { level: 'insufficient', color: 'bg-gray-200', showAgreement: false };
+
     const maxScore = Math.max(dist.low, dist.medium, dist.high);
     const agreement = maxScore / total;
-    
-    if (agreement >= 0.8) return { level: 'high', color: 'bg-green-200' };
-    if (agreement >= 0.6) return { level: 'medium', color: 'bg-yellow-200' };
-    return { level: 'low', color: 'bg-red-200' };
+
+    if (agreement >= 0.8) return { level: 'high', color: 'bg-green-200', showAgreement: true };
+    if (agreement >= 0.6) return { level: 'medium', color: 'bg-yellow-200', showAgreement: true };
+    return { level: 'low', color: 'bg-red-200', showAgreement: true };
   };
 
   return (
@@ -88,11 +90,11 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
                     )}
                   </div>
                   
-                  {/* Agreement indicator */}
+                  {/* Agreement indicator: only show when there are >3 reviews */}
                   <div className="flex items-center gap-1 mt-1">
                     <div className={`w-2 h-2 rounded-full ${agreement.color}`} />
                     <span className="text-xs text-muted-foreground capitalize">
-                      {agreement.level} agreement
+                      {agreement.showAgreement ? `${agreement.level} agreement` : 'Needs more reviews'}
                     </span>
                   </div>
                 </div>
@@ -140,7 +142,11 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
                     </div>
                     
                     <div className="text-xs text-muted-foreground pt-2 border-t">
-                      <strong>Agreement Level:</strong> {agreement.level === 'high' ? 'Experts mostly agree' : agreement.level === 'medium' ? 'Some disagreement among experts' : 'Significant disagreement among experts'}
+                      {agreement.showAgreement ? (
+                        <><strong>Agreement Level:</strong> {agreement.level === 'high' ? 'Experts mostly agree' : agreement.level === 'medium' ? 'Some disagreement among experts' : 'Significant disagreement among experts'}</>
+                      ) : (
+                        <><strong>Needs more reviews:</strong> At least 4 expert reviews are required to report agreement.</>
+                      )}
                     </div>
                   </div>
                 </div>
