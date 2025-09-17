@@ -489,7 +489,7 @@ const Claims = () => {
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
               Community Reviewed Claims
             </h1>
             <p className="text-lg text-muted-foreground mb-8">

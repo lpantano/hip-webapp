@@ -123,3 +123,69 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Exporting the database schema from Supabase into database.sql
+
+If you want the project to contain an up-to-date copy of your Supabase database schema (tables, views, types, functions, constraints), follow these steps to export the schema and save it into the repository's `database.sql` file.
+
+There are two common approaches: using the Supabase dashboard to obtain connection details and running `pg_dump` locally (recommended), or using a Supabase backup/export if you prefer the web UI.
+
+A. Using the Supabase CLI (recommended)
+
+1. No install required — run the CLI via npx. First authenticate with Supabase:
+
+   zsh
+   ```sh
+   # This opens a browser to authenticate the CLI with your account
+   npx supabase login
+   ```
+
+   If you prefer a non-interactive flow, create a Personal Access Token in the Supabase dashboard and set it in your environment:
+
+   ```sh
+   export SUPABASE_ACCESS_TOKEN="your_personal_access_token"
+   ```
+
+2. Link the local project to your Supabase project (use the project ref from your Supabase dashboard):
+
+   zsh
+   ```sh
+   # Replace <PROJECT_REF> with the value shown in your Supabase project settings (e.g. stbumt...)
+   npx supabase link --project-ref <PROJECT_REF>
+   ```
+
+3. Export the schema only to `database.sql`:
+
+   zsh
+   ```sh
+   # Dumps schema-only (no data) to database.sql
+   npx supabase db dump --file database.sql --schema-only
+   ```
+
+   Notes:
+   - `--schema public` limits the dump to the public schema (adjust if you use multiple schemas).
+   - `--schema-only` ensures no row data is exported.
+   - The CLI will use the linked project's connection info. If you need to override the connection, set `SUPABASE_DB_URL` to a full Postgres URI before running the command.
+
+4. Verify and commit:
+
+   ```sh
+   git add database.sql
+   git commit -m "chore(db): export schema from Supabase via CLI"
+   git push
+   ```
+
+
+B. Using the Supabase Dashboard (UI)
+
+Some projects prefer to use the dashboard backup/export features. You can explore:
+
+- Project Settings -> Backups / Export: create or download a backup. This may provide a full dump including data; you can extract schema-only as needed.
+- SQL Editor: copy DDL from the editor if you maintain migration scripts there.
+
+C. Security notes
+
+- Avoid committing connection credentials. Use the dashboard to copy values only for running the export locally, or use CI secrets when automating.
+- For CI-driven exports, store the Supabase connection URI as a secret (e.g., `SUPABASE_DB_URL`) and run `pg_dump` in the pipeline, then commit or upload the artifact to a release.
+
+If you'd like I can add a short script in `scripts/export-schema.sh` that wraps the `pg_dump` command and uses environment variables for the connection details. Tell me if you want that and I will add it.
