@@ -222,13 +222,6 @@ export type Database = {
             referencedRelation: "experts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "expert_contributions_expert_id_fkey"
-            columns: ["expert_id"]
-            isOneToOne: false
-            referencedRelation: "experts_full"
-            referencedColumns: ["id"]
-          },
         ]
       }
       experts: {
@@ -524,13 +517,6 @@ export type Database = {
             referencedRelation: "experts"
             referencedColumns: ["user_id"]
           },
-          {
-            foreignKeyName: "social_media_links_expert_id_fkey"
-            columns: ["expert_id"]
-            isOneToOne: false
-            referencedRelation: "experts_full"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       sources: {
@@ -647,31 +633,6 @@ export type Database = {
           social_media_links: Json | null
           status: string | null
           total_contributions: number | null
-          user_id: string | null
-          website: string | null
-          years_of_experience: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "experts_user_id_fkey1"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      experts_full: {
-        Row: {
-          created_at: string | null
-          display_name: string | null
-          education: string | null
-          expertise_area: Database["public"]["Enums"]["claim_category"] | null
-          id: string | null
-          location: string | null
-          motivation: string | null
-          profile_avatar_url: string | null
-          social_media_links: Json | null
           user_id: string | null
           website: string | null
           years_of_experience: number | null
