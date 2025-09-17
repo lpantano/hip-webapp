@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -115,7 +115,9 @@ const Claims = () => {
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
+  const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
+  const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const { user } = useAuth();
 
   // component-scoped Supabase client
@@ -301,26 +303,126 @@ const Claims = () => {
       setClaims(mappedClaims);
       setReactions(reactionsByClaim);
 
-      // Fallback: ensure we have up-to-date reaction counts from the claim_reactions table
+      // If the view did not include publication_scores nested, fetch them as a fallback and attach to publications
       try {
-        const claimIds = joined.map(c => c.id).filter(Boolean);
-        if (claimIds.length > 0) {
-          const { data: reactionRows, error: reactionErr } = await sb
-            .from('claim_reactions')
-            .select('claim_id, reaction_type')
-            .in('claim_id', claimIds);
-          if (!reactionErr && reactionRows) {
-            const fallback: Record<string, Record<string, number>> = {};
-            reactionRows.forEach((r: { claim_id: string; reaction_type: string }) => {
-              fallback[r.claim_id] = fallback[r.claim_id] || {};
-              fallback[r.claim_id][r.reaction_type] = (fallback[r.claim_id][r.reaction_type] || 0) + 1;
+        const pubIds = mappedClaims.flatMap(c => c.publications.map(p => p.id));
+        if (pubIds.length > 0) {
+          const { data: scoreRows, error: scoreErr } = await sb
+            .from('publication_scores')
+            .select('*')
+            .in('publication_id', pubIds as string[]);
+
+          if (!scoreErr && scoreRows) {
+            const scoreRowsTyped = scoreRows as PublicationScoreRow[];
+            const scoreMap: Record<string, PublicationScoreRow[]> = {};
+            scoreRowsTyped.forEach((r) => {
+              if (!scoreMap[r.publication_id]) scoreMap[r.publication_id] = [];
+              scoreMap[r.publication_id].push(r);
             });
-            // merge fallback counts (fallback wins if present)
-            setReactions(prev => ({ ...prev, ...fallback }));
+
+            const updatedClaims = mappedClaims.map((cl) => ({
+              ...cl,
+              publications: cl.publications.map((pub) => {
+                const rows = scoreMap[pub.id] || pub.rawScores || [];
+                return {
+                  ...pub,
+                  rawScores: rows,
+                  scores: mapEvidenceRowToScores(rows)
+                };
+              })
+            }));
+
+            setClaims(updatedClaims);
+
+            // fetch any missing expert profiles discovered in the fallback rows
+            const expertIdsSet = new Set<string>();
+            scoreRowsTyped.forEach((r) => {
+              if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
+            });
+
+            const expertIds = Array.from(expertIdsSet);
+            if (expertIds.length > 0) {
+              const { data: profilesRows2, error: profilesErr2 } = await sb
+                .from('profiles')
+                .select('user_id, display_name, avatar_url, profile_avatar_url, full_name, id, user')
+                .in('user_id', expertIds as string[]);
+
+              if (!profilesErr2 && profilesRows2) {
+                const normalizeProfileRows = (rows: unknown[]) => {
+                  const map: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+                  rows.forEach((r) => {
+                    if (!r || typeof r !== 'object') return;
+                    const rec = r as Record<string, unknown>;
+                    let key: string | null = null;
+                    if (typeof rec.user_id === 'string') key = rec.user_id;
+                    else if (typeof rec.id === 'string') key = rec.id;
+                    else if (rec.user && typeof rec.user === 'object' && typeof (rec.user as Record<string, unknown>).id === 'string') {
+                      key = (rec.user as Record<string, unknown>).id as string;
+                    }
+                    if (!key) return;
+                    const display = typeof rec.display_name === 'string' ? rec.display_name : typeof rec.full_name === 'string' ? rec.full_name : null;
+                    // Use the `avatar_url` column from profiles specifically
+                    const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
+                    map[key] = { display_name: display, avatar_url: avatar };
+                  });
+                  return map;
+                };
+
+                const profilesMap2 = normalizeProfileRows(profilesRows2 as unknown[]);
+                setExpertProfiles(prev => ({ ...prev, ...profilesMap2 }));
+              }
+            }
           }
         }
       } catch (e) {
-        console.error('Failed to load fallback reaction counts', e);
+        console.error('Failed to load publication_scores fallback', e);
+      }
+
+      // Collect expert user ids from publication_scores and load display names/avatars
+      try {
+        const expertIdsSet = new Set<string>();
+        joined.forEach((c) => {
+          (c.publications || []).forEach((p: PublicationRow & { publication_scores?: PublicationScoreRow[] }) => {
+            (p.publication_scores || []).forEach((s: PublicationScoreRow) => {
+              if (s.expert_user_id) expertIdsSet.add(s.expert_user_id);
+            });
+          });
+        });
+
+        const expertIds = Array.from(expertIdsSet);
+        if (expertIds.length > 0) {
+          const { data: profilesRows, error: profilesErr } = await sb
+            .from('profiles')
+            .select('user_id, display_name, avatar_url, profile_avatar_url, full_name, id, user')
+            .in('user_id', expertIds as string[]);
+
+          if (!profilesErr && profilesRows) {
+            const normalizeProfileRows = (rows: unknown[]) => {
+              const map: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+              rows.forEach((r) => {
+                if (!r || typeof r !== 'object') return;
+                const rec = r as Record<string, unknown>;
+                let key: string | null = null;
+                if (typeof rec.user_id === 'string') key = rec.user_id;
+                else if (typeof rec.id === 'string') key = rec.id;
+                else if (rec.user && typeof rec.user === 'object' && typeof (rec.user as Record<string, unknown>).id === 'string') {
+                  key = (rec.user as Record<string, unknown>).id as string;
+                }
+                if (!key) return;
+                const display = typeof rec.display_name === 'string' ? rec.display_name : typeof rec.full_name === 'string' ? rec.full_name : null;
+                // Use the `avatar_url` column from profiles specifically
+                const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
+                map[key] = { display_name: display, avatar_url: avatar };
+              });
+              return map;
+            };
+
+            const profilesMap = normalizeProfileRows(profilesRows as unknown[]);
+            setExpertProfiles(prev => ({ ...prev, ...profilesMap }));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load expert profiles', e);
       }
     } catch (err) {
       console.error('Error loading claims:', err);
@@ -512,6 +614,82 @@ const Claims = () => {
       'interpretation': 'Evidence Quality'
     };
     return labels[category] || category;
+  };
+
+  // ReelsCarousel: vertically scrollable list of individual review items
+  type ReviewItem = {
+    id: string;
+    expert_user_id: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+    publicationTitle: string;
+    publicationJournal?: string;
+    year?: number;
+    category: string;
+    score: 'low' | 'medium' | 'high';
+    notes?: string | null;
+  };
+
+  const ReelsCarousel: React.FC<{ items: ReviewItem[] }> = ({ items }) => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    if (!items || items.length === 0) return null;
+
+    return (
+      <div className="relative">
+        <button
+          aria-label="Scroll up"
+          onClick={() => containerRef.current?.scrollBy({ top: -320, behavior: 'smooth' })}
+          className="absolute left-1/2 -translate-x-1/2 -top-3 z-10 bg-background/80 border border-border rounded-full p-1 hover:shadow"
+        >
+          ▲
+        </button>
+
+        <div
+          ref={containerRef}
+          className="flex flex-col gap-3 overflow-y-auto max-h-[60vh] p-2"
+          role="list"
+          aria-label="Expert review reels (vertical)"
+        >
+          {items.map((it) => (
+            <div key={it.id} role="listitem" className="w-full snap-start bg-background/60 border border-border rounded p-3">
+              <div className="flex items-center gap-3 mb-2">
+                {it.avatar_url ? (
+                  <img src={it.avatar_url} alt={it.display_name || 'Expert'} className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center">
+                    {(it.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                  </div>
+                )}
+
+                <div>
+                  <div className="text-sm font-medium">{it.display_name || 'Expert'}</div>
+                  <div className="text-xs text-muted-foreground">{it.publicationJournal} • {it.year}</div>
+                </div>
+              </div>
+
+              <div className="text-sm font-semibold mb-2">{it.publicationTitle}</div>
+
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-muted-foreground">{getCategoryLabel(it.category)}</span>
+                <Badge className={`text-xs px-2 py-0 ${getScoreColor(it.score)}`}>{it.score}</Badge>
+              </div>
+
+              {it.notes && (
+                <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded">"{it.notes}"</div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button
+          aria-label="Scroll down"
+          onClick={() => containerRef.current?.scrollBy({ top: 320, behavior: 'smooth' })}
+          className="absolute left-1/2 -translate-x-1/2 -bottom-3 z-10 bg-background/80 border border-border rounded-full p-1 hover:shadow"
+        >
+          ▼
+        </button>
+      </div>
+    );
   };
 
   const categoryOptions = [
@@ -737,56 +915,8 @@ const Claims = () => {
                               </div>
                             </div>
 
-                            {/* Individual expert scores and comments */}
-                            {pub.rawScores && pub.rawScores.length > 0 && (
-                              <div className="space-y-2">
-                                <h6 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                  Expert Scores & Comments
-                                </h6>
-                                <div className="grid gap-2 text-xs">
-                                  {/* Group scores by expert */}
-                                  {(() => {
-                                    const expertGroups: Record<string, PublicationScoreRow[]> = {};
-                                    pub.rawScores.forEach(score => {
-                                      if (!expertGroups[score.expert_user_id]) {
-                                        expertGroups[score.expert_user_id] = [];
-                                      }
-                                      expertGroups[score.expert_user_id].push(score);
-                                    });
-
-                                    return Object.entries(expertGroups).map(([expertId, scores], expertIndex) => (
-                                      <div key={expertId} className="bg-background/50 rounded p-2 border border-border/50">
-                                        <div className="font-medium text-xs text-muted-foreground mb-2">
-                                          Expert {expertIndex + 1}
-                                        </div>
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                                          {scores.map((score) => (
-                                            <div key={score.id} className="space-y-1">
-                                              <div className="flex items-center gap-2">
-                                                <span className="text-xs font-medium">
-                                                  {getCategoryLabel(score.category)}:
-                                                </span>
-                                                <Badge 
-                                                  variant="outline" 
-                                                  className={`text-xs px-2 py-0 ${getScoreColor(mapScoreIntToLabel(score.score))}`}
-                                                >
-                                                  {mapScoreIntToLabel(score.score)}
-                                                </Badge>
-                                              </div>
-                                              {score.notes && (
-                                                <p className="text-xs text-muted-foreground italic bg-muted/30 p-1 rounded">
-                                                  "{score.notes}"
-                                                </p>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ));
-                                  })()}
-                                </div>
-                              </div>
-                            )}
+                            {/* Reviewer details moved to the Expert Reviews Reel below to avoid duplication. */}
+                            <div className="text-xs text-muted-foreground">Reviewer scores and comments are available in the "Expert Reviews Reel" below.</div>
                           </div>
                         ))}
                       </div>
@@ -797,7 +927,18 @@ const Claims = () => {
                 {/* Add Paper Button - Always visible */}
                 <CardContent className="pt-2">
                   {user && (
-                    <div className="border-t border-border pt-3">
+                    <div className="border-t border-border pt-3 flex flex-wrap items-center gap-3">
+                      {/* SEE FULL REVIEW first and highlighted */}
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setShowReelClaim(claim.id)}
+                        className="flex items-center gap-2 shadow-md"
+                      >
+                        <Eye className="w-4 h-4" />
+                        See Full Review
+                      </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -811,6 +952,8 @@ const Claims = () => {
                   )}
                 </CardContent>
 
+                {/* ReelsCarousel for expert reviews - moved to dialog. Do not render inline when card is expanded. */}
+                {/* The full review reel is available via the 'See Full Review' button which opens the dialog. */}
               </Card>
             ))}
             
@@ -835,6 +978,41 @@ const Claims = () => {
                 </DialogContent>
               </Dialog>
             )}
+
+            {/* Expert Reviews Reel Dialog */}
+            <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                {(() => {
+                  const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
+                  if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
+                  const items = claim.publications.flatMap(pub => (
+                    (pub.rawScores || []).map(score => ({
+                      id: score.id,
+                      expert_user_id: score.expert_user_id,
+                      display_name: expertProfiles[score.expert_user_id]?.display_name,
+                      avatar_url: expertProfiles[score.expert_user_id]?.avatar_url,
+                      publicationTitle: pub.title,
+                      publicationJournal: pub.journal,
+                      year: pub.year,
+                      category: score.category,
+                      score: mapScoreIntToLabel(score.score),
+                      notes: score.notes
+                    }))
+                  ));
+
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Full Expert Reviews</h3>
+                      {items.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>
+                      ) : (
+                        <ReelsCarousel items={items} />
+                      )}
+                    </div>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
             
             {/* Publication Review Dialog */}
             <PublicationReviewForm
