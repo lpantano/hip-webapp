@@ -342,34 +342,23 @@ const Claims = () => {
 
             const expertIds = Array.from(expertIdsSet);
             if (expertIds.length > 0) {
-              const { data: profilesRows2, error: profilesErr2 } = await sb
-                .from('profiles')
-                .select('user_id, display_name, avatar_url, profile_avatar_url, full_name, id, user')
+              const { data: statsRows2, error: statsErr2 } = await sb
+                .from('expert_stats')
+                .select('user_id, display_name, avatar_url')
                 .in('user_id', expertIds as string[]);
 
-              if (!profilesErr2 && profilesRows2) {
-                const normalizeProfileRows = (rows: unknown[]) => {
-                  const map: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-                  rows.forEach((r) => {
-                    if (!r || typeof r !== 'object') return;
-                    const rec = r as Record<string, unknown>;
-                    let key: string | null = null;
-                    if (typeof rec.user_id === 'string') key = rec.user_id;
-                    else if (typeof rec.id === 'string') key = rec.id;
-                    else if (rec.user && typeof rec.user === 'object' && typeof (rec.user as Record<string, unknown>).id === 'string') {
-                      key = (rec.user as Record<string, unknown>).id as string;
-                    }
-                    if (!key) return;
-                    const display = typeof rec.display_name === 'string' ? rec.display_name : typeof rec.full_name === 'string' ? rec.full_name : null;
-                    // Use the `avatar_url` column from profiles specifically
-                    const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-                    map[key] = { display_name: display, avatar_url: avatar };
-                  });
-                  return map;
-                };
-
-                const profilesMap2 = normalizeProfileRows(profilesRows2 as unknown[]);
-                setExpertProfiles(prev => ({ ...prev, ...profilesMap2 }));
+              if (!statsErr2 && statsRows2) {
+                const statsMap2: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+                (statsRows2 as unknown[]).forEach((r) => {
+                  if (!r || typeof r !== 'object') return;
+                  const rec = r as Record<string, unknown>;
+                  const key = typeof rec.user_id === 'string' ? rec.user_id : null;
+                  if (!key) return;
+                  const display = typeof rec.display_name === 'string' ? rec.display_name : null;
+                  const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
+                  statsMap2[key] = { display_name: display, avatar_url: avatar };
+                });
+                setExpertProfiles(prev => ({ ...prev, ...statsMap2 }));
               }
             }
           }
@@ -391,35 +380,26 @@ const Claims = () => {
 
         const expertIds = Array.from(expertIdsSet);
         if (expertIds.length > 0) {
-          const { data: profilesRows, error: profilesErr } = await sb
-            .from('profiles')
-            .select('user_id, display_name, avatar_url, profile_avatar_url, full_name, id, user')
+          const { data: statsRows, error: statsErr } = await sb
+            .from('expert_stats')
+            .select('user_id, display_name, avatar_url')
             .in('user_id', expertIds as string[]);
 
-          if (!profilesErr && profilesRows) {
-            const normalizeProfileRows = (rows: unknown[]) => {
-              const map: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-              rows.forEach((r) => {
-                if (!r || typeof r !== 'object') return;
-                const rec = r as Record<string, unknown>;
-                let key: string | null = null;
-                if (typeof rec.user_id === 'string') key = rec.user_id;
-                else if (typeof rec.id === 'string') key = rec.id;
-                else if (rec.user && typeof rec.user === 'object' && typeof (rec.user as Record<string, unknown>).id === 'string') {
-                  key = (rec.user as Record<string, unknown>).id as string;
-                }
-                if (!key) return;
-                const display = typeof rec.display_name === 'string' ? rec.display_name : typeof rec.full_name === 'string' ? rec.full_name : null;
-                // Use the `avatar_url` column from profiles specifically
-                const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-                map[key] = { display_name: display, avatar_url: avatar };
-              });
-              return map;
-            };
-
-            const profilesMap = normalizeProfileRows(profilesRows as unknown[]);
-            setExpertProfiles(prev => ({ ...prev, ...profilesMap }));
+          if (!statsErr && statsRows) {
+            const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+            (statsRows as unknown[]).forEach((r) => {
+              if (!r || typeof r !== 'object') return;
+              const rec = r as Record<string, unknown>;
+              const key = typeof rec.user_id === 'string' ? rec.user_id : null;
+              if (!key) return;
+              const display = typeof rec.display_name === 'string' ? rec.display_name : null;
+              const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
+              console.info('Expert profile loaded:', { user_id: key, display_name: display, avatar_url: avatar });
+              statsMap[key] = { display_name: display, avatar_url: avatar };
+            });
+            setExpertProfiles(prev => ({ ...prev, ...statsMap }));
           }
+          console.info('Expert profiles loaded');
         }
       } catch (e) {
         console.error('Failed to load expert profiles', e);
@@ -654,12 +634,25 @@ const Claims = () => {
             <div key={it.id} role="listitem" className="w-full snap-start bg-background/60 border border-border rounded p-3">
               <div className="flex items-center gap-3 mb-2">
                 {it.avatar_url ? (
-                  <img src={it.avatar_url} alt={it.display_name || 'Expert'} className="w-9 h-9 rounded-full object-cover" />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center">
-                    {(it.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
-                  </div>
-                )}
+                  <img 
+                    src={it.avatar_url} 
+                    alt={it.display_name || 'Expert'} 
+                    className="w-9 h-9 rounded-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
+                  style={{ display: it.avatar_url ? 'none' : 'flex' }}
+                >
+                  {(it.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                </div>
 
                 <div>
                   <div className="text-sm font-medium">{it.display_name || 'Expert'}</div>
