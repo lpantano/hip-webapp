@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { User, Shield, FileText, MapPin, Calendar } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 import type { Database } from '@/integrations/supabase/types';
 
 const Profile = () => {
@@ -253,7 +254,7 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
         <Header />
-        <div className="pt-20 px-6 flex items-center justify-center h-screen">
+        <div className="pt-28 px-6 flex items-center justify-center h-screen">
           <p>Please sign in to view your profile.</p>
         </div>
       </div>
@@ -263,7 +264,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
       <Header />
-      <main className="pt-20 px-6 pb-12">
+      <main className="pt-28 px-6 pb-12">
         <div className="container mx-auto max-w-4xl">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
@@ -274,26 +275,27 @@ const Profile = () => {
             {/* Basic Profile Card */}
             <Card>
               <CardHeader>
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={avatarUrl} alt={displayName || user.email || ''} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
-                      {displayName ? displayName.split(' ').map(n => n[0]).join('') : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="flex items-start gap-6">
+                  <AvatarUpload
+                    currentAvatarUrl={avatarUrl}
+                    onAvatarChange={setAvatarUrl}
+                    userId={user.id}
+                    displayName={displayName}
+                    size="lg"
+                  />
                   <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 mb-2">
                       <User className="w-5 h-5" />
                       Personal Information
                     </CardTitle>
-                    <CardDescription>Update your basic profile details</CardDescription>
+                    <CardDescription>Update your basic profile details and avatar</CardDescription>
+                    {isExpert && (
+                      <Badge variant="secondary" className="flex items-center gap-1 mt-2 w-fit">
+                        <Shield className="w-3 h-3" />
+                        Expert
+                      </Badge>
+                    )}
                   </div>
-                  {isExpert && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Shield className="w-3 h-3" />
-                      Expert
-                    </Badge>
-                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -308,13 +310,16 @@ const Profile = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="avatarUrl">Avatar URL</Label>
+                    <Label htmlFor="avatarUrl">Avatar URL (Optional)</Label>
                     <Input
                       id="avatarUrl"
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
                       placeholder="https://example.com/avatar.jpg"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Or use the upload button above
+                    </p>
                   </div>
                 </div>
                 <div>
