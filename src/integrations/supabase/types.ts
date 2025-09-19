@@ -676,7 +676,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "user" | "expert" | "ambassador" | "admin"
+      app_role:
+        | "user"
+        | "expert"
+        | "ambassador"
+        | "admin"
+        | "founding_expert"
+        | "founding_user"
       claim_category:
         | "nutrition"
         | "fitness"
@@ -837,7 +843,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["user", "expert", "ambassador", "admin"],
+      app_role: [
+        "user",
+        "expert",
+        "ambassador",
+        "admin",
+        "founding_expert",
+        "founding_user",
+      ],
       claim_category: [
         "nutrition",
         "fitness",
