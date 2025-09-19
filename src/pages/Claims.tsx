@@ -67,6 +67,15 @@ interface VoteRow {
   created_at: string;
 }
 
+interface ClaimCommentRow {
+  id: string;
+  claim_id: string;
+  expert_user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface ClaimUI {
   id: string;
   claim: string;
@@ -89,6 +98,7 @@ interface ClaimUI {
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];
+  comments?: ClaimCommentRow[];
   status: 'pending' | 'under_review' | 'approved';
 }
 
@@ -118,6 +128,7 @@ const Claims = () => {
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
+  const [claimComments, setClaimComments] = useState<Record<string, ClaimCommentRow[]>>({});
   const { user } = useAuth();
 
   // component-scoped Supabase client
@@ -247,7 +258,24 @@ const Claims = () => {
 
       if (joinedError) throw joinedError;
 
+      // Fetch claim comments
+      const { data: commentsData, error: commentsError } = await sb
+        .from('claim_comments')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (commentsError) throw commentsError;
+
       const reactionsByClaim: Record<string, Record<string, number>> = {};
+
+      // Group comments by claim_id
+      const commentsByClaim: Record<string, ClaimCommentRow[]> = {};
+      (commentsData || []).forEach((comment: ClaimCommentRow) => {
+        if (!commentsByClaim[comment.claim_id]) {
+          commentsByClaim[comment.claim_id] = [];
+        }
+        commentsByClaim[comment.claim_id].push(comment);
+      });
 
       type JoinedClaim = ClaimRow & {
         publications?: (PublicationRow & { publication_scores?: PublicationScoreRow[] })[];
@@ -296,12 +324,14 @@ const Claims = () => {
           category: uiCategory!,
           votes: c.vote_count || 0,
           publications: pubs,
+          comments: commentsByClaim[c.id!] || [],
           status: statusMap[c.status] || 'pending'
         };
       });
 
       setClaims(mappedClaims);
       setReactions(reactionsByClaim);
+      setClaimComments(commentsByClaim);
 
       // If the view did not include publication_scores nested, fetch them as a fallback and attach to publications
       try {
@@ -596,23 +626,37 @@ const Claims = () => {
     return labels[category] || category;
   };
 
-  // ReelsCarousel: vertically scrollable list of individual review items
-  type ReviewItem = {
-    id: string;
-    expert_user_id: string;
-    display_name?: string | null;
-    avatar_url?: string | null;
-    publicationTitle: string;
-    publicationJournal?: string;
-    year?: number;
-    category: string;
-    score: 'low' | 'medium' | 'high';
-    notes?: string | null;
-  };
+  // Aggregated expert reviews by publication and expert
+  type ExpertReviewsByPublication = {
+    publication: {
+      id: string;
+      title: string;
+      journal: string;
+      year: number;
+      authors: string;
+    };
+    expertReviews: {
+      expert_user_id: string;
+      display_name?: string | null;
+      avatar_url?: string | null;
+      scores: Array<{
+        category: string;
+        score: 'low' | 'medium' | 'high';
+        notes?: string | null;
+      }>;
+      comments: Array<{
+        content: string;
+        created_at: string;
+      }>;
+    }[];
+  }[];
 
-  const ReelsCarousel: React.FC<{ items: ReviewItem[] }> = ({ items }) => {
+  const ExpertReviewsReel: React.FC<{ reviewsByPublication: ExpertReviewsByPublication }> = ({ reviewsByPublication }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    if (!items || items.length === 0) return null;
+    
+    if (!reviewsByPublication || reviewsByPublication.length === 0) {
+      return <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>;
+    }
 
     return (
       <div className="relative">
@@ -626,49 +670,99 @@ const Claims = () => {
 
         <div
           ref={containerRef}
-          className="flex flex-col gap-3 overflow-y-auto max-h-[60vh] p-2"
+          className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-2"
           role="list"
-          aria-label="Expert review reels (vertical)"
+          aria-label="Expert reviews by publication"
         >
-          {items.map((it) => (
-            <div key={it.id} role="listitem" className="w-full snap-start bg-background/60 border border-border rounded p-3">
-              <div className="flex items-center gap-3 mb-2">
-                {it.avatar_url ? (
-                  <img 
-                    src={it.avatar_url} 
-                    alt={it.display_name || 'Expert'} 
-                    className="w-9 h-9 rounded-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      if (target.nextElementSibling) {
-                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
-                  style={{ display: it.avatar_url ? 'none' : 'flex' }}
-                >
-                  {(it.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
-                </div>
-
-                <div>
-                  <div className="text-sm font-medium">{it.display_name || 'Expert'}</div>
-                  <div className="text-xs text-muted-foreground">{it.publicationJournal} • {it.year}</div>
-                </div>
+          {reviewsByPublication.map((pubReview) => (
+            <div key={pubReview.publication.id} className="bg-background border border-border rounded-lg p-4">
+              {/* Publication Header */}
+              <div className="mb-4 pb-3 border-b border-border">
+                <h4 className="font-semibold text-sm mb-1">{pubReview.publication.title}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {pubReview.publication.authors} • {pubReview.publication.journal} ({pubReview.publication.year})
+                </p>
               </div>
 
-              <div className="text-sm font-semibold mb-2">{it.publicationTitle}</div>
+              {/* Expert Reviews for this Publication */}
+              {pubReview.expertReviews.length === 0 ? (
+                <div className="text-sm text-muted-foreground italic">No expert reviews for this publication yet.</div>
+              ) : (
+                <div className="space-y-4">
+                  {pubReview.expertReviews.map((expertReview) => (
+                    <div key={expertReview.expert_user_id} className="bg-muted/20 rounded-md p-3">
+                      {/* Expert Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        {expertReview.avatar_url ? (
+                          <img 
+                            src={expertReview.avatar_url} 
+                            alt={expertReview.display_name || 'Expert'} 
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              if (target.nextElementSibling) {
+                                (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-xs flex items-center justify-center"
+                          style={{ display: expertReview.avatar_url ? 'none' : 'flex' }}
+                        >
+                          {(expertReview.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                        </div>
+                        <div className="font-medium text-sm">{expertReview.display_name || 'Expert'}</div>
+                      </div>
 
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-muted-foreground">{getCategoryLabel(it.category)}</span>
-                <Badge className={`text-xs px-2 py-0 ${getScoreColor(it.score)}`}>{it.score}</Badge>
-              </div>
+                      {/* Scores */}
+                      {expertReview.scores.length > 0 && (
+                        <div className="mb-3">
+                          <div className="text-xs font-medium text-muted-foreground mb-2">Publication Scores:</div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {expertReview.scores.map((scoreItem, idx) => (
+                              <div key={idx} className="flex items-center justify-between gap-2 text-xs">
+                                <span className="text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
+                                <Badge className={`text-xs px-2 py-0 ${getScoreColor(scoreItem.score)}`}>
+                                  {scoreItem.score}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Score Notes */}
+                          {expertReview.scores.some(s => s.notes) && (
+                            <div className="mt-2 space-y-1">
+                              {expertReview.scores.filter(s => s.notes).map((scoreItem, idx) => (
+                                <div key={idx} className="text-xs">
+                                  <span className="text-muted-foreground font-medium">{getCategoryLabel(scoreItem.category)}:</span>
+                                  <div className="italic text-muted-foreground bg-muted/30 p-1 rounded mt-1">"{scoreItem.notes}"</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-              {it.notes && (
-                <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded">"{it.notes}"</div>
+                      {/* Comments */}
+                      {expertReview.comments.length > 0 && (
+                        <div>
+                          <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
+                          <div className="space-y-2">
+                            {expertReview.comments.map((comment, idx) => (
+                              <div key={idx} className="text-xs bg-muted/30 p-2 rounded">
+                                <div className="text-muted-foreground mb-1">
+                                  {new Date(comment.created_at).toLocaleDateString()}
+                                </div>
+                                <div>"{comment.content}"</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           ))}
@@ -974,33 +1068,62 @@ const Claims = () => {
 
             {/* Expert Reviews Reel Dialog */}
             <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
                   if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-                  const items = claim.publications.flatMap(pub => (
-                    (pub.rawScores || []).map(score => ({
-                      id: score.id,
-                      expert_user_id: score.expert_user_id,
-                      display_name: expertProfiles[score.expert_user_id]?.display_name,
-                      avatar_url: expertProfiles[score.expert_user_id]?.avatar_url,
-                      publicationTitle: pub.title,
-                      publicationJournal: pub.journal,
-                      year: pub.year,
-                      category: score.category,
-                      score: mapScoreIntToLabel(score.score),
-                      notes: score.notes
-                    }))
-                  ));
+                  
+                  // Group reviews by publication, then by expert
+                  const reviewsByPublication: ExpertReviewsByPublication = claim.publications.map(pub => {
+                    // Group scores by expert
+                    const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
+                    (pub.rawScores || []).forEach(score => {
+                      if (!scoresByExpert[score.expert_user_id]) {
+                        scoresByExpert[score.expert_user_id] = [];
+                      }
+                      scoresByExpert[score.expert_user_id].push(score);
+                    });
+
+                    // Get comments for this claim
+                    const claimCommentsForClaim = claim.comments || [];
+
+                    // Create expert reviews array
+                    const expertReviews = Object.entries(scoresByExpert).map(([expertUserId, scores]) => {
+                      const expertProfile = expertProfiles[expertUserId];
+                      const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
+                      
+                      return {
+                        expert_user_id: expertUserId,
+                        display_name: expertProfile?.display_name,
+                        avatar_url: expertProfile?.avatar_url,
+                        scores: scores.map(score => ({
+                          category: score.category,
+                          score: mapScoreIntToLabel(score.score),
+                          notes: score.notes
+                        })),
+                        comments: expertComments.map(comment => ({
+                          content: comment.content,
+                          created_at: comment.created_at
+                        }))
+                      };
+                    });
+
+                    return {
+                      publication: {
+                        id: pub.id,
+                        title: pub.title,
+                        journal: pub.journal,
+                        year: pub.year,
+                        authors: pub.authors
+                      },
+                      expertReviews
+                    };
+                  });
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Full Expert Reviews</h3>
-                      {items.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>
-                      ) : (
-                        <ReelsCarousel items={items} />
-                      )}
+                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Expert Reviews by Publication</h3>
+                      <ExpertReviewsReel reviewsByPublication={reviewsByPublication} />
                     </div>
                   );
                 })()}
