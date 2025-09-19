@@ -626,8 +626,8 @@ const Claims = () => {
     return labels[category] || category;
   };
 
-  // Aggregated expert reviews by publication and expert
-  type ExpertReviewsByPublication = {
+  // Individual expert review cards
+  type ExpertReviewCard = {
     publication: {
       id: string;
       title: string;
@@ -635,7 +635,7 @@ const Claims = () => {
       year: number;
       authors: string;
     };
-    expertReviews: {
+    expert: {
       expert_user_id: string;
       display_name?: string | null;
       avatar_url?: string | null;
@@ -648,13 +648,13 @@ const Claims = () => {
         content: string;
         created_at: string;
       }>;
-    }[];
-  }[];
+    };
+  };
 
-  const ExpertReviewsReel: React.FC<{ reviewsByPublication: ExpertReviewsByPublication }> = ({ reviewsByPublication }) => {
+  const ExpertReviewsReel: React.FC<{ reviewCards: ExpertReviewCard[] }> = ({ reviewCards }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     
-    if (!reviewsByPublication || reviewsByPublication.length === 0) {
+    if (!reviewCards || reviewCards.length === 0) {
       return <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>;
     }
 
@@ -672,96 +672,84 @@ const Claims = () => {
           ref={containerRef}
           className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-2"
           role="list"
-          aria-label="Expert reviews by publication"
+          aria-label="Expert reviews"
         >
-          {reviewsByPublication.map((pubReview) => (
-            <div key={pubReview.publication.id} className="bg-background border border-border rounded-lg p-4">
-              {/* Publication Header */}
+          {reviewCards.map((reviewCard, index) => (
+            <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-4 shadow-sm">
+              {/* Expert Header */}
+              <div className="flex items-center gap-3 mb-3">
+                {reviewCard.expert.avatar_url ? (
+                  <img 
+                    src={reviewCard.expert.avatar_url} 
+                    alt={reviewCard.expert.display_name || 'Expert'} 
+                    className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
+                  style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
+                >
+                  {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">{reviewCard.expert.display_name || 'Expert'}</div>
+                  <div className="text-xs text-muted-foreground">Expert Review</div>
+                </div>
+              </div>
+
+              {/* Publication Info */}
               <div className="mb-4 pb-3 border-b border-border">
-                <h4 className="font-semibold text-sm mb-1">{pubReview.publication.title}</h4>
+                <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
                 <p className="text-xs text-muted-foreground">
-                  {pubReview.publication.authors} • {pubReview.publication.journal} ({pubReview.publication.year})
+                  {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
                 </p>
               </div>
 
-              {/* Expert Reviews for this Publication */}
-              {pubReview.expertReviews.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic">No expert reviews for this publication yet.</div>
-              ) : (
-                <div className="space-y-4">
-                  {pubReview.expertReviews.map((expertReview) => (
-                    <div key={expertReview.expert_user_id} className="bg-muted/20 rounded-md p-3">
-                      {/* Expert Header */}
-                      <div className="flex items-center gap-3 mb-3">
-                        {expertReview.avatar_url ? (
-                          <img 
-                            src={expertReview.avatar_url} 
-                            alt={expertReview.display_name || 'Expert'} 
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              if (target.nextElementSibling) {
-                                (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <div 
-                          className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-xs flex items-center justify-center"
-                          style={{ display: expertReview.avatar_url ? 'none' : 'flex' }}
-                        >
-                          {(expertReview.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+              {/* Scores */}
+              {reviewCard.expert.scores.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-medium text-muted-foreground mb-3">Publication Scores:</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {reviewCard.expert.scores.map((scoreItem, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
+                          <Badge className={`text-xs px-2 py-1 ${getScoreColor(scoreItem.score)}`}>
+                            {scoreItem.score}
+                          </Badge>
                         </div>
-                        <div className="font-medium text-sm">{expertReview.display_name || 'Expert'}</div>
+                        {scoreItem.notes && (
+                          <div className="text-xs italic text-muted-foreground bg-muted/30 p-2 rounded">
+                            "{scoreItem.notes}"
+                          </div>
+                        )}
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                      {/* Scores */}
-                      {expertReview.scores.length > 0 && (
-                        <div className="mb-3">
-                          <div className="text-xs font-medium text-muted-foreground mb-2">Publication Scores:</div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {expertReview.scores.map((scoreItem, idx) => (
-                              <div key={idx} className="flex items-center justify-between gap-2 text-xs">
-                                <span className="text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
-                                <Badge className={`text-xs px-2 py-0 ${getScoreColor(scoreItem.score)}`}>
-                                  {scoreItem.score}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Score Notes */}
-                          {expertReview.scores.some(s => s.notes) && (
-                            <div className="mt-2 space-y-1">
-                              {expertReview.scores.filter(s => s.notes).map((scoreItem, idx) => (
-                                <div key={idx} className="text-xs">
-                                  <span className="text-muted-foreground font-medium">{getCategoryLabel(scoreItem.category)}:</span>
-                                  <div className="italic text-muted-foreground bg-muted/30 p-1 rounded mt-1">"{scoreItem.notes}"</div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+              {/* Comments */}
+              {reviewCard.expert.comments.length > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
+                  <div className="space-y-2">
+                    {reviewCard.expert.comments.map((comment, idx) => (
+                      <div key={idx} className="bg-muted/20 p-3 rounded-md">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {new Date(comment.created_at).toLocaleDateString()}
                         </div>
-                      )}
-
-                      {/* Comments */}
-                      {expertReview.comments.length > 0 && (
-                        <div>
-                          <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
-                          <div className="space-y-2">
-                            {expertReview.comments.map((comment, idx) => (
-                              <div key={idx} className="text-xs bg-muted/30 p-2 rounded">
-                                <div className="text-muted-foreground mb-1">
-                                  {new Date(comment.created_at).toLocaleDateString()}
-                                </div>
-                                <div>"{comment.content}"</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="text-sm">"{comment.content}"</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1073,8 +1061,10 @@ const Claims = () => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
                   if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
                   
-                  // Group reviews by publication, then by expert
-                  const reviewsByPublication: ExpertReviewsByPublication = claim.publications.map(pub => {
+                  // Create individual cards for each expert review on each publication
+                  const reviewCards: ExpertReviewCard[] = [];
+                  
+                  claim.publications.forEach(pub => {
                     // Group scores by expert
                     const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
                     (pub.rawScores || []).forEach(score => {
@@ -1087,43 +1077,41 @@ const Claims = () => {
                     // Get comments for this claim
                     const claimCommentsForClaim = claim.comments || [];
 
-                    // Create expert reviews array
-                    const expertReviews = Object.entries(scoresByExpert).map(([expertUserId, scores]) => {
+                    // Create individual cards for each expert who reviewed this publication
+                    Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
                       const expertProfile = expertProfiles[expertUserId];
                       const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
                       
-                      return {
-                        expert_user_id: expertUserId,
-                        display_name: expertProfile?.display_name,
-                        avatar_url: expertProfile?.avatar_url,
-                        scores: scores.map(score => ({
-                          category: score.category,
-                          score: mapScoreIntToLabel(score.score),
-                          notes: score.notes
-                        })),
-                        comments: expertComments.map(comment => ({
-                          content: comment.content,
-                          created_at: comment.created_at
-                        }))
-                      };
+                      reviewCards.push({
+                        publication: {
+                          id: pub.id,
+                          title: pub.title,
+                          journal: pub.journal,
+                          year: pub.year,
+                          authors: pub.authors
+                        },
+                        expert: {
+                          expert_user_id: expertUserId,
+                          display_name: expertProfile?.display_name,
+                          avatar_url: expertProfile?.avatar_url,
+                          scores: scores.map(score => ({
+                            category: score.category,
+                            score: mapScoreIntToLabel(score.score),
+                            notes: score.notes
+                          })),
+                          comments: expertComments.map(comment => ({
+                            content: comment.content,
+                            created_at: comment.created_at
+                          }))
+                        }
+                      });
                     });
-
-                    return {
-                      publication: {
-                        id: pub.id,
-                        title: pub.title,
-                        journal: pub.journal,
-                        year: pub.year,
-                        authors: pub.authors
-                      },
-                      expertReviews
-                    };
                   });
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Expert Reviews by Publication</h3>
-                      <ExpertReviewsReel reviewsByPublication={reviewsByPublication} />
+                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
+                      <ExpertReviewsReel reviewCards={reviewCards} />
                     </div>
                   );
                 })()}
