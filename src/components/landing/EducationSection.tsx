@@ -38,7 +38,7 @@ const EducationSection = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <Button variant="ghost" className="text-primary hover:text-primary/80">
+                  <Button variant="ghost" className="text-black dark:text-white hover:text-black/80 dark:hover:text-white/80">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Learn More
                   </Button>
@@ -213,7 +213,7 @@ const EducationSection = () => {
           {/* Population Diversity Card - Interactive */}
           <Dialog open={populationOpen} onOpenChange={setPopulationOpen}>
             <DialogTrigger asChild>
-              <Card className="cursor-pointer hover:shadow-lg transition-all bg-card/50 backdrop-blur-sm hover:scale-105 border-2 hover:border-secondary/50">
+              <Card className="cursor-pointer hover:shadow-lg transition-all bg-card/50 backdrop-blur-sm hover:scale-105 border-2 hover:border-primary/50">
                 <CardHeader className="text-center">
                   <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                     <Globe className="w-8 h-8 text-primary" />
@@ -224,7 +224,7 @@ const EducationSection = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <Button variant="ghost" className="text-primary hover:text-primary/80">
+                  <Button variant="ghost" className="text-black dark:text-white hover:text-black/80 dark:hover:text-white/80">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Learn More
                   </Button>
@@ -445,7 +445,7 @@ const EducationSection = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <Button variant="ghost" className="text-accent hover:text-accent/80">
+                  <Button variant="ghost" className="text-black dark:text-white hover:text-black/80 dark:hover:text-white/80">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Learn More
                   </Button>
@@ -762,7 +762,7 @@ const EducationSection = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <Button variant="ghost" className="text-accent hover:text-accent/80">
+                  <Button variant="ghost" className="text-black dark:text-white hover:text-black/80 dark:hover:text-white/80">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Learn More
                   </Button>
