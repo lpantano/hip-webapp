@@ -120,6 +120,7 @@ const Claims = () => {
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
+  const [userReactions, setUserReactions] = useState<Record<string, Set<string>>>({});
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
@@ -268,6 +269,24 @@ const Claims = () => {
 
       const reactionsByClaim: Record<string, Record<string, number>> = {};
 
+      // Fetch user's own reactions if logged in
+      const userReactionsByClaim: Record<string, Set<string>> = {};
+      if (user) {
+        const { data: userReactionsData, error: userReactionsError } = await sb
+          .from('claim_reactions')
+          .select('claim_id, reaction_type')
+          .eq('user_id', user.id);
+
+        if (!userReactionsError && userReactionsData) {
+          userReactionsData.forEach((reaction) => {
+            if (!userReactionsByClaim[reaction.claim_id]) {
+              userReactionsByClaim[reaction.claim_id] = new Set();
+            }
+            userReactionsByClaim[reaction.claim_id].add(reaction.reaction_type);
+          });
+        }
+      }
+
       // Group comments by claim_id
       const commentsByClaim: Record<string, ClaimCommentRow[]> = {};
       (commentsData || []).forEach((comment: ClaimCommentRow) => {
@@ -331,6 +350,7 @@ const Claims = () => {
 
       setClaims(mappedClaims);
       setReactions(reactionsByClaim);
+      setUserReactions(userReactionsByClaim);
       setClaimComments(commentsByClaim);
 
       // If the view did not include publication_scores nested, fetch them as a fallback and attach to publications
@@ -510,6 +530,20 @@ const Claims = () => {
           counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1;
         });
         setReactions(prev => ({ ...prev, [cId]: counts }));
+
+        // Also refresh user's own reactions for this claim
+        if (user) {
+          const { data: userRows, error: userError } = await sb
+            .from('claim_reactions')
+            .select('reaction_type')
+            .eq('claim_id', cId)
+            .eq('user_id', user.id);
+
+          if (!userError && userRows) {
+            const userReactionTypes = new Set(userRows.map(r => r.reaction_type));
+            setUserReactions(prev => ({ ...prev, [cId]: userReactionTypes }));
+          }
+        }
       } catch (e) {
         console.error('Failed to refresh reaction counts', e);
       }
@@ -565,6 +599,10 @@ const Claims = () => {
 
   const getReactionCount = (claimId: string, reactionType: string) => {
     return reactions[claimId]?.[reactionType] || 0;
+  };
+
+  const hasUserReacted = (claimId: string, reactionType: string) => {
+    return userReactions[claimId]?.has(reactionType) || false;
   };
 
   const reactionButtons = [
@@ -905,18 +943,20 @@ const Claims = () => {
                       <div className="flex items-center gap-2 mt-1">
                         {reactionButtons.map((reaction) => {
                           const count = getReactionCount(claim.id, reaction.type);
+                          const hasReacted = hasUserReacted(claim.id, reaction.type);
                           const Icon = reaction.icon;
                           return (
                             <Button
                               key={reaction.type}
                               variant="ghost"
                               size="sm"
-                              className="h-7 px-2 text-xs flex items-center gap-1"
+                              className={`h-7 px-2 text-xs flex items-center gap-1 ${hasReacted ? 'bg-muted' : ''}`}
                               onClick={() => handleReaction(claim.id, reaction.type)}
                               title={reaction.label}
+                              disabled={!user}
                             >
-                              <Icon className={`w-4 h-4 ${reaction.color}`} />
-                              <span className="text-xs">{count > 0 ? count : ''}</span>
+                              <Icon className={`w-4 h-4 ${hasReacted ? reaction.color : 'text-muted-foreground'} ${hasReacted ? 'fill-current' : ''}`} />
+                              <span className="text-xs font-medium">{count}</span>
                             </Button>
                           );
                         })}
