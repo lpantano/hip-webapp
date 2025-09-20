@@ -817,64 +817,6 @@ const Claims = () => {
               Community-driven claims about products and services for women's health conditions. 
               Upvote Claims with strong scientific backing to prioritize them for expert review.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span>All Claims must be linked to scientific publications</span>
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="gap-2" disabled={!user}>
-                      <Plus className="w-4 h-4" />
-                      {user ? 'Submit New Claim' : 'Sign in to Submit Claim'}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <ClaimSubmissionForm 
-                      onSuccess={() => {
-                        setShowSubmissionForm(false);
-                        // Refresh the claims data by re-running the fetch
-                        fetchData();
-                      }}
-                      onCancel={() => setShowSubmissionForm(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-                
-                <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
-                  <SelectTrigger className="w-[180px] h-9">
-                    <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4" />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Button
-                  variant={sortBy === 'votes' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSortBy('votes')}
-                >
-                  Sort by Votes
-                </Button>
-                <Button
-                  variant={sortBy === 'recent' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSortBy('recent')}
-                >
-                  Most Recent
-                </Button>
-              </div>
-            </div>
           </div>
 
           {/* Tabs Navigation */}
@@ -886,6 +828,64 @@ const Claims = () => {
 
             {/* Claims Tab */}
             <TabsContent value="claims" className="space-y-6">
+              {/* Claims Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>All Claims must be linked to scientific publications</span>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-2" disabled={!user}>
+                        <Plus className="w-4 h-4" />
+                        {user ? 'Submit New Claim' : 'Sign in to Submit Claim'}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <ClaimSubmissionForm 
+                        onSuccess={() => {
+                          setShowSubmissionForm(false);
+                          // Refresh the claims data by re-running the fetch
+                          fetchData();
+                        }}
+                        onCancel={() => setShowSubmissionForm(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
+                    <SelectTrigger className="w-[180px] h-9">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4" />
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button
+                    variant={sortBy === 'votes' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSortBy('votes')}
+                  >
+                    Sort by Votes
+                  </Button>
+                  <Button
+                    variant={sortBy === 'recent' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSortBy('recent')}
+                  >
+                    Most Recent
+                  </Button>
+                </div>
+              </div>
               {filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>No claims found for the selected category.</p>
