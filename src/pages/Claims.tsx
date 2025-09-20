@@ -254,10 +254,24 @@ const Claims = () => {
 
   const fetchClaimsData = useCallback(async () => {
     try {
-      // Use the `claims_full` view that aggregates publications (with scores) and claim_reactions
-      const { data: joinedData, error: joinedError } = await sb.from('claims_full').select('*');
+      // Fetch claims directly instead of using the problematic view
+      const { data: claimsData, error: claimsError } = await sb.from('claims').select('*');
+      if (claimsError) throw claimsError;
 
-      if (joinedError) throw joinedError;
+      // Fetch all publications for these claims
+      const claimIds = claimsData?.map(c => c.id) || [];
+      const { data: publicationsData, error: publicationsError } = await sb
+        .from('publications')
+        .select('*')
+        .in('claim_id', claimIds);
+      if (publicationsError) throw publicationsError;
+
+      // Fetch all reactions for these claims
+      const { data: reactionsData, error: reactionsError } = await sb
+        .from('claim_reactions')
+        .select('*')
+        .in('claim_id', claimIds);
+      if (reactionsError) throw reactionsError;
 
       // Fetch claim comments
       const { data: commentsData, error: commentsError } = await sb
@@ -267,25 +281,35 @@ const Claims = () => {
 
       if (commentsError) throw commentsError;
 
+      // Build reaction counts from the fetched reactions data
       const reactionsByClaim: Record<string, Record<string, number>> = {};
+      (reactionsData || []).forEach((reaction: ReactionRow) => {
+        if (!reactionsByClaim[reaction.claim_id]) {
+          reactionsByClaim[reaction.claim_id] = {};
+        }
+        reactionsByClaim[reaction.claim_id][reaction.reaction_type] = (reactionsByClaim[reaction.claim_id][reaction.reaction_type] || 0) + 1;
+      });
 
-      // Fetch user's own reactions if logged in
+      // Fetch user's own reactions using the same data we already fetched
       const userReactionsByClaim: Record<string, Set<string>> = {};
       if (user) {
-        const { data: userReactionsData, error: userReactionsError } = await sb
-          .from('claim_reactions')
-          .select('claim_id, reaction_type')
-          .eq('user_id', user.id);
-
-        if (!userReactionsError && userReactionsData) {
-          userReactionsData.forEach((reaction) => {
-            if (!userReactionsByClaim[reaction.claim_id]) {
-              userReactionsByClaim[reaction.claim_id] = new Set();
-            }
-            userReactionsByClaim[reaction.claim_id].add(reaction.reaction_type);
-          });
-        }
+        const userReactionsForClaims = (reactionsData || []).filter(r => r.user_id === user.id);
+        userReactionsForClaims.forEach((reaction) => {
+          if (!userReactionsByClaim[reaction.claim_id]) {
+            userReactionsByClaim[reaction.claim_id] = new Set();
+          }
+          userReactionsByClaim[reaction.claim_id].add(reaction.reaction_type);
+        });
       }
+
+      // Group publications by claim_id
+      const publicationsByClaim: Record<string, PublicationRow[]> = {};
+      (publicationsData || []).forEach((pub: PublicationRow) => {
+        if (!publicationsByClaim[pub.claim_id]) {
+          publicationsByClaim[pub.claim_id] = [];
+        }
+        publicationsByClaim[pub.claim_id].push(pub);
+      });
 
       // Group comments by claim_id
       const commentsByClaim: Record<string, ClaimCommentRow[]> = {};
@@ -296,23 +320,10 @@ const Claims = () => {
         commentsByClaim[comment.claim_id].push(comment);
       });
 
-      type JoinedClaim = ClaimRow & {
-        publications?: (PublicationRow & { publication_scores?: PublicationScoreRow[] })[];
-        claim_reactions?: ReactionRow[];
-      };
-
-      const joined = (joinedData || []) as unknown as JoinedClaim[];
-      const mappedClaims: ClaimUI[] = joined.map((c) => {
-        // build reaction counts per claim from nested claim_reactions
-        (c.claim_reactions || []).forEach((r) => {
-          reactionsByClaim[r.claim_id] = reactionsByClaim[r.claim_id] || {};
-          reactionsByClaim[r.claim_id][r.reaction_type] = (reactionsByClaim[r.claim_id][r.reaction_type] || 0) + 1;
-        });
-
-        // map nested publications and their scores
-        const pubs = (c.publications || []).map((p: PublicationRow & { publication_scores?: PublicationScoreRow[] }) => {
-          const scoresRows = p.publication_scores || [];
-          const scores = mapEvidenceRowToScores(scoresRows);
+      const mappedClaims: ClaimUI[] = (claimsData || []).map((c: ClaimRow) => {
+        // map publications for this claim
+        const claimPublications = publicationsByClaim[c.id] || [];
+        const pubs = claimPublications.map((p: PublicationRow) => {
           return {
             id: p.id, // Add publication ID
             title: p.title,
@@ -320,14 +331,16 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
-            scores,
-            // include raw score rows so UI can detect whether current user already reviewed
-            rawScores: scoresRows
+            scores: {
+              sampleSize: { score: 'low' as const, explanation: '' },
+              populationRepresentation: { score: 'low' as const, explanation: '' },
+              consensus: { score: 'low' as const, explanation: '' },
+              evidence: { score: 'low' as const, explanation: '' }
+            },
+            // Will be populated later with actual scores
+            rawScores: []
           };
         });
-
-        // map DB category directly to UI category (show DB value)
-        const uiCategory = c.category;
 
         const statusMap: Record<string, ClaimUI['status']> = {
           pending: 'pending',
@@ -338,12 +351,12 @@ const Claims = () => {
         };
 
         return {
-          id: c.id!,
+          id: c.id,
           claim: c.title || c.description || '',
-          category: uiCategory!,
+          category: c.category,
           votes: c.vote_count || 0,
           publications: pubs,
-          comments: commentsByClaim[c.id!] || [],
+          comments: commentsByClaim[c.id] || [],
           status: statusMap[c.status] || 'pending'
         };
       });
@@ -353,7 +366,7 @@ const Claims = () => {
       setUserReactions(userReactionsByClaim);
       setClaimComments(commentsByClaim);
 
-      // If the view did not include publication_scores nested, fetch them as a fallback and attach to publications
+      // Fetch publication scores and attach to publications
       try {
         const pubIds = mappedClaims.flatMap(c => c.publications.map(p => p.id));
         if (pubIds.length > 0) {
@@ -384,7 +397,7 @@ const Claims = () => {
 
             setClaims(updatedClaims);
 
-            // fetch any missing expert profiles discovered in the fallback rows
+            // fetch expert profiles for score authors
             const expertIdsSet = new Set<string>();
             scoreRowsTyped.forEach((r) => {
               if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
@@ -392,72 +405,34 @@ const Claims = () => {
 
             const expertIds = Array.from(expertIdsSet);
             if (expertIds.length > 0) {
-              const { data: statsRows2, error: statsErr2 } = await sb
+              const { data: statsRows, error: statsErr } = await sb
                 .from('expert_stats')
                 .select('user_id, display_name, avatar_url')
                 .in('user_id', expertIds as string[]);
 
-              if (!statsErr2 && statsRows2) {
-                const statsMap2: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-                (statsRows2 as unknown[]).forEach((r) => {
+              if (!statsErr && statsRows) {
+                const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+                (statsRows as unknown[]).forEach((r) => {
                   if (!r || typeof r !== 'object') return;
                   const rec = r as Record<string, unknown>;
                   const key = typeof rec.user_id === 'string' ? rec.user_id : null;
                   if (!key) return;
                   const display = typeof rec.display_name === 'string' ? rec.display_name : null;
                   const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-                  statsMap2[key] = { display_name: display, avatar_url: avatar };
+                  statsMap[key] = { display_name: display, avatar_url: avatar };
                 });
-                setExpertProfiles(prev => ({ ...prev, ...statsMap2 }));
+                setExpertProfiles(prev => ({ ...prev, ...statsMap }));
               }
             }
           }
         }
       } catch (e) {
-        console.error('Failed to load publication_scores fallback', e);
-      }
-
-      // Collect expert user ids from publication_scores and load display names/avatars
-      try {
-        const expertIdsSet = new Set<string>();
-        joined.forEach((c) => {
-          (c.publications || []).forEach((p: PublicationRow & { publication_scores?: PublicationScoreRow[] }) => {
-            (p.publication_scores || []).forEach((s: PublicationScoreRow) => {
-              if (s.expert_user_id) expertIdsSet.add(s.expert_user_id);
-            });
-          });
-        });
-
-        const expertIds = Array.from(expertIdsSet);
-        if (expertIds.length > 0) {
-          const { data: statsRows, error: statsErr } = await sb
-            .from('expert_stats')
-            .select('user_id, display_name, avatar_url')
-            .in('user_id', expertIds as string[]);
-
-          if (!statsErr && statsRows) {
-            const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-            (statsRows as unknown[]).forEach((r) => {
-              if (!r || typeof r !== 'object') return;
-              const rec = r as Record<string, unknown>;
-              const key = typeof rec.user_id === 'string' ? rec.user_id : null;
-              if (!key) return;
-              const display = typeof rec.display_name === 'string' ? rec.display_name : null;
-              const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-              console.info('Expert profile loaded:', { user_id: key, display_name: display, avatar_url: avatar });
-              statsMap[key] = { display_name: display, avatar_url: avatar };
-            });
-            setExpertProfiles(prev => ({ ...prev, ...statsMap }));
-          }
-          console.info('Expert profiles loaded');
-        }
-      } catch (e) {
-        console.error('Failed to load expert profiles', e);
+        console.error('Failed to load publication_scores', e);
       }
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, mapEvidenceRowToScores]);
+  }, [sb, mapEvidenceRowToScores, user]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async () => {
