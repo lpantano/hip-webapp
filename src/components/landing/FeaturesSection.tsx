@@ -135,17 +135,17 @@ const FeaturesSection = () => {
             </CardContent>
           </Card>
 
-          {/* Apps */}
+          {/* Mental Health */}
           <Card className="bg-card-gradient border-border/50 hover:shadow-lg transition-all duration-300 relative">
             <CardHeader>
-              <CardTitle className="text-primary text-2xl">Apps</CardTitle>
+              <CardTitle className="text-primary text-2xl">Mental Health</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-lg mb-2">Health Data Usage</h4>
-                    <p className="text-muted-foreground text-sm">Evaluating how health apps collect, use, and protect women's personal health information.</p>
+                    <h4 className="font-semibold text-lg mb-2">ADHD</h4>
+                    <p className="text-muted-foreground text-sm">Attention-deficit/hyperactivity disorder often underdiagnosed in women due to presentation differences.</p>
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -155,27 +155,27 @@ const FeaturesSection = () => {
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
-                        <DialogTitle>How We Evaluate Health Apps</DialogTitle>
+                        <DialogTitle>How We Evaluate Mental Health Conditions</DialogTitle>
                         <DialogDescription>
-                          Our evaluation process for digital health applications and platforms
+                          Our evaluation process for mental health conditions affecting women
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">Privacy Analysis</h4>
-                          <p className="text-sm text-muted-foreground">Comprehensive review of data collection practices, storage security, and third-party sharing policies to protect women's sensitive health information.</p>
+                          <h4 className="font-semibold text-primary mb-2">Gender-Specific Research</h4>
+                          <p className="text-sm text-muted-foreground">Analysis of studies that examine how mental health conditions present differently in women, including hormonal influences and diagnostic criteria.</p>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">Clinical Validation</h4>
-                          <p className="text-sm text-muted-foreground">Assessment of whether app features are backed by peer-reviewed research and whether they demonstrate measurable health improvements.</p>
+                          <h4 className="font-semibold text-primary mb-2">Treatment Efficacy</h4>
+                          <p className="text-sm text-muted-foreground">Review of therapeutic approaches and medications specifically tested in female populations across different life stages and hormonal states.</p>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">User Experience</h4>
-                          <p className="text-sm text-muted-foreground">Evaluation of app usability, accessibility features, and user interface design with focus on women's diverse needs and preferences.</p>
+                          <h4 className="font-semibold text-primary mb-2">Comorbidity Patterns</h4>
+                          <p className="text-sm text-muted-foreground">Examination of how mental health conditions intersect with women's physical health, reproductive health, and social factors.</p>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-primary mb-2">Impact Measurement</h4>
-                          <p className="text-sm text-muted-foreground">Analysis of real-world outcomes and user-reported improvements in health metrics, behavior change, and quality of life indicators.</p>
+                          <h4 className="font-semibold text-primary mb-2">Access & Barriers</h4>
+                          <p className="text-sm text-muted-foreground">Assessment of healthcare access, stigma, and systemic barriers that affect women's mental health diagnosis and treatment.</p>
                         </div>
                       </div>
                     </DialogContent>
@@ -183,8 +183,14 @@ const FeaturesSection = () => {
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-lg mb-2">Real Impact</h4>
-                    <p className="text-muted-foreground text-sm">Assessing whether health apps deliver measurable improvements to women's health outcomes.</p>
+                    <h4 className="font-semibold text-lg mb-2">Anxiety</h4>
+                    <p className="text-muted-foreground text-sm">Anxiety disorders affect women at twice the rate of men, with unique triggers and manifestations.</p>
+                  </div>
+                </div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-lg mb-2">Depression</h4>
+                    <p className="text-muted-foreground text-sm">Major depressive disorder with strong links to hormonal changes and reproductive health in women.</p>
                   </div>
                 </div>
               </div>
