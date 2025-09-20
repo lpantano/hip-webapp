@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Expert {
+interface CommunityMember {
   id: string;
   user_id: string;
   expertise_area: string;
@@ -29,28 +29,38 @@ interface Expert {
   new_claims?: number;
   links_added?: number;
   contributor_level?: string;
+  member_type?: 'expert' | 'researcher';
 }
 
-const Experts = () => {
-  const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null);
-  const [experts, setExperts] = useState<Expert[]>([]);
+const Community = () => {
+  const [selectedMember, setSelectedMember] = useState<CommunityMember | null>(null);
+  const [experts, setExperts] = useState<CommunityMember[]>([]);
+  const [researchers, setResearchers] = useState<CommunityMember[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchExperts();
+    fetchCommunityMembers();
   }, []);
 
-  const fetchExperts = async () => {
+  const fetchCommunityMembers = async () => {
     try {
       // Fetch from expert_stats view
       const { data: expertsData, error: expertsError } = await supabase
         .from('expert_stats')
         .select('*')
-      // console.log(expertsData);
-    if (expertsError) throw expertsError;
-        setExperts((expertsData || []) as Expert[]);
+      
+      if (expertsError) throw expertsError;
+      
+      // For now, all members from expert_stats are experts
+      // Later you can add researchers from a different table
+      const expertsWithType = (expertsData || []).map(expert => ({ ...expert, member_type: 'expert' as const }));
+      setExperts(expertsWithType);
+      
+      // Placeholder for researchers - you can fetch from researchers table later
+      setResearchers([]);
+      
     } catch (error) {
-      console.error('Error fetching experts:', error);
+      console.error('Error fetching community members:', error);
     } finally {
       setLoading(false);
     }
@@ -91,8 +101,8 @@ const Experts = () => {
     }
   };
 
-  const getContributorBadge = (expert: Expert) => {
-    const level = expert.contributor_level || 'Seedling';
+  const getContributorBadge = (member: CommunityMember) => {
+    const level = member.contributor_level || 'Seedling';
     
     const badgeMap = {
       'Luminary': { level: 'Luminary', emoji: '🌟', description: 'Top Contributor' },
@@ -105,29 +115,36 @@ const Experts = () => {
     return badgeMap[level as keyof typeof badgeMap] || badgeMap['Seedling'];
   };
 
-  const openProfile = (expert: Expert) => {
-    setSelectedExpert(expert);
+  const openProfile = (member: CommunityMember) => {
+    setSelectedMember(member);
   };
 
-  const ExpertCard = ({ expert }: { expert: Expert }) => {
-    const displayName = expert.display_name || `${formatExpertiseArea(expert.expertise_area)} Expert`;
-    const avatarUrl = expert.profile_avatar_url || expert.avatar_url;
-    const expertiseTitle = formatExpertiseArea(expert.expertise_area) + ' Specialist';
-    const yearsOnPlatform = getYearsOnPlatform(expert.created_at);
-    const contributorBadge = getContributorBadge(expert);
+  const MemberCard = ({ member }: { member: CommunityMember }) => {
+    const displayName = member.display_name || `${formatExpertiseArea(member.expertise_area)} ${member.member_type === 'expert' ? 'Expert' : 'Researcher'}`;
+    const avatarUrl = member.profile_avatar_url || member.avatar_url;
+    const title = formatExpertiseArea(member.expertise_area) + ` ${member.member_type === 'expert' ? 'Specialist' : 'Researcher'}`;
+    const yearsOnPlatform = getYearsOnPlatform(member.created_at);
+    const contributorBadge = getContributorBadge(member);
     
     return (
       <Card 
         className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer relative max-w-[240px] p-4"
-        onClick={() => openProfile(expert)}
+        onClick={() => openProfile(member)}
       >
         {/* Experience Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
           <Badge variant="secondary" className="text-[11px] font-bold bg-primary/90 text-primary-foreground hover:bg-primary">
-            {expert.years_of_experience}y
+            {member.years_of_experience}y
           </Badge>
           <Badge variant="outline" className="text-[11px] font-bold bg-background/90 border-accent text-accent">
             {yearsOnPlatform}y
+          </Badge>
+        </div>
+
+        {/* Member type badge */}
+        <div className="absolute top-2 right-2">
+          <Badge variant={member.member_type === 'expert' ? 'default' : 'secondary'} className="text-[11px] font-bold">
+            {member.member_type === 'expert' ? 'Expert' : 'Researcher'}
           </Badge>
         </div>
 
@@ -148,22 +165,22 @@ const Experts = () => {
             </div>
           </div>
           <CardTitle className="text-sm truncate">{displayName}</CardTitle>
-          <CardDescription className="text-[12px] font-medium text-primary truncate">{expertiseTitle}</CardDescription>
+          <CardDescription className="text-[12px] font-medium text-primary truncate">{title}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 pb-3">
-          {expert.location && (
+          {member.location && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" />
-              {expert.location}
+              {member.location}
             </div>
           )}
           <div className="flex flex-wrap gap-1 mt-2">
             <Badge variant="secondary" className="text-xs">
-              {formatExpertiseArea(expert.expertise_area)}
+              {formatExpertiseArea(member.expertise_area)}
             </Badge>
           </div>
           <div className="flex gap-1 mt-2">
-            {(expert.social_media_links || []).map((link: { platform: string; url: string }) => {
+            {(member.social_media_links || []).map((link: { platform: string; url: string }) => {
               if (!link.platform || !link.url) return null;
               const Icon = getSocialIcon(link.platform);
               return (
@@ -181,9 +198,9 @@ const Experts = () => {
                 </Button>
               );
             })}
-            {expert.website && (
+            {member.website && (
               <Button variant="ghost" size="icon" className="h-7 w-7 p-0" onClick={(e) => e.stopPropagation()} asChild>
-                <a href={expert.website} target="_blank" rel="noopener noreferrer">
+                <a href={member.website} target="_blank" rel="noopener noreferrer">
                   <Globe className="h-3 w-3" />
                 </a>
               </Button>
@@ -203,10 +220,10 @@ const Experts = () => {
           {/* Header Section */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-6xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
-              Our Experts
+              Our Community
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Meet the dedicated professionals who review, contribute, and guide our community with their expertise in women's health, wellness, and technology.
+              Meet the dedicated professionals - experts and researchers - who review, contribute, and guide our community with their expertise in women's health, wellness, and technology.
             </p>
           </div>
 
@@ -214,7 +231,7 @@ const Experts = () => {
           <section className="mb-20">
             <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
               <Users className="h-8 w-8 text-primary" />
-              Current Experts
+              Experts
             </h2>
             
             {loading ? (
@@ -227,8 +244,28 @@ const Experts = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {experts.map((expert) => (
-                  <ExpertCard key={expert.id} expert={expert} />
+                {experts.map((member) => (
+                  <MemberCard key={member.id} member={member} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Researchers Section */}
+          <section className="mb-20">
+            <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              Researchers
+            </h2>
+            
+            {researchers.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No researchers have been approved yet. Check back soon!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {researchers.map((member) => (
+                  <MemberCard key={member.id} member={member} />
                 ))}
               </div>
             )}
@@ -236,31 +273,33 @@ const Experts = () => {
         </div>
       </main>
 
-      {/* Expert Profile Dialog */}
-      <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
+      {/* Community Member Profile Dialog */}
+      <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedExpert && (
+          {selectedMember && (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="w-16 h-16">
-                    <AvatarImage src={selectedExpert.profile_avatar_url || selectedExpert.avatar_url} alt={selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`} />
+                    <AvatarImage src={selectedMember.profile_avatar_url || selectedMember.avatar_url} alt={selectedMember.display_name || `${formatExpertiseArea(selectedMember.expertise_area)} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`} />
                     <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
-                      {selectedExpert.display_name ? selectedExpert.display_name.split(' ').map(n => n[0]).join('') : formatExpertiseArea(selectedExpert.expertise_area).split(' ').map(n => n[0]).join('')}
+                      {selectedMember.display_name ? selectedMember.display_name.split(' ').map(n => n[0]).join('') : formatExpertiseArea(selectedMember.expertise_area).split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <DialogTitle className="text-2xl">{selectedExpert.display_name || `${formatExpertiseArea(selectedExpert.expertise_area)} Expert`}</DialogTitle>
-                      
+                      <DialogTitle className="text-2xl">{selectedMember.display_name || `${formatExpertiseArea(selectedMember.expertise_area)} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`}</DialogTitle>
+                      <Badge variant={selectedMember.member_type === 'expert' ? 'default' : 'secondary'}>
+                        {selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}
+                      </Badge>
                     </div>
                     <DialogDescription className="text-lg text-primary font-medium">
-                      {formatExpertiseArea(selectedExpert.expertise_area)} Specialist • {getContributorBadge(selectedExpert).description}
+                      {formatExpertiseArea(selectedMember.expertise_area)} {selectedMember.member_type === 'expert' ? 'Specialist' : 'Researcher'} • {getContributorBadge(selectedMember).description}
                     </DialogDescription>
-                    {selectedExpert.location && (
+                    {selectedMember.location && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                         <MapPin className="h-4 w-4" />
-                        {selectedExpert.location}
+                        {selectedMember.location}
                       </div>
                     )}
                   </div>
@@ -272,11 +311,11 @@ const Experts = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold text-sm text-muted-foreground mb-1">Years of Experience</h4>
-                    <p className="text-lg font-bold">{selectedExpert.years_of_experience} years</p>
+                    <p className="text-lg font-bold">{selectedMember.years_of_experience} years</p>
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm text-muted-foreground mb-1">Years on Platform</h4>
-                    <p className="text-lg font-bold">{getYearsOnPlatform(selectedExpert.created_at)} years</p>
+                    <p className="text-lg font-bold">{getYearsOnPlatform(selectedMember.created_at)} years</p>
                   </div>
                 </div>
 
@@ -286,7 +325,7 @@ const Experts = () => {
                 <div>
                   <h4 className="font-semibold mb-3">Area of Expertise</h4>
                   <Badge variant="secondary">
-                    {formatExpertiseArea(selectedExpert.expertise_area)}
+                    {formatExpertiseArea(selectedMember.expertise_area)}
                   </Badge>
                 </div>
 
@@ -295,23 +334,23 @@ const Experts = () => {
                 {/* Motivation */}
                 <div>
                   <h4 className="font-semibold mb-3">Motivation</h4>
-                  <p className="text-muted-foreground leading-relaxed">{selectedExpert.motivation}</p>
+                  <p className="text-muted-foreground leading-relaxed">{selectedMember.motivation}</p>
                 </div>
 
                 {/* Education */}
                 <div>
                   <h4 className="font-semibold mb-3">Education & Background</h4>
-                  <p className="text-muted-foreground leading-relaxed">{selectedExpert.education}</p>
+                  <p className="text-muted-foreground leading-relaxed">{selectedMember.education}</p>
                 </div>
 
                 <Separator />
 
                 {/* Social Links */}
-                {(selectedExpert.social_media_links.length > 0 || selectedExpert.website) && (
+                {(selectedMember.social_media_links.length > 0 || selectedMember.website) && (
                   <div>
                     <h4 className="font-semibold mb-3">Connect</h4>
                     <div className="flex flex-wrap gap-2">
-                      {selectedExpert.social_media_links.map((link: { platform: string; url: string }) => {
+                      {selectedMember.social_media_links.map((link: { platform: string; url: string }) => {
                         if (!link.platform || !link.url) return null;
                         const Icon = getSocialIcon(link.platform);
                         const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);
@@ -325,12 +364,11 @@ const Experts = () => {
                           </Button>
                         );
                       })}
-                      {selectedExpert.website && (
+                      {selectedMember.website && (
                         <Button variant="outline" size="sm" asChild>
-                          <a href={selectedExpert.website} target="_blank" rel="noopener noreferrer">
+                          <a href={selectedMember.website} target="_blank" rel="noopener noreferrer">
                             <Globe className="h-4 w-4 mr-2" />
                             Website
-                 Twitter
                             <ExternalLink className="h-3 w-3 ml-1" />
                           </a>
                         </Button>
@@ -347,4 +385,4 @@ const Experts = () => {
   );
 };
 
-export default Experts;
+export default Community;

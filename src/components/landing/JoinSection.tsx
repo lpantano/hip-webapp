@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import ExpertApplicationForm from "@/components/forms/ExpertApplicationForm";
+import CommunityApplicationForm from "@/components/forms/CommunityApplicationForm";
 import ExpertOnboardingDialog from "@/components/forms/ExpertOnboardingDialog";
 
 const JoinSection = () => {
@@ -172,9 +172,10 @@ const JoinSection = () => {
         onApply={() => setShowExpertForm(true)}
       />
       
-      <ExpertApplicationForm 
+      <CommunityApplicationForm 
         open={showExpertForm}
         onOpenChange={setShowExpertForm}
+        memberType="expert"
       />
     </section>
   );

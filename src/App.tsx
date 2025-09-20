@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
 import Team from "./pages/Team";
-import Experts from "./pages/Experts";
+import Community from "./pages/Community";
 import Claims from "./pages/Claims";
 import Legal from "./pages/Legal";
 import Roadmap from "./pages/Roadmap";
@@ -32,7 +32,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/about" element={<About />} />
             <Route path="/team" element={<Team />} />
-            <Route path="/experts" element={<Experts />} />
+            <Route path="/community" element={<Community />} />
             <Route path="/claims" element={<Claims />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/roadmap" element={<Roadmap />} />

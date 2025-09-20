@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 // Form validation schema
-const expertApplicationSchema = z.object({
+const communityApplicationSchema = z.object({
   education: z.string().min(10, "Please provide detailed education (minimum 10 characters)"),
   expertiseArea: z.enum(["nutrition", "fitness", "mental_health", "pregnancy", "menopause", "general_health", "perimenopause"]),
   yearsOfExperience: z.number().min(0, "Years of experience must be 0 or greater").max(50, "Please enter a realistic number of years"),
@@ -26,16 +26,18 @@ const expertApplicationSchema = z.object({
     platform: z.string().min(1, "Platform name is required"),
     url: z.string().url("Please enter a valid URL")
   })).optional(),
+  memberType: z.enum(["expert", "researcher"]),
 });
 
-type ExpertApplicationForm = z.infer<typeof expertApplicationSchema>;
+type CommunityApplicationForm = z.infer<typeof communityApplicationSchema>;
 
-interface ExpertApplicationFormProps {
+interface CommunityApplicationFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  memberType: "expert" | "researcher";
 }
 
-const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProps) => {
+const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityApplicationFormProps) => {
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -48,8 +50,11 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
     setValue,
     watch,
     reset,
-  } = useForm<ExpertApplicationForm>({
-    resolver: zodResolver(expertApplicationSchema),
+  } = useForm<CommunityApplicationForm>({
+    resolver: zodResolver(communityApplicationSchema),
+    defaultValues: {
+      memberType: memberType,
+    }
   });
 
   const watchedExpertiseArea = watch("expertiseArea");
@@ -70,7 +75,7 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
     setValue("socialLinks", updated);
   };
 
-  const onSubmit = async (data: ExpertApplicationForm) => {
+  const onSubmit = async (data: CommunityApplicationForm) => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -155,13 +160,13 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-accent">Expert Application</DialogTitle>
+          <DialogTitle className="text-2xl text-accent">{memberType === 'expert' ? 'Expert Application' : 'Researcher Application'}</DialogTitle>
         </DialogHeader>
 
         <Card className="border-0 shadow-none">
           <CardHeader>
             <p className="text-muted-foreground">
-              Join our community of healthcare professionals and scientists. All applications are carefully reviewed.
+              Join our community of {memberType === 'expert' ? 'healthcare professionals and scientists' : 'researchers and academics'}. All applications are carefully reviewed.
             </p>
           </CardHeader>
           <CardContent>
@@ -329,4 +334,4 @@ const ExpertApplicationForm = ({ open, onOpenChange }: ExpertApplicationFormProp
   );
 };
 
-export default ExpertApplicationForm;
+export default CommunityApplicationForm;
