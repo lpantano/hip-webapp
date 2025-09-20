@@ -35,9 +35,9 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
     const maxScore = Math.max(dist.low, dist.medium, dist.high);
     const agreement = maxScore / total;
 
-    if (agreement >= 0.8) return { level: 'high', color: 'bg-green-200', showAgreement: true };
-    if (agreement >= 0.6) return { level: 'medium', color: 'bg-yellow-200', showAgreement: true };
-    return { level: 'low', color: 'bg-red-200', showAgreement: true };
+    if (agreement >= 0.8) return { level: 'high', color: 'bg-blue-500', showAgreement: true };
+    if (agreement >= 0.6) return { level: 'medium', color: 'bg-blue-300', showAgreement: true };
+    return { level: 'low', color: 'bg-blue-100', showAgreement: true };
   };
 
   return (
@@ -68,19 +68,19 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
                       <>
                         {dist.distribution.low > 0 && (
                           <div 
-                            className="bg-red-400 transition-all"
+                            className="bg-blue-200 transition-all"
                             style={{ width: `${(dist.distribution.low / dist.totalExperts) * 100}%` }}
                           />
                         )}
                         {dist.distribution.medium > 0 && (
                           <div 
-                            className="bg-yellow-400 transition-all"
+                            className="bg-blue-400 transition-all"
                             style={{ width: `${(dist.distribution.medium / dist.totalExperts) * 100}%` }}
                           />
                         )}
                         {dist.distribution.high > 0 && (
                           <div 
-                            className="bg-green-400 transition-all"
+                            className="bg-blue-600 transition-all"
                             style={{ width: `${(dist.distribution.high / dist.totalExperts) * 100}%` }}
                           />
                         )}
@@ -113,7 +113,7 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
                       {dist.distribution.high > 0 && (
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-green-400 rounded" />
+                            <div className="w-3 h-3 bg-blue-600 rounded" />
                             <span>High Score</span>
                           </div>
                           <span className="font-medium">{dist.distribution.high}</span>
@@ -123,7 +123,7 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
                       {dist.distribution.medium > 0 && (
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-yellow-400 rounded" />
+                            <div className="w-3 h-3 bg-blue-400 rounded" />
                             <span>Medium Score</span>
                           </div>
                           <span className="font-medium">{dist.distribution.medium}</span>
@@ -133,7 +133,7 @@ const ExpertScoreDistribution = ({ distributions }: ExpertScoreDistributionProps
                       {dist.distribution.low > 0 && (
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-red-400 rounded" />
+                            <div className="w-3 h-3 bg-blue-200 rounded" />
                             <span>Low Score</span>
                           </div>
                           <span className="font-medium">{dist.distribution.low}</span>
