@@ -15,6 +15,7 @@ import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -1056,81 +1057,8 @@ const Claims = () => {
             ))}
             </TabsContent>
 
-            {/* Trusted Resources Tab */}
             <TabsContent value="trusted-resources" className="space-y-6">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                  <Shield className="w-8 h-8 text-primary" />
-                </div>
-                <h2 className="text-2xl font-bold mb-4">Trusted Resources</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  This section contains carefully curated resources that our organization supports independently, 
-                  beyond community-submitted claims. These resources meet our highest standards for evidence and reliability.
-                </p>
-              </div>
-
-              <div className="grid gap-6">
-                {/* Placeholder content explaining conditions */}
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-primary" />
-                      Criteria for Trusted Resources
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
-                        <div>
-                          <h4 className="font-medium">Expert Panel Review</h4>
-                          <p className="text-sm text-muted-foreground">Must be reviewed and approved by our expert advisory panel with unanimous consensus</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
-                        <div>
-                          <h4 className="font-medium">Systematic Evidence Review</h4>
-                          <p className="text-sm text-muted-foreground">Backed by systematic reviews, meta-analyses, or multiple high-quality randomized controlled trials</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
-                        <div>
-                          <h4 className="font-medium">Independent Verification</h4>
-                          <p className="text-sm text-muted-foreground">Independently verified by our organization with no conflicts of interest</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
-                        <div>
-                          <h4 className="font-medium">Ongoing Monitoring</h4>
-                          <p className="text-sm text-muted-foreground">Continuously monitored for new evidence that may affect recommendations</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
-                        <div>
-                          <h4 className="font-medium">Transparency Standards</h4>
-                          <p className="text-sm text-muted-foreground">All evaluation criteria, funding sources, and potential conflicts disclosed publicly</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Placeholder for future trusted resources */}
-                <Card className="bg-muted/30">
-                  <CardContent className="p-8 text-center">
-                    <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-                    <p className="text-muted-foreground">
-                      Our expert panel is currently reviewing potential trusted resources. 
-                      The first curated resources will be available here once they meet our rigorous standards.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+              <ResourcesSection />
             </TabsContent>
           </Tabs>
 

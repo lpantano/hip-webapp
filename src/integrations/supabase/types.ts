@@ -480,6 +480,72 @@ export type Database = {
           },
         ]
       }
+      resource_reviews: {
+        Row: {
+          comments: string | null
+          created_at: string
+          id: string
+          resource_id: string
+          reviewer_user_id: string
+          supports: boolean
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          resource_id: string
+          reviewer_user_id: string
+          supports: boolean
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          resource_id?: string
+          reviewer_user_id?: string
+          supports?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          created_at: string
+          description: string
+          expertise_area: Database["public"]["Enums"]["expertise_area"]
+          id: string
+          name: string
+          status: string
+          submitted_by: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          expertise_area: Database["public"]["Enums"]["expertise_area"]
+          id?: string
+          name: string
+          status?: string
+          submitted_by: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          expertise_area?: Database["public"]["Enums"]["expertise_area"]
+          id?: string
+          name?: string
+          status?: string
+          submitted_by?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       social_media_links: {
         Row: {
           created_at: string
@@ -683,6 +749,7 @@ export type Database = {
         | "admin"
         | "founding_expert"
         | "founding_user"
+        | "researcher"
       claim_category:
         | "nutrition"
         | "fitness"
@@ -850,6 +917,7 @@ export const Constants = {
         "admin",
         "founding_expert",
         "founding_user",
+        "researcher",
       ],
       claim_category: [
         "nutrition",
