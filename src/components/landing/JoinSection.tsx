@@ -79,7 +79,7 @@ const JoinSection = () => {
 
           <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-accent flex flex-col">
             <CardHeader>
-              <CardTitle className="text-2xl text-accent">Apply as an Expert</CardTitle>
+              <CardTitle className="text-2xl text-accent">Apply as expert or researcher</CardTitle>
               <p className="text-muted-foreground">
                 Scientists and healthcare professionals - by invitation only
               </p>
