@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, Shield, CheckCircle } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -875,14 +876,21 @@ const Claims = () => {
             </div>
           </div>
 
-          {/* Claims List */}
-          <div className="max-w-4xl mx-auto space-y-6">
-            {filteredAndSortedClaims.length === 0 && !loading && (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>No claims found for the selected category.</p>
-              </div>
-            )}
-            {filteredAndSortedClaims.map((claim) => (
+          {/* Tabs Navigation */}
+          <Tabs defaultValue="claims" className="max-w-4xl mx-auto">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="claims">Claims</TabsTrigger>
+              <TabsTrigger value="trusted-resources">Trusted Resources</TabsTrigger>
+            </TabsList>
+
+            {/* Claims Tab */}
+            <TabsContent value="claims" className="space-y-6">
+              {filteredAndSortedClaims.length === 0 && !loading && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No claims found for the selected category.</p>
+                </div>
+              )}
+              {filteredAndSortedClaims.map((claim) => (
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
@@ -1046,104 +1054,182 @@ const Claims = () => {
                 {/* The full review reel is available via the 'See Full Review' button which opens the dialog. */}
               </Card>
             ))}
-            
-            {/* Paper Submission Dialog */}
-            {showPaperForm && (
-              <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  {(() => {
-                    const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
-                    return claim ? (
-                      <PaperSubmissionForm
-                        claimId={claim.id}
-                        claimTitle={claim.claim}
-                        onSuccess={() => {
-                          setShowPaperForm(null);
-                          fetchData();
-                        }}
-                        onCancel={() => setShowPaperForm(null)}
-                      />
-                    ) : null;
-                  })()}
-                </DialogContent>
-              </Dialog>
-            )}
+            </TabsContent>
 
-            {/* Expert Reviews Reel Dialog */}
-            <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                {(() => {
-                  const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
-                  if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-                  
-                  // Create individual cards for each expert review on each publication
-                  const reviewCards: ExpertReviewCard[] = [];
-                  
-                  claim.publications.forEach(pub => {
-                    // Group scores by expert
-                    const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
-                    (pub.rawScores || []).forEach(score => {
-                      if (!scoresByExpert[score.expert_user_id]) {
-                        scoresByExpert[score.expert_user_id] = [];
-                      }
-                      scoresByExpert[score.expert_user_id].push(score);
-                    });
+            {/* Trusted Resources Tab */}
+            <TabsContent value="trusted-resources" className="space-y-6">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                  <Shield className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold mb-4">Trusted Resources</h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  This section contains carefully curated resources that our organization supports independently, 
+                  beyond community-submitted claims. These resources meet our highest standards for evidence and reliability.
+                </p>
+              </div>
 
-                    // Get comments for this claim
-                    const claimCommentsForClaim = claim.comments || [];
-
-                    // Create individual cards for each expert who reviewed this publication
-                    Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
-                      const expertProfile = expertProfiles[expertUserId];
-                      const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
-                      
-                      reviewCards.push({
-                        publication: {
-                          id: pub.id,
-                          title: pub.title,
-                          journal: pub.journal,
-                          year: pub.year,
-                          authors: pub.authors
-                        },
-                        expert: {
-                          expert_user_id: expertUserId,
-                          display_name: expertProfile?.display_name,
-                          avatar_url: expertProfile?.avatar_url,
-                          scores: scores.map(score => ({
-                            category: score.category,
-                            score: mapScoreIntToLabel(score.score),
-                            notes: score.notes
-                          })),
-                          comments: expertComments.map(comment => ({
-                            content: comment.content,
-                            created_at: comment.created_at
-                          }))
-                        }
-                      });
-                    });
-                  });
-
-                  return (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
-                      <ExpertReviewsReel reviewCards={reviewCards} />
+              <div className="grid gap-6">
+                {/* Placeholder content explaining conditions */}
+                <Card className="border-l-4 border-l-primary">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-primary" />
+                      Criteria for Trusted Resources
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
+                        <div>
+                          <h4 className="font-medium">Expert Panel Review</h4>
+                          <p className="text-sm text-muted-foreground">Must be reviewed and approved by our expert advisory panel with unanimous consensus</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
+                        <div>
+                          <h4 className="font-medium">Systematic Evidence Review</h4>
+                          <p className="text-sm text-muted-foreground">Backed by systematic reviews, meta-analyses, or multiple high-quality randomized controlled trials</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
+                        <div>
+                          <h4 className="font-medium">Independent Verification</h4>
+                          <p className="text-sm text-muted-foreground">Independently verified by our organization with no conflicts of interest</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
+                        <div>
+                          <h4 className="font-medium">Ongoing Monitoring</h4>
+                          <p className="text-sm text-muted-foreground">Continuously monitored for new evidence that may affect recommendations</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
+                        <div>
+                          <h4 className="font-medium">Transparency Standards</h4>
+                          <p className="text-sm text-muted-foreground">All evaluation criteria, funding sources, and potential conflicts disclosed publicly</p>
+                        </div>
+                      </div>
                     </div>
-                  );
+                  </CardContent>
+                </Card>
+
+                {/* Placeholder for future trusted resources */}
+                <Card className="bg-muted/30">
+                  <CardContent className="p-8 text-center">
+                    <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground">
+                      Our expert panel is currently reviewing potential trusted resources. 
+                      The first curated resources will be available here once they meet our rigorous standards.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Paper Submission Dialog */}
+          {showPaperForm && (
+            <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                {(() => {
+                  const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
+                  return claim ? (
+                    <PaperSubmissionForm
+                      claimId={claim.id}
+                      claimTitle={claim.claim}
+                      onSuccess={() => {
+                        setShowPaperForm(null);
+                        fetchData();
+                      }}
+                      onCancel={() => setShowPaperForm(null)}
+                    />
+                  ) : null;
                 })()}
               </DialogContent>
             </Dialog>
-            
-            {/* Publication Review Dialog */}
-            <PublicationReviewForm
-              publication={reviewPublication}
-              isOpen={!!reviewPublication}
-              onClose={() => setReviewPublication(null)}
-              onReviewSubmitted={() => {
-                // refresh claims and expert distributions after an expert submits/updates a review
-                fetchData();
-              }}
-            />
-          </div>
+          )}
+
+          {/* Expert Reviews Reel Dialog */}
+          <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              {(() => {
+                const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
+                if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
+                
+                // Create individual cards for each expert review on each publication
+                const reviewCards: ExpertReviewCard[] = [];
+                
+                claim.publications.forEach(pub => {
+                  // Group scores by expert
+                  const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
+                  (pub.rawScores || []).forEach(score => {
+                    if (!scoresByExpert[score.expert_user_id]) {
+                      scoresByExpert[score.expert_user_id] = [];
+                    }
+                    scoresByExpert[score.expert_user_id].push(score);
+                  });
+
+                  // Get comments for this claim
+                  const claimCommentsForClaim = claim.comments || [];
+
+                  // Create individual cards for each expert who reviewed this publication
+                  Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
+                    const expertProfile = expertProfiles[expertUserId];
+                    const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
+                    
+                    reviewCards.push({
+                      publication: {
+                        id: pub.id,
+                        title: pub.title,
+                        journal: pub.journal,
+                        year: pub.year,
+                        authors: pub.authors
+                      },
+                      expert: {
+                        expert_user_id: expertUserId,
+                        display_name: expertProfile?.display_name,
+                        avatar_url: expertProfile?.avatar_url,
+                        scores: scores.map(score => ({
+                          category: score.category,
+                          score: mapScoreIntToLabel(score.score),
+                          notes: score.notes
+                        })),
+                        comments: expertComments.map(comment => ({
+                          content: comment.content,
+                          created_at: comment.created_at
+                        }))
+                      }
+                    });
+                  });
+                });
+
+                return (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
+                    <ExpertReviewsReel reviewCards={reviewCards} />
+                  </div>
+                );
+              })()}
+            </DialogContent>
+          </Dialog>
+          
+          {/* Publication Review Dialog */}
+          <PublicationReviewForm
+            publication={reviewPublication}
+            isOpen={!!reviewPublication}
+            onClose={() => setReviewPublication(null)}
+            onReviewSubmitted={() => {
+              // refresh claims and expert distributions after an expert submits/updates a review
+              fetchData();
+            }}
+          />
         </div>
       </main>
     </div>
