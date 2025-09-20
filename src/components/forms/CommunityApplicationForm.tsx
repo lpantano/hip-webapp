@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 // Form validation schema
 const communityApplicationSchema = z.object({
+  role: z.enum(["expert", "researcher"]),
   education: z.string().min(10, "Please provide detailed education (minimum 10 characters)"),
   expertiseArea: z.enum(["nutrition", "fitness", "mental_health", "pregnancy", "menopause", "general_health", "perimenopause"]),
   yearsOfExperience: z.number().min(0, "Years of experience must be 0 or greater").max(50, "Please enter a realistic number of years"),
@@ -53,11 +54,12 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
   } = useForm<CommunityApplicationForm>({
     resolver: zodResolver(communityApplicationSchema),
     defaultValues: {
-      memberType: memberType,
+      role: memberType,
     }
   });
 
   const watchedExpertiseArea = watch("expertiseArea");
+  const watchedRole = watch("role");
 
   const addSocialLink = () => {
     setSocialLinks([...socialLinks, { platform: "", url: "" }]);
@@ -171,6 +173,41 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Role Selection */}
+              <div className="space-y-4">
+                <Label htmlFor="role">I am applying as a: *</Label>
+                <Select onValueChange={(value) => setValue("role", value as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expert">Expert</SelectItem>
+                    <SelectItem value="researcher">Researcher</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.role && (
+                  <p className="text-sm text-destructive">{errors.role.message}</p>
+                )}
+                
+                {/* Role Explanations */}
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div className="p-4 bg-muted/50 rounded-lg border">
+                    <h4 className="font-semibold text-primary mb-2">Expert</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Healthcare professionals and practitioners who provide services directly to clients. 
+                      Examples: fitness coaches, gynecologists for endometriosis, nutritionists, mental health therapists. 
+                      You will include content about the services you already provide.
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted/50 rounded-lg border">
+                    <h4 className="font-semibold text-accent mb-2">Researcher</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Scientists and academics who evaluate research and add expert information to the platform. 
+                      You know how to evaluate papers and understand what experts are saying, but may not provide direct services yourself.
+                    </p>
+                  </div>
+                </div>
+              </div>
               {/* Expertise Area */}
               <div className="space-y-2">
                 <Label htmlFor="expertiseArea">Area of Expertise *</Label>
@@ -225,11 +262,11 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
               {/* Motivation */}
               <div className="space-y-2">
-                <Label htmlFor="motivation">Why do you want to join as an expert? *</Label>
+                <Label htmlFor="motivation">Why do you want to join our community? *</Label>
                 <Textarea
                   id="motivation"
                   {...register("motivation")}
-                  placeholder="I'm passionate about improving women's health outcomes through evidence-based research reviews. My experience in clinical nutrition research would contribute to..."
+                  placeholder="I'm passionate about improving women's health outcomes through evidence-based research reviews. My experience would contribute to..."
                   rows={4}
                 />
                 {errors.motivation && (
