@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import FeatureRequestForm from '@/components/forms/FeatureRequestForm';
 
 const statusColors = {
   open: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -32,6 +34,7 @@ const FeatureRequests = () => {
   const queryClient = useQueryClient();
   const [sortBy, setSortBy] = useState<"votes" | "recent" | "comments">("votes");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showNewRequest, setShowNewRequest] = useState(false);
 
   // Fetch feature requests
   const { data: featureRequests = [], isLoading } = useQuery({
@@ -164,10 +167,17 @@ const FeatureRequests = () => {
               Suggest and vote on new features for the platform. Only members can vote.
             </p>
           </div>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Request
-          </Button>
+          <Dialog open={showNewRequest} onOpenChange={setShowNewRequest}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <FeatureRequestForm onSuccess={() => { setShowNewRequest(false); queryClient.invalidateQueries({ queryKey: ['feature-requests'] }); }} onCancel={() => setShowNewRequest(false)} />
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-6">
