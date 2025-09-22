@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const AboutSection = () => {
   return (
-    <section className="py-20 bg-background">
+    <section className="py-12 bg-background">
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Health Issues */}

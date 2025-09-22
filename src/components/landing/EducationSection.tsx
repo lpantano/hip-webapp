@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Users, TrendingUp, AlertTriangle, CheckCircle, BookOpen, BarChart3, Target, Globe, FileText, Award } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CheckCircle, AlertTriangle, Target } from 'lucide-react';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
 import ResearchConsensusCard from './EducationSection/ResearchConsensusCard';
@@ -12,10 +10,7 @@ import EvidenceQualityCard from './EducationSection/EvidenceQualityCard';
 const EducationSection = () => {
   // interactive research path state
   const [selectedStep, setSelectedStep] = useState<string>('Basic Research');
-  const [sampleSizeOpen, setSampleSizeOpen] = useState(false);
-  const [populationOpen, setPopulationOpen] = useState(false);
-  const [consensusOpen, setConsensusOpen] = useState(false);
-  const [evidenceQualityOpen, setEvidenceQualityOpen] = useState(false);
+  const [pitfallOpen, setPitfallOpen] = useState(false);
 
   const steps = useMemo(() => [
     { id: 'Basic Research', label: 'BR' },
@@ -99,7 +94,7 @@ const EducationSection = () => {
   const [selectedPitfall, setSelectedPitfall] = useState<string | null>(null);
 
   return (
-    <section className="py-16 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+    <section className="py-12 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-hero-gradient bg-clip-text text-transparent">
@@ -173,39 +168,58 @@ const EducationSection = () => {
         </div>
 
         {/* Common Pitfalls Section */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="bg-card/60 border border-border rounded-lg p-4">
+        <div className="max-w-6xl mx-auto mt-6 mb-1">
+          <div className="bg-card/60 border border-border rounded-lg p-6">
             <h3 className="text-xl font-bold mb-4">Common Pitfalls in Research Analysis</h3>
+
             <div className="grid md:grid-cols-3 gap-4">
               {PITFALLS.map((pitfall) => (
-                <button
+                <div
                   key={pitfall.id}
-                  onClick={() => setSelectedPitfall(pitfall.id)}
-                  className="p-4 bg-muted/30 rounded hover:bg-muted/50 transition"
+                  role="button"
+                  onClick={() => { setSelectedPitfall(pitfall.id); setPitfallOpen(true); }}
+                  className="cursor-pointer p-4 bg-background/50 dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition flex flex-col gap-2"
                 >
-                  <div className="font-semibold text-lg">{pitfall.title}</div>
-                </button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      {pitfall.id === 'Placebo Effect' && <CheckCircle className="w-5 h-5 text-green-600" />}
+                      {pitfall.id === 'Nocebo Effect' && <AlertTriangle className="w-5 h-5 text-yellow-600" />}
+                      {pitfall.id === 'Confounding Effect' && <Target className="w-5 h-5 text-orange-600" />}
+                    </div>
+                    <div className="font-semibold">{pitfall.title}</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">{pitfall.description}</div>
+                  <div className="mt-2">
+                    <Button variant="ghost" className="px-3 py-1" onClick={(e) => { e.stopPropagation(); setSelectedPitfall(pitfall.id); setPitfallOpen(true); }}>Learn more</Button>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Pitfall Details */}
-            {selectedPitfall && (
-              <div className="mt-6 p-4 bg-background/80 rounded">
-                <button
-                  onClick={() => setSelectedPitfall(null)}
-                  className="text-sm text-primary underline mb-2"
-                >
-                  Back to list
-                </button>
-                <div className="font-semibold text-lg">{PITFALLS.find((p) => p.id === selectedPitfall)?.title}</div>
-                <div className="text-sm text-muted-foreground mt-2">
-                  {PITFALLS.find((p) => p.id === selectedPitfall)?.description}
+            {/* Dialog for pitfall details */}
+            <Dialog open={pitfallOpen} onOpenChange={(open) => { setPitfallOpen(open); if (!open) setSelectedPitfall(null); }}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>
+                    {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.title : 'Details'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.description : ''}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <div className="font-medium mb-2">What this means</div>
+                  <div className="mb-3">{selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.description : ''}</div>
+                  <div className="font-medium mb-2">Example</div>
+                  <div className="mb-4">{selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.example : ''}</div>
                 </div>
-                <div className="text-sm text-muted-foreground mt-2">
-                  <strong>Example:</strong> {PITFALLS.find((p) => p.id === selectedPitfall)?.example}
+
+                <div className="flex justify-end mt-4">
+                  <Button onClick={() => setPitfallOpen(false)}>Done</Button>
                 </div>
-              </div>
-            )}
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
