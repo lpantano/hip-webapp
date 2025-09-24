@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, User } from 'lucide-react';
+import { FileText, User, Link as LinkIcon } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 interface Publication {
@@ -37,32 +37,37 @@ interface PublicationReviewFormProps {
   onReviewSubmitted?: () => void;
 }
 
-interface ReviewCategory {
-  key: string;
+interface ScoreCategory {
+  key: string;        // UI key
   label: string;
-  description: string;
+  description?: string;
+  dbKey: Database['public']['Enums']['evidence_score_category']; // maps to DB enum
 }
 
-const reviewCategories: ReviewCategory[] = [
+const scoreCategories: ScoreCategory[] = [
+  {
+    key: 'alignment',
+    label: 'Alignment of Claim with Evidence',
+    description: 'How well does the paper support or contradict the claim being evaluated?',
+    dbKey: 'interpretation'
+  },
   {
     key: 'study_size',
-    label: 'Sample Size Analysis',
-    description: 'We examine study participant numbers across multiple research papers, ensuring adequate statistical power for reliable conclusions about women\'s health conditions.'
+    label: 'Study Size',
+    description: 'Assess adequacy of sample size for reliable conclusions',
+    dbKey: 'study_size'
   },
   {
     key: 'population',
-    label: 'Population Diversity',
-    description: 'Assessment of demographic representation including age groups, ethnicities, and geographic locations to ensure findings apply broadly to women\'s experiences.'
+    label: 'Population Representation',
+    description: 'Diversity and representativeness of participants related to the claim',
+    dbKey: 'population'
   },
   {
-    key: 'consensus',
-    label: 'Research Consensus',
-    description: 'Review of agreement across multiple independent studies and meta-analyses to identify consistent patterns in health condition research.'
-  },
-  {
-    key: 'interpretation',
-    label: 'Clinical Application',
-    description: 'Validation of how research findings translate to real-world treatment outcomes and patient experiences in clinical settings.'
+    key: 'data_analysis',
+    label: 'Data Analysis Method',
+    description: 'Appropriateness and rigor of statistical or analysis methods',
+    dbKey: 'consensus'
   }
 ];
 
@@ -86,77 +91,103 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [scores, setScores] = useState<Record<string, { score: number; notes: string }>>({});
+  // Scores keyed by UI key, notes removed per-category in favor of a single comment box
+  const [scores, setScores] = useState<Record<string, { score: number }>>({});
 
-  // Fetch existing reviews for this publication by this expert
-  const { data: existingReviews } = useQuery<ExistingReview[]>({
-    queryKey: ['publication-reviews', publication?.id, user?.id],
+  // Single comment for the whole review
+  const [comment, setComment] = useState('');
+
+  // Evidence classification (only one may be selected)
+  const [classification, setClassification] = useState<
+    'early' | 'preliminary' | 'strong' | 'established' | null
+  >(null);
+
+  // Multiple links input
+  const [links, setLinks] = useState<string[]>(['']);
+
+  // Fetch existing review (single row) for this publication by this expert
+  const { data: existingReview } = useQuery<{
+    id?: string;
+    publication_id?: string;
+    expert_user_id?: string;
+    evidence_classification?: 'early' | 'preliminary' | 'strong' | 'established' | null;
+    alignment?: number | null;
+    study_size?: number | null;
+    population?: number | null;
+    consensus?: number | null;
+    comments?: string | null;
+    created_at?: string;
+    updated_at?: string;
+  } | null>({
+    queryKey: ['publication-review', publication?.id, user?.id],
     queryFn: async () => {
-      if (!publication?.id || !user?.id) return [];
-      
+      if (!publication?.id || !user?.id) return null;
+
       const { data, error } = await supabase
         .from('publication_scores')
         .select('*')
         .eq('publication_id', publication.id)
-        .eq('expert_user_id', user.id);
-      
+        .eq('expert_user_id', user.id)
+        .maybeSingle();
+
       if (error) throw error;
-      return (data || []) as ExistingReview[];
+      return data || null;
     },
     enabled: !!publication?.id && !!user?.id && isOpen
   });
 
-  // Set form values when existing reviews load
+  // Set form values when existing review loads
   useEffect(() => {
-    if (existingReviews && existingReviews.length > 0) {
-      const reviewMap: Record<string, { score: number; notes: string }> = {};
-      existingReviews.forEach(review => {
-        reviewMap[review.category] = {
-          score: review.score,
-          notes: review.notes || ''
-        };
-      });
-      setScores(reviewMap);
-    } else {
-      // Reset form for new reviews
-      const emptyScores: Record<string, { score: number; notes: string }> = {};
-      reviewCategories.forEach(cat => {
-        emptyScores[cat.key] = { score: 0, notes: '' };
-      });
-      setScores(emptyScores);
+    const initial: Record<string, { score: number }> = {};
+    scoreCategories.forEach(cat => {
+      initial[cat.key] = { score: 0 };
+    });
+
+    if (existingReview) {
+      // map consolidated columns into UI keys
+      if (typeof existingReview.alignment === 'number') initial['alignment'] = { score: existingReview.alignment };
+      if (typeof existingReview.study_size === 'number') initial['study_size'] = { score: existingReview.study_size };
+      if (typeof existingReview.population === 'number') initial['population'] = { score: existingReview.population };
+      // UI key `data_analysis` maps to DB column `consensus`
+      if (typeof existingReview.consensus === 'number') initial['data_analysis'] = { score: existingReview.consensus };
+
+      if (existingReview.comments) setComment(existingReview.comments || '');
+      // safe assignment for classification without using `any`
+      setClassification(existingReview.evidence_classification ?? null);
     }
-  }, [existingReviews]);
+
+    setScores(initial);
+  }, [existingReview]);
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
       if (!publication?.id || !user?.id) throw new Error('Missing required data');
-      
-      // Prepare reviews for submission
-      const reviews = Object.entries(scores).filter(([_, data]) => data.score > 0).map(([category, data]) => ({
+
+      // Build consolidated payload matching new table schema
+      const payload = {
         publication_id: publication.id,
         expert_user_id: user.id,
-        category: category as Database['public']['Enums']['evidence_score_category'],
-        score: data.score,
-        notes: data.notes || null
-      }));
+        evidence_classification: classification || null,
+        alignment: scores['alignment']?.score ?? null,
+        study_size: scores['study_size']?.score ?? null,
+        population: scores['population']?.score ?? null,
+        consensus: scores['data_analysis']?.score ?? null,
+        comments: comment || null
+      } as const;
 
-      if (reviews.length === 0) {
-        throw new Error('Please provide at least one score');
-      }
-
-      // Use upsert to atomically insert or update existing rows and avoid unique-constraint 409 errors
       const { error } = await supabase
         .from('publication_scores')
-        .upsert(reviews, { onConflict: 'publication_id,expert_user_id,category' });
+        .upsert(payload, { onConflict: 'publication_id,expert_user_id' });
 
       if (error) throw error;
     },
     onSuccess: () => {
-      const wasUpdate = existingReviews && existingReviews.length > 0;
+      const wasUpdate = !!existingReview;
       toast({
-        title: wasUpdate ? "Review updated" : "Review submitted",
+        title: wasUpdate ? 'Review updated' : 'Review submitted',
         description: `Your publication review has been ${wasUpdate ? 'updated' : 'saved'} successfully.`,
       });
+      queryClient.invalidateQueries({ queryKey: ['publication-review'] });
       queryClient.invalidateQueries({ queryKey: ['publication-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['claims'] });
       onReviewSubmitted?.();
@@ -165,9 +196,9 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
       toast({
-        title: "Error",
-        description: message || "Failed to submit review. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: message || 'Failed to submit review. Please try again.',
+        variant: 'destructive',
       });
     }
   });
@@ -182,19 +213,20 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     }));
   };
 
-  const updateNotes = (category: string, notes: string) => {
-    setScores(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        notes
-      }
-    }));
+  const updateLink = (index: number, value: string) => {
+    setLinks(prev => {
+      const copy = [...prev];
+      copy[index] = value;
+      return copy;
+    });
   };
+
+  const addLink = () => setLinks(prev => [...prev, '']);
+  const removeLink = (index: number) => setLinks(prev => prev.filter((_, i) => i !== index));
 
   if (!publication) return null;
 
-  const isUpdate = (existingReviews && existingReviews.length > 0);
+  const isUpdate = !!existingReview;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -210,7 +242,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 overflow-hidden">
-          {/* Publication Info */}
+          {/* Publication Info + Classification + Alignment Score (LEFT) */}
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-lg mb-2">{publication.title}</h3>
@@ -230,26 +262,87 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               </div>
             )}
 
+            {/* Evidence Classification (moved to left column) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Evidence Classification (pick one)</Label>
+              <p className="text-xs text-muted-foreground">Select the best single classification for the evidence presented in this paper.</p>
+              <div className="flex flex-col gap-2 mt-2">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="classification" checked={classification === 'early'} onChange={() => setClassification('early')} />
+                  <span className="text-sm ml-2">Early Evidence (cells and/or animals)</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="classification" checked={classification === 'preliminary'} onChange={() => setClassification('preliminary')} />
+                  <span className="text-sm ml-2">Preliminary Human Evidence (small / early trials)</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="classification" checked={classification === 'strong'} onChange={() => setClassification('strong')} />
+                  <span className="text-sm ml-2">Strong Human Evidence (controlled trials)</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="classification" checked={classification === 'established'} onChange={() => setClassification('established')} />
+                  <span className="text-sm ml-2">Established Consensus (repeated + reviewed)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Alignment Score (moved to left column) */}
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">{scoreCategories.find(sc => sc.key === 'alignment')?.label}</Label>
+                {scoreCategories.find(sc => sc.key === 'alignment')?.description && (
+                  <p className="text-xs text-muted-foreground mt-1">{scoreCategories.find(sc => sc.key === 'alignment')?.description}</p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {[1, 2, 3].map((score) => (
+                  <Button
+                    key={score}
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-8 w-8"
+                    onClick={() => updateScore('alignment', score)}
+                  >
+                    <div 
+                      className={`w-3 h-3 rounded-full transition-colors ${
+                        scores['alignment']?.score >= score 
+                          ? 'bg-primary' 
+                          : 'bg-muted-foreground/30'
+                      }`}
+                    />
+                  </Button>
+                ))}
+                {scores['alignment']?.score > 0 && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {scoreLabels[scores['alignment'].score as keyof typeof scoreLabels]}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
             {/* Existing Reviews Count */}
             <div className="p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm">
                 <User className="w-4 h-4" />
-                <span>{existingReviews?.length || 0} categories reviewed by you</span>
+                <span>{existingReview ? 'You have submitted a review' : 'You have not reviewed this publication'}</span>
               </div>
             </div>
           </div>
 
-          {/* Review Form */}
+          {/* Review Form (RIGHT) - other scores, comment, links */}
           <div className="space-y-4">
             <ScrollArea className="h-96 w-full">
               <div className="space-y-6 pr-4">
-                {reviewCategories.map((category) => (
+
+                {/* Score Categories (excluding alignment which is on the left) */}
+                {scoreCategories.filter(c => c.key !== 'alignment').map((category) => (
                   <div key={category.key} className="space-y-3">
                     <div>
                       <Label className="text-sm font-medium">{category.label}</Label>
-                      <p className="text-xs text-muted-foreground mt-1">{category.description}</p>
+                      {category.description && <p className="text-xs text-muted-foreground mt-1">{category.description}</p>}
                     </div>
-                    
+
                     {/* Dot Rating */}
                     <div className="flex items-center gap-2">
                       {[1, 2, 3].map((score) => (
@@ -276,20 +369,51 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       )}
                     </div>
 
-                    {/* Notes */}
-                    <Textarea
-                      placeholder={`Notes on ${category.label.toLowerCase()}...`}
-                      value={scores[category.key]?.notes || ''}
-                      onChange={(e) => updateNotes(category.key, e.target.value)}
-                      rows={2}
-                      className="text-sm"
-                    />
-                    
-                    {category.key !== reviewCategories[reviewCategories.length - 1].key && (
+                    {category.key !== scoreCategories[scoreCategories.length - 1].key && (
                       <Separator />
                     )}
                   </div>
                 ))}
+
+                <Separator />
+
+                {/* Single Comment Box */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Reviewer Comment</Label>
+                  <Textarea
+                    placeholder={`Overall notes, interpretation, or context...`}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={4}
+                    className="text-sm"
+                  />
+                </div>
+
+                {/* Links
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Related Links</Label>
+                  <p className="text-xs text-muted-foreground">Add zero or more links to supplementary sources, platforms, or webpages.</p>
+                  <div className="flex flex-col gap-2 mt-2">
+                    {links.map((link, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-muted-foreground" />
+                        <input
+                          className="flex-1 rounded border px-2 py-1 text-sm"
+                          placeholder="https://..."
+                          value={link}
+                          onChange={(e) => updateLink(idx, e.target.value)}
+                        />
+                        {links.length > 1 && (
+                          <Button variant="ghost" size="sm" onClick={() => removeLink(idx)}>Remove</Button>
+                        )}
+                      </div>
+                    ))}
+                    <div>
+                      <Button variant="outline" size="sm" onClick={addLink}>Add link</Button>
+                    </div>
+                  </div>
+                </div> */}
+
               </div>
             </ScrollArea>
 
