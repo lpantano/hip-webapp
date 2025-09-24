@@ -49,9 +49,15 @@ interface PublicationScoreRow {
   id: string;
   publication_id: string;
   expert_user_id: string;
-  category: Database['public']['Enums']['evidence_score_category']; // study_size | population | consensus | interpretation
-  score: number;
-  notes?: string | null;
+  // Consolidated schema: one row per publication+expert
+  evidence_classification?: 'early' | 'preliminary' | 'strong' | 'established' | null;
+  alignment?: number | null; // interpretation
+  study_size?: number | null;
+  population?: number | null;
+  consensus?: number | null;
+  comments?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ReactionRow {
@@ -161,11 +167,12 @@ const Claims = () => {
     checkExpertStatus();
   }, [user, sb]);
 
-  const mapScoreIntToLabel = (n: number): 'low' | 'medium' | 'high' => {
-    if (n >= 4) return 'high';
-    if (n === 3) return 'medium';
+  const mapScoreIntToLabel = useCallback((n: number): 'low' | 'medium' | 'high' => {
+    // New schema uses 1..3 where 1=low,2=medium,3=high
+    if (n >= 3) return 'high';
+    if (n === 2) return 'medium';
     return 'low';
-  };
+  }, []);
 
   const mapEvidenceRowToScores = useCallback((rows: PublicationScoreRow[] = []) => {
     const scoresTemplate: {
@@ -180,49 +187,91 @@ const Claims = () => {
       evidence: { score: 'low', explanation: '' }
     };
 
-    (rows || []).forEach((r) => {
-      const cat = r.category; // 'study_size' | 'population' | 'consensus' | 'interpretation'
-      const label = mapScoreIntToLabel(r.score);
-      if (cat === 'study_size') scoresTemplate.sampleSize = { score: label, explanation: r.notes || '' };
-      else if (cat === 'population') scoresTemplate.populationRepresentation = { score: label, explanation: r.notes || '' };
-      else if (cat === 'consensus') scoresTemplate.consensus = { score: label, explanation: r.notes || '' };
-      else if (cat === 'interpretation') scoresTemplate.evidence = { score: label, explanation: r.notes || '' };
-    });
+    if (!rows || rows.length === 0) return scoresTemplate;
+
+    // If rows represent consolidated rows (one per expert), pick the most recent expert row to populate the summary display
+    // (This mirrors previous behaviour where the first matching rows were used). For aggregated views consider using distributions.
+    const latestRow = rows.reduce((a, b) => {
+      const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
+      return bTime >= aTime ? b : a;
+    }, rows[0]);
+
+    if (latestRow) {
+      if (typeof latestRow.study_size === 'number') scoresTemplate.sampleSize = { score: mapScoreIntToLabel(latestRow.study_size), explanation: latestRow.comments || '' };
+      if (typeof latestRow.population === 'number') scoresTemplate.populationRepresentation = { score: mapScoreIntToLabel(latestRow.population), explanation: latestRow.comments || '' };
+      if (typeof latestRow.consensus === 'number') scoresTemplate.consensus = { score: mapScoreIntToLabel(latestRow.consensus), explanation: latestRow.comments || '' };
+      if (typeof latestRow.alignment === 'number') scoresTemplate.evidence = { score: mapScoreIntToLabel(latestRow.alignment), explanation: latestRow.comments || '' };
+    }
+
     return scoresTemplate;
-  }, []);
+  }, [mapScoreIntToLabel]);
 
   const fetchExpertDistributions = useCallback(async () => {
     try {
-      // Fetch score distributions aggregated by claim and category
+      // Fetch consolidated score data and create distributions from individual columns
       const { data: scoreData, error } = await sb.from('publication_scores')
         .select(`
-          score,
-          category,
+          alignment,
+          study_size,
+          population,
+          consensus,
+          publication_id,
           publications!inner(claim_id)
         `);
       
       if (error) throw error;
 
-      // Process the data to create distributions
+      // Process the consolidated data to create distributions
       const distributionMap: Record<string, Record<string, { low: number; medium: number; high: number; }>> = {};
       
-      type ScoreItem = { score: number; category: string; publications: { claim_id: string } };
-      scoreData?.forEach((item: ScoreItem) => {
-        const claimId = item.publications.claim_id;
-        const category = item.category;
-        const score = item.score;
+      type ScoreItem = { 
+        alignment?: number | null; 
+        study_size?: number | null; 
+        population?: number | null; 
+        consensus?: number | null; 
+        publication_id?: string;
+        publications?: { claim_id?: string } | Array<{ claim_id?: string }> | null;
+      };
+      
+      const rows = (scoreData || []) as ScoreItem[];
+      rows.forEach((itemRaw) => {
+        // Supabase can return the related row as an object or an array depending on the join shape.
+        let claimId: string | undefined;
+        if (itemRaw.publications) {
+          if (Array.isArray(itemRaw.publications)) {
+            claimId = itemRaw.publications[0]?.claim_id || undefined;
+          } else {
+            claimId = itemRaw.publications?.claim_id || undefined;
+          }
+        }
+
+        // If claimId not present, we cannot attribute this score to a claim so skip it.
+        if (!claimId) return;
         
         if (!distributionMap[claimId]) {
           distributionMap[claimId] = {};
         }
         
-        if (!distributionMap[claimId][category]) {
-          distributionMap[claimId][category] = { low: 0, medium: 0, high: 0 };
-        }
+        // Process each score category from the consolidated row
+        const categories = [
+          { key: 'interpretation', value: itemRaw.alignment },
+          { key: 'study_size', value: itemRaw.study_size },
+          { key: 'population', value: itemRaw.population },
+          { key: 'consensus', value: itemRaw.consensus }
+        ];
         
-        // Map score to category (same logic as existing mapScoreIntToLabel)
-        const scoreLevel = score >= 4 ? 'high' : score === 3 ? 'medium' : 'low';
-        distributionMap[claimId][category][scoreLevel]++;
+        categories.forEach(({ key, value }) => {
+          if (typeof value === 'number') {
+            if (!distributionMap[claimId][key]) {
+              distributionMap[claimId][key] = { low: 0, medium: 0, high: 0 };
+            }
+            
+            // Map score to level using new 1-3 scale
+            const scoreLevel = mapScoreIntToLabel(value);
+            distributionMap[claimId][key][scoreLevel]++;
+          }
+        });
       });
 
       // Convert to the format expected by the component
@@ -235,8 +284,8 @@ const Claims = () => {
           const categoryLabels: Record<string, string> = {
             'study_size': 'Sample Size',
             'population': 'Population',
-            'consensus': 'Consensus', 
-            'interpretation': 'Evidence Quality'
+            'consensus': 'Consensus'
+            // 'interpretation' (Evidence Quality) intentionally omitted from distributions
           };
           
           return {
@@ -252,7 +301,7 @@ const Claims = () => {
     } catch (error) {
       console.error('Error fetching expert distributions:', error);
     }
-  }, [sb]);
+  }, [sb, mapScoreIntToLabel]);
 
   const fetchClaimsData = useCallback(async () => {
     try {
@@ -635,8 +684,8 @@ const Claims = () => {
     const labels: Record<string, string> = {
       'study_size': 'Sample Size',
       'population': 'Population', 
-      'consensus': 'Consensus',
-      'interpretation': 'Evidence Quality'
+      'consensus': 'Consensus'
+      // 'interpretation' (Evidence Quality) intentionally omitted from publication score labels
     };
     return labels[category] || category;
   };
@@ -654,35 +703,28 @@ const Claims = () => {
       expert_user_id: string;
       display_name?: string | null;
       avatar_url?: string | null;
+      // Show the current scores for each category; score may be null when not provided
       scores: Array<{
         category: string;
-        score: 'low' | 'medium' | 'high';
-        notes?: string | null;
+        score?: 'low' | 'medium' | 'high' | null;
       }>;
       comments: Array<{
         content: string;
         created_at: string;
       }>;
+      classification?: string | null;
     };
   };
 
   const ExpertReviewsReel: React.FC<{ reviewCards: ExpertReviewCard[] }> = ({ reviewCards }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    
+
     if (!reviewCards || reviewCards.length === 0) {
       return <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>;
     }
 
     return (
       <div className="relative">
-        <button
-          aria-label="Scroll up"
-          onClick={() => containerRef.current?.scrollBy({ top: -320, behavior: 'smooth' })}
-          className="absolute left-1/2 -translate-x-1/2 -top-3 z-10 bg-background/80 border border-border rounded-full p-1 hover:shadow"
-        >
-          ▲
-        </button>
-
         <div
           ref={containerRef}
           className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-2"
@@ -716,6 +758,13 @@ const Claims = () => {
                 <div>
                   <div className="font-semibold text-sm">{reviewCard.expert.display_name || 'Expert'}</div>
                   <div className="text-xs text-muted-foreground">Expert Review</div>
+                  {reviewCard.expert.classification && (
+                    <div className="mt-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -730,21 +779,16 @@ const Claims = () => {
               {/* Scores */}
               {reviewCard.expert.scores.length > 0 && (
                 <div className="mb-4">
-                  <div className="text-xs font-medium text-muted-foreground mb-3">Publication Scores:</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {reviewCard.expert.scores.map((scoreItem, idx) => (
                       <div key={idx} className="space-y-1">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
                           <span className="text-sm text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
-                          <Badge className={`text-xs px-2 py-1 ${getScoreColor(scoreItem.score)}`}>
-                            {scoreItem.score}
+                          <Badge className={`text-xs px-2 py-1 ${getScoreColor(scoreItem.score ?? 'low', !!scoreItem.score)}`}>
+                            {scoreItem.score ? scoreItem.score : 'No score'}
                           </Badge>
                         </div>
-                        {scoreItem.notes && (
-                          <div className="text-xs italic text-muted-foreground bg-muted/30 p-2 rounded">
-                            "{scoreItem.notes}"
-                          </div>
-                        )}
+                        {/* per-score notes removed: only one comment per card now */}
                       </div>
                     ))}
                   </div>
@@ -770,14 +814,6 @@ const Claims = () => {
             </div>
           ))}
         </div>
-
-        <button
-          aria-label="Scroll down"
-          onClick={() => containerRef.current?.scrollBy({ top: 320, behavior: 'smooth' })}
-          className="absolute left-1/2 -translate-x-1/2 -bottom-3 z-10 bg-background/80 border border-border rounded-full p-1 hover:shadow"
-        >
-          ▼
-        </button>
       </div>
     );
   };
@@ -1112,6 +1148,27 @@ const Claims = () => {
                     const expertProfile = expertProfiles[expertUserId];
                     const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
                     
+                    // For consolidated schema, pick the latest row for this expert (there should be one)
+                    const latestRow = (scores || []).reduce((a, b) => {
+                      const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
+                      const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
+                      return bTime >= aTime ? b : a;
+                    }, scores[0]);
+
+                    // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
+                    const expertScores: Array<{ category: string; score?: 'low' | 'medium' | 'high' | null }> = [
+                      { category: 'study_size', score: latestRow && typeof latestRow.study_size === 'number' ? mapScoreIntToLabel(latestRow.study_size) : null },
+                      { category: 'population', score: latestRow && typeof latestRow.population === 'number' ? mapScoreIntToLabel(latestRow.population) : null },
+                      { category: 'consensus', score: latestRow && typeof latestRow.consensus === 'number' ? mapScoreIntToLabel(latestRow.consensus) : null }
+                    ];
+
+                    // Merge comments: claim-level expert comments + the review's comments (if present)
+                    const mergedComments = [
+                      ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
+                    ];
+                    if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
+                    // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
+
                     reviewCards.push({
                       publication: {
                         id: pub.id,
@@ -1124,15 +1181,9 @@ const Claims = () => {
                         expert_user_id: expertUserId,
                         display_name: expertProfile?.display_name,
                         avatar_url: expertProfile?.avatar_url,
-                        scores: scores.map(score => ({
-                          category: score.category,
-                          score: mapScoreIntToLabel(score.score),
-                          notes: score.notes
-                        })),
-                        comments: expertComments.map(comment => ({
-                          content: comment.content,
-                          created_at: comment.created_at
-                        }))
+                        scores: expertScores,
+                        comments: mergedComments,
+                        classification: latestRow?.evidence_classification ?? null
                       }
                     });
                   });
