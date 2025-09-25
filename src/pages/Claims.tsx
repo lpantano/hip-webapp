@@ -50,7 +50,7 @@ interface PublicationScoreRow {
   publication_id: string;
   expert_user_id: string;
   // Consolidated schema: one row per publication+expert
-  evidence_classification?: 'early' | 'preliminary' | 'strong' | 'established' | null;
+  evidence_classification?: 'unreliable_study' | 'not_tested_in_human' | 'limited_tested_in_human' | 'widely_tested_in_human' | 'widely_scientifically_accepted' | null;
   alignment?: number | null; // interpretation
   study_size?: number | null;
   population?: number | null;
@@ -107,7 +107,7 @@ interface ClaimUI {
     rawScores?: PublicationScoreRow[];
   }[];
   comments?: ClaimCommentRow[];
-  status: 'pending' | 'under_review' | 'approved';
+  status: 'pending' | 'under_review' | 'approved' | 'reviewed';
 }
 
 interface ExpertDistribution {
@@ -398,7 +398,8 @@ const Claims = () => {
           proposed: 'under_review',
           needs_more_evidence: 'under_review',
           verified: 'approved',
-          disputed: 'under_review'
+          disputed: 'under_review',
+          reviewed: 'reviewed'
         };
 
         return {
@@ -485,21 +486,121 @@ const Claims = () => {
     }
   }, [sb, mapEvidenceRowToScores, user]);
 
+  // Static data for pre-release
+  const getStaticClaimsData = useCallback(() => {
+    const staticClaims: ClaimUI[] = [
+      {
+        id: 'static-turmeric-1',
+        claim: 'Turmeric decreases visceral fat',
+        category: 'nutrition',
+        votes: 42,
+        publications: [
+          {
+            id: 'pub-turmeric-1',
+            title: 'Curcumin supplementation and vascular and cognitive function in chronic kidney disease: a randomized controlled trial',
+            authors: 'Ng QX, Koh SSH, Chan HW, Ho CYX',
+            journal: 'PubMed',
+            year: 2021,
+            url: 'https://pubmed.ncbi.nlm.nih.gov/33880847/',
+            scores: {
+              sampleSize: { score: 'low', explanation: 'Small sample size in animal study' },
+              populationRepresentation: { score: 'low', explanation: 'Study conducted in male mice, not representative of human population' },
+              consensus: { score: 'low', explanation: 'Limited research available, not yet replicated' },
+              evidence: { score: 'low', explanation: 'Animal study only, not tested in humans' }
+            },
+            rawScores: [
+              {
+                id: 'score-1',
+                publication_id: 'pub-turmeric-1',
+                expert_user_id: 'expert-lorena',
+                evidence_classification: 'not_tested_in_human' as const,
+                alignment: 1, // bad alignment - animal study
+                study_size: 1, // low - small sample
+                population: 1, // low - male mice only
+                consensus: 1, // low - limited research
+                created_at: '2024-09-20T10:00:00Z',
+                updated_at: '2024-09-20T10:00:00Z'
+              }
+            ]
+          }
+        ],
+        comments: [
+          {
+            id: 'comment-1',
+            claim_id: 'static-turmeric-1',
+            expert_user_id: 'expert-lorena',
+            content: 'New research, not reproduced yet. Study done in male mice, not tested in humans.',
+            created_at: '2024-09-20T10:00:00Z',
+            updated_at: '2024-09-20T10:00:00Z'
+          }
+        ],
+        status: 'reviewed' as const
+      }
+    ];
+
+    // Set static expert profile
+    setExpertProfiles({
+      'expert-lorena': {
+        display_name: 'Lorena Pantano',
+        avatar_url: null
+      }
+    });
+
+    // Set static expert distributions
+    const staticDistributions: Record<string, ExpertDistribution[]> = {
+      'static-turmeric-1': [
+        {
+          category: 'study_size',
+          categoryLabel: 'Sample Size',
+          totalExperts: 1,
+          distribution: { low: 1, medium: 0, high: 0 }
+        },
+        {
+          category: 'population',
+          categoryLabel: 'Population',
+          totalExperts: 1,
+          distribution: { low: 1, medium: 0, high: 0 }
+        },
+        {
+          category: 'consensus',
+          categoryLabel: 'Consensus',
+          totalExperts: 1,
+          distribution: { low: 1, medium: 0, high: 0 }
+        }
+      ]
+    };
+
+    setClaims(staticClaims);
+    setExpertDistributions(staticDistributions);
+    setClaimComments({
+      'static-turmeric-1': staticClaims[0].comments || []
+    });
+
+    // Set static reactions
+    setReactions({
+      'static-turmeric-1': {
+        'helpful': 15,
+        'insightful': 8,
+        'wantmore': 12,
+        'moneysaver': 5
+      }
+    });
+
+    setUserReactions({});
+  }, []);
+
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch claims data
-      await Promise.all([
-        fetchClaimsData(),
-        fetchExpertDistributions()
-      ]);
+      // Use static data for pre-release instead of fetching from database
+      getStaticClaimsData();
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
-  }, [fetchExpertDistributions, fetchClaimsData]);
+  }, [getStaticClaimsData]);
 
   // Ensure data is loaded on mount
   useEffect(() => {
@@ -659,7 +760,8 @@ const Claims = () => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
       under_review: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+      approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      reviewed: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -873,9 +975,9 @@ const Claims = () => {
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                     <DialogTrigger asChild>
-                      <Button size="sm" className="gap-2" disabled={!user}>
+                      <Button size="sm" className="gap-2" disabled={true}>
                         <Plus className="w-4 h-4" />
-                        {user ? 'Submit New Claim' : 'Sign in to Submit Claim'}
+                        Submit New Claim (Disabled for Demo)
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -946,6 +1048,10 @@ const Claims = () => {
                           {expandedClaim === claim.id ? '▼' : '▶'}
                         </span>
                       </CardTitle>
+                      {/* Source Information */}
+                      <div className="text-sm text-muted-foreground mt-2">
+                        <span className="font-medium">Source:</span> Dr. Mary Claire Haver - The 'Pause Nutrition Turmeric Supplement - 'Pause Blog, Turmeric 101
+                      </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
@@ -985,8 +1091,56 @@ const Claims = () => {
                   </div>
                   
                   {/* Expert Score Distributions */}
-                  {expertDistributions[claim.id] && (
+                  {/* {expertDistributions[claim.id] && (
                     <ExpertScoreDistribution distributions={expertDistributions[claim.id]} />
+                  )} */}
+
+                  {/* Expert Reviews Summary */}
+                  {claim.publications.length > 0 && claim.publications.some(pub => pub.rawScores && pub.rawScores.length > 0) && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Expert Reviews:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {claim.publications.map(pub => 
+                          pub.rawScores?.map((score, idx) => {
+                            const expertProfile = expertProfiles[score.expert_user_id];
+                            return (
+                              <div key={`${pub.id}-${score.expert_user_id}-${idx}`} className="flex items-center gap-2 bg-muted/20 rounded-md p-2">
+                                {expertProfile?.avatar_url ? (
+                                  <img 
+                                    src={expertProfile.avatar_url} 
+                                    alt={expertProfile.display_name || 'Expert'} 
+                                    className="w-6 h-6 rounded-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      if (target.nextElementSibling) {
+                                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <div 
+                                  className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 text-xs flex items-center justify-center"
+                                  style={{ display: expertProfile?.avatar_url ? 'none' : 'flex' }}
+                                >
+                                  {(expertProfile?.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium">{expertProfile?.display_name || 'Expert'}</span>
+                                  {score.evidence_classification && (
+                                    <Badge variant="secondary" className="text-xs px-1 py-0.5 h-auto">
+                                      {score.evidence_classification.replace(/_/g, ' ').split(' ').map(word => 
+                                        word.charAt(0).toUpperCase() + word.slice(1)
+                                      ).join(' ')}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        ).flat()}
+                      </div>
+                    </div>
                   )}
                 </CardHeader>
 

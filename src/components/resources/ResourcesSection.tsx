@@ -24,9 +24,9 @@ export const ResourcesSection = () => {
         {user && (
           <Dialog>
             <DialogTrigger asChild>
-              <Button>
+              <Button disabled={true}>
                 <Plus className="h-4 w-4 mr-2" />
-                Submit Resource
+                Submit Resource (Disabled for Demo)
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
