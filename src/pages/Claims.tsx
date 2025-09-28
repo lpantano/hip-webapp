@@ -534,7 +534,7 @@ const Claims = () => {
             updated_at: '2024-09-20T10:00:00Z'
           }
         ],
-        status: 'reviewed' as const
+        status: 'under_review' as const
       }
     ];
 
@@ -766,14 +766,20 @@ const Claims = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const getScoreColor = (score: 'low' | 'medium' | 'high', hasScore: boolean = true) => {
+  const getScoreColor = (score: 'low' | 'medium' | 'high', hasScore: boolean = true, category?: string) => {
     if (!hasScore) {
       return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
     }
+    
+    // Special case for "representation" - show as red when low (bad)
+    if (category === 'representation' && score === 'low') {
+      return 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800';
+    }
+    
     const colors = {
       low: 'bg-blue-50 text-blue-500 border border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
       medium: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
-      high: 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white'
+      high: 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
     };
     return colors[score];
   };
@@ -784,10 +790,11 @@ const Claims = () => {
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      'study_size': 'Sample Size',
-      'population': 'Population', 
-      'consensus': 'Consensus'
-      // 'interpretation' (Evidence Quality) intentionally omitted from publication score labels
+      'study_design': 'Study Design',
+      'representation': 'Representation',
+      'control_group': 'Control Group',
+      'bias_addressed': 'Bias Addressed',
+      'statistics': 'Statistics'
     };
     return labels[category] || category;
   };
@@ -886,8 +893,8 @@ const Claims = () => {
                       <div key={idx} className="space-y-1">
                         <div className="flex items-center gap-1">
                           <span className="text-sm text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
-                          <Badge className={`text-xs px-2 py-1 ${getScoreColor(scoreItem.score ?? 'low', !!scoreItem.score)}`}>
-                            {scoreItem.score ? scoreItem.score : 'No score'}
+                          <Badge className={`text-xs px-2 py-1 ${getScoreColor(scoreItem.score ?? 'low', !!scoreItem.score, scoreItem.category)}`}>
+                            {scoreItem.score ? (scoreItem.score === 'high' && scoreItem.category !== 'representation' ? 'Pass' : scoreItem.score) : 'No score'}
                           </Badge>
                         </div>
                         {/* per-score notes removed: only one comment per card now */}
@@ -1100,45 +1107,28 @@ const Claims = () => {
                     <div className="mt-3 pt-3 border-t border-border">
                       <div className="text-xs font-medium text-muted-foreground mb-2">Expert Reviews:</div>
                       <div className="flex flex-wrap gap-2">
-                        {claim.publications.map(pub => 
-                          pub.rawScores?.map((score, idx) => {
-                            const expertProfile = expertProfiles[score.expert_user_id];
-                            return (
-                              <div key={`${pub.id}-${score.expert_user_id}-${idx}`} className="flex items-center gap-2 bg-muted/20 rounded-md p-2">
-                                {expertProfile?.avatar_url ? (
-                                  <img 
-                                    src={expertProfile.avatar_url} 
-                                    alt={expertProfile.display_name || 'Expert'} 
-                                    className="w-6 h-6 rounded-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      if (target.nextElementSibling) {
-                                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                                      }
-                                    }}
-                                  />
-                                ) : null}
-                                <div 
-                                  className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 text-xs flex items-center justify-center"
-                                  style={{ display: expertProfile?.avatar_url ? 'none' : 'flex' }}
-                                >
-                                  {(expertProfile?.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-medium">{expertProfile?.display_name || 'Expert'}</span>
-                                  {score.evidence_classification && (
-                                    <Badge variant="secondary" className="text-xs px-1 py-0.5 h-auto">
-                                      {score.evidence_classification.replace(/_/g, ' ').split(' ').map(word => 
-                                        word.charAt(0).toUpperCase() + word.slice(1)
-                                      ).join(' ')}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })
-                        ).flat()}
+                        {(() => {
+                          // Count classifications across all publications for this claim
+                          const classificationCounts: Record<string, number> = {};
+                          claim.publications.forEach(pub => {
+                            pub.rawScores?.forEach(score => {
+                              if (score.evidence_classification) {
+                                classificationCounts[score.evidence_classification] = (classificationCounts[score.evidence_classification] || 0) + 1;
+                              }
+                            });
+                          });
+
+                          return Object.entries(classificationCounts).map(([classification, count]) => (
+                            <div key={classification} className="flex items-center gap-2 bg-muted/20 rounded-md p-2">
+                              <Badge variant="secondary" className="text-xs px-2 py-1">
+                                {classification.replace(/_/g, ' ').split(' ').map(word => 
+                                  word.charAt(0).toUpperCase() + word.slice(1)
+                                ).join(' ')}
+                              </Badge>
+                              <span className="text-xs font-medium text-muted-foreground">{count}</span>
+                            </div>
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
@@ -1149,7 +1139,7 @@ const Claims = () => {
                   <CardContent className="pt-0">
                     <div className="border-t border-border pt-4">
                       <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
-                        Individual Expert Reviews
+                        Publications
                       </h4>
                       <div className="space-y-4">
                         {claim.publications.map((pub, pubIndex) => (
@@ -1309,11 +1299,13 @@ const Claims = () => {
                       return bTime >= aTime ? b : a;
                     }, scores[0]);
 
-                    // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
+                    // New expert score categories for the full review
                     const expertScores: Array<{ category: string; score?: 'low' | 'medium' | 'high' | null }> = [
-                      { category: 'study_size', score: latestRow && typeof latestRow.study_size === 'number' ? mapScoreIntToLabel(latestRow.study_size) : null },
-                      { category: 'population', score: latestRow && typeof latestRow.population === 'number' ? mapScoreIntToLabel(latestRow.population) : null },
-                      { category: 'consensus', score: latestRow && typeof latestRow.consensus === 'number' ? mapScoreIntToLabel(latestRow.consensus) : null }
+                      { category: 'study_design', score: 'high' }, // green
+                      { category: 'representation', score: 'low' }, // bad (red)
+                      { category: 'control_group', score: 'high' }, // green
+                      { category: 'bias_addressed', score: 'high' }, // green
+                      { category: 'statistics', score: 'high' } // green
                     ];
 
                     // Merge comments: claim-level expert comments + the review's comments (if present)
