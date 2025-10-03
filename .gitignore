@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 #supabase
-supabase*
+supabase/.temp*
 
 # Editor directories and files
 .vscode/*
