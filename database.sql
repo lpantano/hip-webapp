@@ -125,6 +125,15 @@ CREATE TYPE "public"."expertise_area" AS ENUM (
 ALTER TYPE "public"."expertise_area" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."member_type" AS ENUM (
+    'expert',
+    'researcher'
+);
+
+
+ALTER TYPE "public"."member_type" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."source_type" AS ENUM (
     'webpage',
     'instagram',
@@ -348,11 +357,16 @@ CREATE TABLE IF NOT EXISTS "public"."experts" (
     "location" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "member_type" "public"."member_type" DEFAULT 'expert'::"public"."member_type" NOT NULL,
     CONSTRAINT "experts_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'more_information'::"text"])))
 );
 
 
 ALTER TABLE "public"."experts" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."experts"."member_type" IS 'Type of membership the applicant is requesting: expert (provides services) or researcher (evaluates research)';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
@@ -392,6 +406,7 @@ CREATE OR REPLACE VIEW "public"."expert_stats" AS
     "e"."location",
     "e"."education",
     "e"."motivation",
+    "e"."member_type",
     "p"."display_name",
     "p"."avatar_url",
     "p"."bio",
@@ -424,10 +439,14 @@ CREATE OR REPLACE VIEW "public"."expert_stats" AS
      LEFT JOIN "public"."expert_contributions" "ec" ON (("e"."id" = "ec"."expert_id")))
      LEFT JOIN "public"."social_media_links" "sml" ON (("e"."user_id" = "sml"."expert_id")))
   WHERE ("e"."status" = 'accepted'::"text")
-  GROUP BY "e"."id", "e"."user_id", "e"."expertise_area", "e"."years_of_experience", "e"."created_at", "e"."status", "e"."website", "e"."location", "e"."education", "e"."motivation", "p"."display_name", "p"."avatar_url", "p"."bio";
+  GROUP BY "e"."id", "e"."user_id", "e"."expertise_area", "e"."years_of_experience", "e"."created_at", "e"."status", "e"."website", "e"."location", "e"."education", "e"."motivation", "e"."member_type", "p"."display_name", "p"."avatar_url", "p"."bio";
 
 
 ALTER VIEW "public"."expert_stats" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."expert_stats" IS 'Comprehensive view of expert statistics including member type (expert/researcher), contributions, and profile information';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."feature_requests" (
@@ -493,14 +512,18 @@ CREATE TABLE IF NOT EXISTS "public"."publication_scores" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "publication_id" "uuid" NOT NULL,
     "expert_user_id" "uuid" NOT NULL,
-    "review_data" "jsonb" DEFAULT '{}'::jsonb,
     "comments" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "review_data" "jsonb" DEFAULT '{}'::"jsonb"
 );
 
 
 ALTER TABLE "public"."publication_scores" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."publication_scores"."review_data" IS 'Flexible JSON storage for review data. Can contain any review-specific fields as needed.';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."publications" (
