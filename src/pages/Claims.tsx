@@ -152,7 +152,7 @@ const Claims = () => {
   // component-scoped Supabase client
   const sb = supabase;
 
-  // Check if user is expert
+  // Check if user is expert or researcher
   const [isExpert, setIsExpert] = useState(false);
   useEffect(() => {
     const checkExpertStatus = async () => {
@@ -162,13 +162,20 @@ const Claims = () => {
       }
       
       try {
+        // Check if user has expert or researcher role in user_roles table
         const { data } = await sb.rpc('has_role', { 
           _user_id: user.id, 
           _role: 'expert' 
         });
-        setIsExpert(data || false);
+        
+        const { data: researcherData } = await sb.rpc('has_role', { 
+          _user_id: user.id, 
+          _role: 'researcher' 
+        });
+        
+        setIsExpert((data || false) || (researcherData || false));
       } catch (error) {
-        console.error('Error checking expert status:', error);
+        console.error('Error checking expert/researcher status:', error);
         setIsExpert(false);
       }
     };
