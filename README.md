@@ -159,12 +159,10 @@ A. Using the Supabase CLI (recommended)
    zsh
    ```sh
    # Dumps schema-only (no data) to database.sql
-   npx supabase db dump --file database.sql --schema-only
+   npx supabase db dump --file database.sql
    ```
 
    Notes:
-   - `--schema public` limits the dump to the public schema (adjust if you use multiple schemas).
-   - `--schema-only` ensures no row data is exported.
    - The CLI will use the linked project's connection info. If you need to override the connection, set `SUPABASE_DB_URL` to a full Postgres URI before running the command.
 
 4. Verify and commit:
