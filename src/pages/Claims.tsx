@@ -11,7 +11,6 @@ import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
-import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,12 +48,22 @@ interface PublicationScoreRow {
   id: string;
   publication_id: string;
   expert_user_id: string;
-  // Consolidated schema: one row per publication+expert
-  evidence_classification?: 'early' | 'preliminary' | 'strong' | 'established' | null;
-  alignment?: number | null; // interpretation
-  study_size?: number | null;
-  population?: number | null;
-  consensus?: number | null;
+  // New JSON-based schema
+  review_data: {
+    category?: string;
+    tags?: {
+      testedInHuman?: boolean;
+      ethnicityLabels?: string[];
+      ageRanges?: string[];
+    };
+    qualityChecks?: {
+      studyDesign?: 'PASS' | 'NO' | 'NA' | null;
+      representation?: 'PASS' | 'NO' | 'NA' | null;
+      controlGroup?: 'PASS' | 'NO' | 'NA' | null;
+      biasAddressed?: 'PASS' | 'NO' | 'NA' | null;
+      statistics?: 'PASS' | 'NO' | 'NA' | null;
+    };
+  } | null;
   comments?: string | null;
   created_at: string;
   updated_at: string;
@@ -189,119 +198,50 @@ const Claims = () => {
 
     if (!rows || rows.length === 0) return scoresTemplate;
 
-    // If rows represent consolidated rows (one per expert), pick the most recent expert row to populate the summary display
-    // (This mirrors previous behaviour where the first matching rows were used). For aggregated views consider using distributions.
+    // Get the most recent review
     const latestRow = rows.reduce((a, b) => {
       const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
       const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
       return bTime >= aTime ? b : a;
     }, rows[0]);
 
-    if (latestRow) {
-      if (typeof latestRow.study_size === 'number') scoresTemplate.sampleSize = { score: mapScoreIntToLabel(latestRow.study_size), explanation: latestRow.comments || '' };
-      if (typeof latestRow.population === 'number') scoresTemplate.populationRepresentation = { score: mapScoreIntToLabel(latestRow.population), explanation: latestRow.comments || '' };
-      if (typeof latestRow.consensus === 'number') scoresTemplate.consensus = { score: mapScoreIntToLabel(latestRow.consensus), explanation: latestRow.comments || '' };
-      if (typeof latestRow.alignment === 'number') scoresTemplate.evidence = { score: mapScoreIntToLabel(latestRow.alignment), explanation: latestRow.comments || '' };
+    if (latestRow?.review_data) {
+      const reviewData = latestRow.review_data;
+      const qualityChecks = reviewData.qualityChecks;
+      const comments = latestRow.comments || '';
+      
+      // Map quality checks to score levels
+      const mapQualityToScore = (quality?: string): 'low' | 'medium' | 'high' => {
+        switch (quality) {
+          case 'PASS': return 'high';
+          case 'NO': return 'low';
+          case 'NA': return 'medium';
+          default: return 'low';
+        }
+      };
+
+      // Map the quality checks to our score categories
+      if (qualityChecks?.studyDesign) {
+        scoresTemplate.evidence = { score: mapQualityToScore(qualityChecks.studyDesign), explanation: comments };
+      }
+      if (qualityChecks?.representation) {
+        scoresTemplate.populationRepresentation = { score: mapQualityToScore(qualityChecks.representation), explanation: comments };
+      }
+      if (qualityChecks?.statistics) {
+        scoresTemplate.consensus = { score: mapQualityToScore(qualityChecks.statistics), explanation: comments };
+      }
+      if (qualityChecks?.controlGroup || qualityChecks?.biasAddressed) {
+        // Combine control group and bias for sample size score
+        const controlScore = mapQualityToScore(qualityChecks.controlGroup);
+        const biasScore = mapQualityToScore(qualityChecks.biasAddressed);
+        const avgScore = controlScore === 'high' && biasScore === 'high' ? 'high' : 
+                        (controlScore === 'low' || biasScore === 'low') ? 'low' : 'medium';
+        scoresTemplate.sampleSize = { score: avgScore, explanation: comments };
+      }
     }
 
     return scoresTemplate;
-  }, [mapScoreIntToLabel]);
-
-  const fetchExpertDistributions = useCallback(async () => {
-    try {
-      // Fetch consolidated score data and create distributions from individual columns
-      const { data: scoreData, error } = await sb.from('publication_scores')
-        .select(`
-          alignment,
-          study_size,
-          population,
-          consensus,
-          publication_id,
-          publications!inner(claim_id)
-        `);
-      
-      if (error) throw error;
-
-      // Process the consolidated data to create distributions
-      const distributionMap: Record<string, Record<string, { low: number; medium: number; high: number; }>> = {};
-      
-      type ScoreItem = { 
-        alignment?: number | null; 
-        study_size?: number | null; 
-        population?: number | null; 
-        consensus?: number | null; 
-        publication_id?: string;
-        publications?: { claim_id?: string } | Array<{ claim_id?: string }> | null;
-      };
-      
-      const rows = (scoreData || []) as ScoreItem[];
-      rows.forEach((itemRaw) => {
-        // Supabase can return the related row as an object or an array depending on the join shape.
-        let claimId: string | undefined;
-        if (itemRaw.publications) {
-          if (Array.isArray(itemRaw.publications)) {
-            claimId = itemRaw.publications[0]?.claim_id || undefined;
-          } else {
-            claimId = itemRaw.publications?.claim_id || undefined;
-          }
-        }
-
-        // If claimId not present, we cannot attribute this score to a claim so skip it.
-        if (!claimId) return;
-        
-        if (!distributionMap[claimId]) {
-          distributionMap[claimId] = {};
-        }
-        
-        // Process each score category from the consolidated row
-        const categories = [
-          { key: 'interpretation', value: itemRaw.alignment },
-          { key: 'study_size', value: itemRaw.study_size },
-          { key: 'population', value: itemRaw.population },
-          { key: 'consensus', value: itemRaw.consensus }
-        ];
-        
-        categories.forEach(({ key, value }) => {
-          if (typeof value === 'number') {
-            if (!distributionMap[claimId][key]) {
-              distributionMap[claimId][key] = { low: 0, medium: 0, high: 0 };
-            }
-            
-            // Map score to level using new 1-3 scale
-            const scoreLevel = mapScoreIntToLabel(value);
-            distributionMap[claimId][key][scoreLevel]++;
-          }
-        });
-      });
-
-      // Convert to the format expected by the component
-      const distributions: Record<string, ExpertDistribution[]> = {};
-      
-      Object.entries(distributionMap).forEach(([claimId, categories]) => {
-        distributions[claimId] = Object.entries(categories).map(([category, dist]) => {
-          const totalExperts = dist.low + dist.medium + dist.high;
-          
-          const categoryLabels: Record<string, string> = {
-            'study_size': 'Sample Size',
-            'population': 'Population',
-            'consensus': 'Consensus'
-            // 'interpretation' (Evidence Quality) intentionally omitted from distributions
-          };
-          
-          return {
-            category,
-            categoryLabel: categoryLabels[category] || category,
-            totalExperts,
-            distribution: dist
-          };
-        });
-      });
-
-      setExpertDistributions(distributions);
-    } catch (error) {
-      console.error('Error fetching expert distributions:', error);
-    }
-  }, [sb, mapScoreIntToLabel]);
+  }, []);
 
   const fetchClaimsData = useCallback(async () => {
     try {
@@ -492,14 +432,14 @@ const Claims = () => {
       // Fetch claims data
       await Promise.all([
         fetchClaimsData(),
-        fetchExpertDistributions()
+        // fetchExpertDistributions()
       ]);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
-  }, [fetchExpertDistributions, fetchClaimsData]);
+  }, [fetchClaimsData]);
 
   // Ensure data is loaded on mount
   useEffect(() => {
@@ -706,13 +646,18 @@ const Claims = () => {
       // Show the current scores for each category; score may be null when not provided
       scores: Array<{
         category: string;
-        score?: 'low' | 'medium' | 'high' | null;
+        score?: 'PASS' | 'NO' | 'NA' | null;
       }>;
       comments: Array<{
         content: string;
         created_at: string;
       }>;
       classification?: string | null;
+      tags?: {
+        testedInHuman?: boolean;
+        ethnicityLabels?: string[];
+        ageRanges?: string[];
+      } | null;
     };
   };
 
@@ -731,88 +676,143 @@ const Claims = () => {
           role="list"
           aria-label="Expert reviews"
         >
-          {reviewCards.map((reviewCard, index) => (
-            <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-4 shadow-sm">
-              {/* Expert Header */}
-              <div className="flex items-center gap-3 mb-3">
-                {reviewCard.expert.avatar_url ? (
-                  <img 
-                    src={reviewCard.expert.avatar_url} 
-                    alt={reviewCard.expert.display_name || 'Expert'} 
-                    className="w-10 h-10 rounded-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      if (target.nextElementSibling) {
-                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
-                  style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
-                >
-                  {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+          {reviewCards.map((reviewCard, index) => {
+            // Extract tags from the reviewCard (if present)
+            // The tags are not currently passed in the reviewCard, so we need to get them from classification or add them to the reviewCard in the parent if possible.
+            // For now, try to get them from the expert.classification if it is an object (future-proofing), else skip.
+            // But the correct way is to pass tags in the reviewCard.expert, so let's check if they exist.
+            const tags = reviewCard.expert.tags || null;
+            return (
+              <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-4 shadow-sm">
+                {/* Expert Header */}
+                <div className="flex items-center gap-3 mb-3">
+                  {reviewCard.expert.avatar_url ? (
+                    <img 
+                      src={reviewCard.expert.avatar_url} 
+                      alt={reviewCard.expert.display_name || 'Expert'} 
+                      className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
+                    style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
+                  >
+                    {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">{reviewCard.expert.display_name || 'Expert'}</div>
+                    <div className="text-xs text-muted-foreground">Expert Review</div>
+                    {reviewCard.expert.classification && (
+                      <div className="mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
+                        </Badge>
+                      </div>
+                    )}
+                    {/* Show tags if present */}
+                    {tags && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && (
+                          <span className="text-xs flex items-center gap-1">
+                            <span className="font-medium">Ethnicities:</span>
+                            {tags.ethnicityLabels.map((eth: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
+                            ))}
+                          </span>
+                        )}
+                        {Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && (
+                          <span className="text-xs flex items-center gap-1">
+                            <span className="font-medium">Ages:</span>
+                            {tags.ageRanges.map((age: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
+                            ))}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-sm">{reviewCard.expert.display_name || 'Expert'}</div>
-                  <div className="text-xs text-muted-foreground">Expert Review</div>
-                  {reviewCard.expert.classification && (
-                    <div className="mt-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
-                      </Badge>
-                    </div>
-                  )}
+
+                {/* Publication Info */}
+                <div className="mb-4 pb-3 border-b border-border">
+                  <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
+                  </p>
                 </div>
-              </div>
 
-              {/* Publication Info */}
-              <div className="mb-4 pb-3 border-b border-border">
-                <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
-                <p className="text-xs text-muted-foreground">
-                  {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
-                </p>
-              </div>
-
-              {/* Scores */}
-              {reviewCard.expert.scores.length > 0 && (
-                <div className="mb-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {reviewCard.expert.scores.map((scoreItem, idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-sm text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
-                          <Badge className={`text-xs px-2 py-1 ${getScoreColor(scoreItem.score ?? 'low', !!scoreItem.score)}`}>
-                            {scoreItem.score ? scoreItem.score : 'No score'}
+                {/* Scores */}
+                {reviewCard.expert.scores.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex flex-row flex-wrap gap-3 items-center">
+                      {reviewCard.expert.scores.map((scoreItem, idx) => (
+                        <div key={idx} className="flex items-center gap-1">
+                          {(() => {
+                            // Explanations and human labels for each score category
+                            const explanations: Record<string, string> = {
+                              studyDesign: 'Was the study designed to answer this claim?',
+                              representation: 'Do the people in the study represent the kinds of people the claim is about?',
+                              controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
+                              biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
+                              statistics: 'Were statistical tests appropriate for the study design and data type?'
+                            };
+                            const humanLabels: Record<string, string> = {
+                              studyDesign: 'Study Design',
+                              representation: 'Representation',
+                              controlGroup: 'Control Group',
+                              biasAddressed: 'Bias Addressed',
+                              statistics: 'Statistics'
+                            };
+                            const label = humanLabels[scoreItem.category] || getCategoryLabel(scoreItem.category);
+                            const explanation = explanations[scoreItem.category] || '';
+                            return explanation ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
+                                </PopoverTrigger>
+                                <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                  {explanation}
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">{label}:</span>
+                            );
+                          })()}
+                          <Badge className="text-xs px-1 py-1">
+                            {scoreItem.score ?? 'No score'}
                           </Badge>
                         </div>
-                        {/* per-score notes removed: only one comment per card now */}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Comments */}
-              {reviewCard.expert.comments.length > 0 && (
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
-                  <div className="space-y-2">
-                    {reviewCard.expert.comments.map((comment, idx) => (
-                      <div key={idx} className="bg-muted/20 p-3 rounded-md">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          {new Date(comment.created_at).toLocaleDateString()}
+                {/* Comments */}
+                {reviewCard.expert.comments.length > 0 && (
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
+                    <div className="space-y-2">
+                      {reviewCard.expert.comments.map((comment, idx) => (
+                        <div key={idx} className="bg-muted/20 p-3 rounded-md">
+                          <div className="text-xs text-muted-foreground mb-1">
+                            {new Date(comment.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="text-sm">"{comment.content}"</div>
                         </div>
-                        <div className="text-sm">"{comment.content}"</div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -982,14 +982,46 @@ const Claims = () => {
                         })}
                       </div>
                     </div>
+                  </div>                  
+                  {/* Aggregated Category Labels from all expert reviews, color-coded */}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(() => {
+                      // Aggregate all review_data.category labels for this claim
+                      const labelCounts: Record<string, number> = {};
+                      claim.publications.forEach(pub => {
+                        (pub.rawScores || []).forEach(score => {
+                          const label = score.review_data?.category;
+                          if (label) {
+                            labelCounts[label] = (labelCounts[label] || 0) + 1;
+                          }
+                        });
+                      });
+                      // Color map for categories (all lowercase, no extra spaces)
+                      const categoryColors: Record<string, string> = {
+                        'unreliable': 'bg-gray-200 text-gray-700 border border-gray-300',
+                        'not tested in humans': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+                        'limited tested in humans': 'bg-blue-100 text-blue-800 border border-blue-300',
+                        'tested in human': 'bg-green-100 text-green-800 border border-green-300',
+                        'widely tested in humans': 'bg-green-300 text-green-900 border border-green-400',
+                      };
+                      return Object.entries(labelCounts).map(([label, count]) => {
+                        // Normalize label for color matching: lowercase and single spaces
+                        const key = label.trim().toLowerCase().replace(/\s+/g, ' ');
+                        const color = categoryColors[key] || 'bg-gray-100 text-gray-800 border border-gray-200';
+                        // console.log('Label:', label, 'Key:', key, 'Color:', color);
+                        return (
+                          <span
+                            key={label}
+                            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${color} !border-2`}
+                            style={{ borderWidth: 2 }}
+                          >
+                            {label} <span className="ml-1">({count})</span>
+                          </span>
+                        );
+                      });
+                    })()}
                   </div>
-                  
-                  {/* Expert Score Distributions */}
-                  {expertDistributions[claim.id] && (
-                    <ExpertScoreDistribution distributions={expertDistributions[claim.id]} />
-                  )}
                 </CardHeader>
-
                 {/* Expanded view with individual reviews */}
                 {expandedClaim === claim.id && (
                   <CardContent className="pt-0">
@@ -1156,10 +1188,12 @@ const Claims = () => {
                     }, scores[0]);
 
                     // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
-                    const expertScores: Array<{ category: string; score?: 'low' | 'medium' | 'high' | null }> = [
-                      { category: 'study_size', score: latestRow && typeof latestRow.study_size === 'number' ? mapScoreIntToLabel(latestRow.study_size) : null },
-                      { category: 'population', score: latestRow && typeof latestRow.population === 'number' ? mapScoreIntToLabel(latestRow.population) : null },
-                      { category: 'consensus', score: latestRow && typeof latestRow.consensus === 'number' ? mapScoreIntToLabel(latestRow.consensus) : null }
+                    const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
+                      { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
+                      { category: 'representation', score: latestRow?.review_data?.qualityChecks?.representation ?? null },
+                      { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
+                      { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
+                      { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
                     ];
 
                     // Merge comments: claim-level expert comments + the review's comments (if present)
@@ -1183,7 +1217,8 @@ const Claims = () => {
                         avatar_url: expertProfile?.avatar_url,
                         scores: expertScores,
                         comments: mergedComments,
-                        classification: latestRow?.evidence_classification ?? null
+                        classification: latestRow?.review_data?.category ?? null,
+                        tags: latestRow?.review_data?.tags ?? null
                       }
                     });
                   });

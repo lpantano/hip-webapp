@@ -4,8 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { CheckCircle, AlertTriangle, Target } from 'lucide-react';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
-import ResearchConsensusCard from './EducationSection/ResearchConsensusCard';
-import EvidenceQualityCard from './EducationSection/EvidenceQualityCard';
+import PitfallsCard from './EducationSection/PitfallsCard';
 
 const EducationSection = () => {
   // interactive research path state
@@ -13,12 +12,12 @@ const EducationSection = () => {
   const [pitfallOpen, setPitfallOpen] = useState(false);
 
   const steps = useMemo(() => [
-    { id: 'Basic Research', label: 'BR' },
-    { id: 'Preclinical', label: 'Pre' },
-    { id: 'Phase 1', label: '1' },
-    { id: 'Phase 2', label: '2' },
-    { id: 'Phase 3', label: '3' },
-    { id: 'Approval / Product', label: '✓' },
+    { id: 'unreliable', label: 'Unreliable' , step: 1},
+    { id: 'notTestedInHuman', label: 'No Tested in Humans', step: 2 },
+    { id: 'limitedTestedInHuman', label: 'Limited Tested in Humans', step: 3 },
+    { id: 'testedInHuman', label: 'Tested in Humans', step: 4 },
+    { id: 'widelyTestedInHuman', label: 'Widely Tested in Humans', step: 5 },
+
   ], []);
 
   // auto-advance the selected step every 3 seconds
@@ -37,36 +36,34 @@ const EducationSection = () => {
     return () => clearInterval(interval);
   }, [steps, isHoveringPath]);
 
-  const PHASE_INFO: Record<string, { title: string; desc: string; time: string }> = {
-    'Basic Research': {
-      title: 'Basic Research',
-      desc: 'Laboratory and theoretical work to discover biological mechanisms and generate hypotheses — often using cell models and biochemical studies.',
-      time: 'Months → years (commonly 1–5 years)'
+  type StandardPhase = { title: string; desc: string; time: string };
+  type CustomPhase = { title: string; desc: string; threshold: number };
+  const PHASE_INFO: Record<string, StandardPhase | CustomPhase> = {
+
+    'unreliable': {
+      title: 'Unreliable Research',
+      desc: 'Fails to pass at least one of the five quality checks (such as peer review, control group, blinding, randomization, or preregistration).',
+      threshold: 0
     },
-    'Preclinical': {
-      title: 'Preclinical',
-      desc: 'Tests in cells and animal models (e.g., mice, rats) to evaluate safety, dosing, and proof-of-concept before human studies.',
-      time: '1–3 years'
+    'notTestedInHuman': {
+      title: 'Not Tested in Humans',
+      desc: 'Research focused only on cells or animals, with no human participants.',
+      threshold: 1
     },
-    'Phase 1': {
-      title: 'Phase 1 — Safety',
-      desc: 'Small trials in healthy volunteers (or patients) focused on safety, tolerability, and dosing.',
-      time: 'Months → 1 year'
+    'limitedTestedInHuman': {
+      title: 'Limited Human Testing',
+      desc: 'Tested in humans, but with fewer than 100 participants in total.',
+      threshold: 2
     },
-    'Phase 2': {
-      title: 'Phase 2 — Efficacy & Dose',
-      desc: 'Larger trials to assess whether the intervention shows evidence of benefit and to refine dose/usage.',
-      time: '1–3 years'
+    'testedInHuman': {
+      title: 'Tested in Humans',
+      desc: 'Tested in humans with more than 100 participants.',
+      threshold: 3
     },
-    'Phase 3': {
-      title: 'Phase 3 — Confirmation',
-      desc: 'Large, often multi-site randomized trials to confirm efficacy and monitor less common side effects.',
-      time: '2–6 years'
-    },
-    'Approval / Product': {
-      title: 'Regulatory Review & Product',
-      desc: 'Regulatory submission, review, and post-approval surveillance leading to market availability.',
-      time: '1–2 years (varies by region)'
+    'widelyTestedInHuman': {
+      title: 'Widely Tested in Humans',
+      desc: 'Tested in humans with more than 500,000 participants across studies.',
+      threshold: 4
     }
   };
 
@@ -112,21 +109,20 @@ const EducationSection = () => {
             {/* use existing useState already present in this file for other dialogs */}
             {/* define phase info inline so translations/changes are easy */}
             <div className="flex flex-col items-start">
-              <div className="flex items-center gap-4 w-full overflow-x-auto py-2">
+              <div className="flex flex-wrap items-center justify-center gap-4 w-full py-2">
                 {steps.map((s, i) => (
-                  <div key={s.id} className="flex items-center gap-3 whitespace-nowrap">
+                  <div key={s.id} className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setSelectedStep(s.id)}
                       onMouseEnter={() => setIsHoveringPath(true)}
                       onMouseLeave={() => setIsHoveringPath(false)}
-                      className={`flex items-center gap-3 p-2 rounded-md ${selectedStep === s.id ? 'ring-2 ring-primary/40 bg-primary/5' : 'hover:bg-muted/30'}`}
+                      className={`flex flex-col items-center gap-1 px-2 py-2 rounded-md min-w-[90px] max-w-[120px] break-words ${selectedStep === s.id ? 'ring-2 ring-primary/40 bg-primary/5' : 'hover:bg-muted/30'}`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${selectedStep === s.id ? 'bg-primary/20' : 'bg-primary/10'}`}>{s.label}</div>
-                      <div className="text-sm font-medium">{s.id}</div>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-center ${selectedStep === s.id ? 'bg-primary/20' : 'bg-primary/10'}`}>{s.step}</div>
+                      <div className="text-xs font-medium text-center leading-tight break-words">{s.label}</div>
                     </button>
-
-                    {i < steps.length - 1 && <div className="flex-1 h-px bg-border mx-3 hidden md:block" />}
+                    {i < steps.length - 1 && <div className="h-px w-4 bg-border mx-1" />}
                   </div>
                 ))}
               </div>
@@ -135,7 +131,15 @@ const EducationSection = () => {
               <div className="w-full mt-4 p-4 bg-background/80 rounded">
                 {PHASE_INFO[selectedStep] && (
                   <div>
-                    <div className="font-semibold text-lg">{PHASE_INFO[selectedStep].title} <span className="text-sm text-muted-foreground">• {PHASE_INFO[selectedStep].time}</span></div>
+                    <div className="font-semibold text-lg">
+                      {PHASE_INFO[selectedStep].title}
+                      {('time' in PHASE_INFO[selectedStep]) ? (
+                        <span className="text-sm text-muted-foreground"> • {PHASE_INFO[selectedStep].time}</span>
+                      ) : null}
+                      {('threshold' in PHASE_INFO[selectedStep]) ? (
+                        <span className="text-sm text-muted-foreground"> • Threshold: {PHASE_INFO[selectedStep].threshold}</span>
+                      ) : null}
+                    </div>
                     <div className="text-sm text-muted-foreground mt-2">{PHASE_INFO[selectedStep].desc}</div>
                   </div>
                 )}
@@ -160,68 +164,47 @@ const EducationSection = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           <SampleSizeCard />
           <PopulationDiversityCard />
-          <ResearchConsensusCard />
-          <EvidenceQualityCard />
+          <PitfallsCard />
         </div>
 
-        {/* Common Pitfalls Section */}
-        <div className="max-w-6xl mx-auto mt-6 mb-1">
-          <div className="bg-card/60 border border-border rounded-lg p-6">
-            <h3 className="text-xl font-bold mb-4">Common Pitfalls in Research Analysis</h3>
+        {/* Dialog for pitfall details */}
+        <Dialog open={pitfallOpen} onOpenChange={(open) => { setPitfallOpen(open); if (!open) setSelectedPitfall(null); }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.title : 'Common Pitfalls in Research Analysis'}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.description : 'These are common pitfalls to watch for when analyzing research.'}
+              </DialogDescription>
+            </DialogHeader>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              {PITFALLS.map((pitfall) => (
-                <div
-                  key={pitfall.id}
-                  role="button"
-                  onClick={() => { setSelectedPitfall(pitfall.id); setPitfallOpen(true); }}
-                  className="cursor-pointer p-4 bg-background/50 dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition flex flex-col gap-2"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      {pitfall.id === 'Placebo Effect' && <CheckCircle className="w-5 h-5 text-green-600" />}
-                      {pitfall.id === 'Nocebo Effect' && <AlertTriangle className="w-5 h-5 text-yellow-600" />}
-                      {pitfall.id === 'Confounding Effect' && <Target className="w-5 h-5 text-orange-600" />}
-                    </div>
-                    <div className="font-semibold">{pitfall.title}</div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">{pitfall.description}</div>
-                  <div className="mt-2">
-                    <Button variant="ghost" className="px-3 py-1" onClick={(e) => { e.stopPropagation(); setSelectedPitfall(pitfall.id); setPitfallOpen(true); }}>Learn more</Button>
-                  </div>
-                </div>
-              ))}
+            {selectedPitfall ? (
+              <div className="mt-4 text-sm text-muted-foreground">
+                <div className="font-medium mb-2">What this means</div>
+                <div className="mb-3">{PITFALLS.find((p) => p.id === selectedPitfall)?.description}</div>
+                <div className="font-medium mb-2">Example</div>
+                <div className="mb-4">{PITFALLS.find((p) => p.id === selectedPitfall)?.example}</div>
+              </div>
+            ) : (
+              <div className="mt-4 text-sm text-muted-foreground">
+                <div className="font-medium mb-2">Common Pitfalls</div>
+                <ul className="list-disc pl-5 space-y-2">
+                  {PITFALLS.map((pitfall) => (
+                    <li key={pitfall.id}><span className="font-medium">{pitfall.title}:</span> {pitfall.description}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setPitfallOpen(false)}>Done</Button>
             </div>
-
-            {/* Dialog for pitfall details */}
-            <Dialog open={pitfallOpen} onOpenChange={(open) => { setPitfallOpen(open); if (!open) setSelectedPitfall(null); }}>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>
-                    {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.title : 'Details'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.description : ''}
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="mt-4 text-sm text-muted-foreground">
-                  <div className="font-medium mb-2">What this means</div>
-                  <div className="mb-3">{selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.description : ''}</div>
-                  <div className="font-medium mb-2">Example</div>
-                  <div className="mb-4">{selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.example : ''}</div>
-                </div>
-
-                <div className="flex justify-end mt-4">
-                  <Button onClick={() => setPitfallOpen(false)}>Done</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );

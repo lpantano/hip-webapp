@@ -146,6 +146,11 @@ A. Using the Supabase CLI (recommended)
    export SUPABASE_ACCESS_TOKEN="your_personal_access_token"
    ```
 
+   **Note**: To ensure you're using the latest Supabase CLI version, you can:
+   - Use `npx supabase@latest` instead of `npx supabase` for commands
+   - Clear npx cache periodically: `npx clear-npx-cache`
+   - Or install via Homebrew: `brew install supabase/tap/supabase`
+
 2. Link the local project to your Supabase project (use the project ref from your Supabase dashboard):
 
    zsh
@@ -159,12 +164,10 @@ A. Using the Supabase CLI (recommended)
    zsh
    ```sh
    # Dumps schema-only (no data) to database.sql
-   npx supabase db dump --file database.sql --schema-only
+   npx supabase db dump --file database.sql
    ```
 
    Notes:
-   - `--schema public` limits the dump to the public schema (adjust if you use multiple schemas).
-   - `--schema-only` ensures no row data is exported.
    - The CLI will use the linked project's connection info. If you need to override the connection, set `SUPABASE_DB_URL` to a full Postgres URI before running the command.
 
 4. Verify and commit:
@@ -189,3 +192,113 @@ C. Security notes
 - For CI-driven exports, store the Supabase connection URI as a secret (e.g., `SUPABASE_DB_URL`) and run `pg_dump` in the pipeline, then commit or upload the artifact to a release.
 
 If you'd like I can add a short script in `scripts/export-schema.sh` that wraps the `pg_dump` command and uses environment variables for the connection details. Tell me if you want that and I will add it.
+
+## Managing Database Migrations
+
+This project uses Supabase migrations to manage database schema changes. Here's how to work with migrations effectively:
+
+### Prerequisites
+
+1. **Set up authentication**: Make sure you have the `SUPABASE_ACCESS_TOKEN` in your `.env` file
+2. **Load environment**: Always run `source .env` before Supabase CLI commands
+3. **Use latest CLI**: Use `npx supabase@latest` for the most recent features
+
+### Common Migration Tasks
+
+#### 1. Check Migration Status
+
+See which migrations are applied locally vs remotely:
+
+```sh
+source .env
+npx supabase@latest migration list
+```
+
+This shows three columns:
+- **Local**: Migrations in your `supabase/migrations/` folder
+- **Remote**: Migrations applied to the Supabase database
+- **Time (UTC)**: When the migration was created
+
+#### 2. Create New Migrations
+
+```sh
+source .env
+npx supabase@latest migration new "describe_your_change"
+```
+
+This creates a new migration file in `supabase/migrations/` with a timestamp prefix.
+
+#### 3. Apply Migrations
+
+**Option A: Push all pending migrations**
+```sh
+source .env
+npx supabase@latest db push
+```
+
+**Option B: Apply via Supabase Dashboard**
+- Go to [SQL Editor](https://supabase.com/dashboard/project/stbumtfkanunkgopitfd/sql) 
+- Copy and paste migration content
+- Execute the SQL
+
+#### 4. Sync Migration History
+
+If you applied migrations directly in the Supabase dashboard but have the files locally:
+
+```sh
+source .env
+# Mark specific migrations as applied (replace with actual migration timestamps)
+npx supabase@latest migration repair --status applied 20251003000000
+npx supabase@latest migration repair --status applied 20251003000001
+
+# Verify sync
+npx supabase@latest migration list
+```
+
+#### 5. Pull Remote Changes
+
+If someone else applied migrations directly to the database:
+
+```sh
+source .env
+npx supabase@latest db pull
+```
+
+This creates local migration files for any remote changes not tracked locally.
+
+### Best Practices
+
+1. **Always check status first**: Run `migration list` before making changes
+2. **Use descriptive names**: `migration new "add_member_type_column"` not `migration new "update"`
+3. **Test migrations**: Apply to a development environment first
+4. **Keep migrations focused**: One logical change per migration file
+5. **Don't edit applied migrations**: Create new migrations to fix issues
+6. **Sync regularly**: Use `migration list` to ensure local and remote are aligned
+
+### Troubleshooting
+
+**Migration out of sync?**
+```sh
+# Check what's different
+npx supabase@latest migration list
+
+# Mark as applied if you ran it manually
+npx supabase@latest migration repair --status applied <migration_id>
+```
+
+**CLI authentication issues?**
+```sh
+# Ensure token is loaded
+source .env
+echo $SUPABASE_ACCESS_TOKEN
+
+# Check if project is linked
+npx supabase@latest projects list
+```
+
+**Need to update CLI?**
+```sh
+# Clear cache and use latest
+npx clear-npx-cache
+npx supabase@latest --version
+```

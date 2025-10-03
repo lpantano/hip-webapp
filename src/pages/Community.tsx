@@ -44,20 +44,27 @@ const Community = () => {
 
   const fetchCommunityMembers = async () => {
     try {
-      // Fetch from expert_stats view
+      // Fetch from expert_stats view (now includes member_type)
       const { data: expertsData, error: expertsError } = await supabase
         .from('expert_stats')
         .select('*')
       
       if (expertsError) throw expertsError;
       
-      // For now, all members from expert_stats are experts
-      // Later you can add researchers from a different table
-      const expertsWithType = (expertsData || []).map(expert => ({ ...expert, member_type: 'expert' as const }));
-      setExperts(expertsWithType);
+      const allMembers = expertsData || [];
       
-      // Placeholder for researchers - you can fetch from researchers table later
-      setResearchers([]);
+      // Separate members by their member_type (with type safety for migration period)
+      const expertMembers = allMembers.filter(member => {
+        const memberType = (member as CommunityMember).member_type;
+        return memberType === 'expert' || !memberType; // fallback for existing data
+      });
+      const researcherMembers = allMembers.filter(member => {
+        const memberType = (member as CommunityMember).member_type;
+        return memberType === 'researcher';
+      });
+      
+      setExperts(expertMembers);
+      setResearchers(researcherMembers);
       
     } catch (error) {
       console.error('Error fetching community members:', error);
@@ -212,7 +219,7 @@ const Community = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main className="pt-24 pb-16">

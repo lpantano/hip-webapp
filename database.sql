@@ -55,7 +55,10 @@ CREATE TYPE "public"."app_role" AS ENUM (
     'user',
     'expert',
     'ambassador',
-    'admin'
+    'admin',
+    'founding_expert',
+    'founding_user',
+    'researcher'
 );
 
 
@@ -89,6 +92,17 @@ CREATE TYPE "public"."claim_status" AS ENUM (
 ALTER TYPE "public"."claim_status" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."evidence_classification" AS ENUM (
+    'early',
+    'preliminary',
+    'strong',
+    'established'
+);
+
+
+ALTER TYPE "public"."evidence_classification" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."evidence_score_category" AS ENUM (
     'study_size',
     'population',
@@ -109,6 +123,15 @@ CREATE TYPE "public"."expertise_area" AS ENUM (
 
 
 ALTER TYPE "public"."expertise_area" OWNER TO "postgres";
+
+
+CREATE TYPE "public"."member_type" AS ENUM (
+    'expert',
+    'researcher'
+);
+
+
+ALTER TYPE "public"."member_type" OWNER TO "postgres";
 
 
 CREATE TYPE "public"."source_type" AS ENUM (
@@ -168,6 +191,36 @@ $$;
 
 
 ALTER FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."record_expert_contribution_after_score"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  INSERT INTO public.expert_contributions (expert_id, contribution_type)
+  VALUES (
+    (SELECT id FROM public.experts WHERE user_id = NEW.expert_user_id LIMIT 1),
+    'publication_review'
+  );
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."record_expert_contribution_after_score"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_claim_vote_count"() RETURNS "trigger"
@@ -280,66 +333,6 @@ CREATE TABLE IF NOT EXISTS "public"."claims" (
 ALTER TABLE "public"."claims" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."publication_scores" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "publication_id" "uuid" NOT NULL,
-    "expert_user_id" "uuid" NOT NULL,
-    "category" "public"."evidence_score_category" NOT NULL,
-    "score" integer NOT NULL,
-    "notes" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "publication_scores_score_check" CHECK ((("score" >= 1) AND ("score" <= 5)))
-);
-
-
-ALTER TABLE "public"."publication_scores" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."publications" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "claim_id" "uuid" NOT NULL,
-    "title" "text" NOT NULL,
-    "journal" "text" NOT NULL,
-    "publication_year" integer NOT NULL,
-    "doi" "text",
-    "url" "text",
-    "abstract" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "submitted_by" "uuid"
-);
-
-
-ALTER TABLE "public"."publications" OWNER TO "postgres";
-
-
-CREATE OR REPLACE VIEW "public"."claims_full" AS
- SELECT "c"."id",
-    "c"."description",
-    "c"."title",
-    "c"."user_id",
-    "c"."category",
-    "c"."status",
-    "c"."vote_count",
-    "c"."created_at",
-    "c"."updated_at",
-    COALESCE("json_agg"(DISTINCT "jsonb_build_object"('id', "p"."id", 'title', "p"."title", 'journal', "p"."journal", 'publication_year', "p"."publication_year", 'doi', "p"."doi", 'url', "p"."url", 'abstract', "p"."abstract", 'status', "p"."status", 'submitted_by', "p"."submitted_by", 'created_at', "p"."created_at", 'scores', COALESCE("p_scores"."scores", '[]'::json))) FILTER (WHERE ("p"."id" IS NOT NULL)), '[]'::json) AS "publications",
-    COALESCE("json_agg"(DISTINCT "jsonb_build_object"('id', "cr"."id", 'reaction_type', "cr"."reaction_type", 'user_id', "cr"."user_id", 'created_at', "cr"."created_at")) FILTER (WHERE ("cr"."id" IS NOT NULL)), '[]'::json) AS "claim_reactions"
-   FROM ((("public"."claims" "c"
-     LEFT JOIN "public"."publications" "p" ON (("c"."id" = "p"."claim_id")))
-     LEFT JOIN "public"."claim_reactions" "cr" ON (("c"."id" = "cr"."claim_id")))
-     LEFT JOIN ( SELECT "ps"."publication_id",
-            "json_agg"("jsonb_build_object"('id', "ps"."id", 'category', "ps"."category", 'score', "ps"."score", 'notes', "ps"."notes", 'expert_user_id', "ps"."expert_user_id", 'created_at', "ps"."created_at", 'updated_at', "ps"."updated_at")) AS "scores"
-           FROM "public"."publication_scores" "ps"
-          GROUP BY "ps"."publication_id") "p_scores" ON (("p"."id" = "p_scores"."publication_id")))
-  WHERE ("auth"."role"() = 'authenticated'::"text")
-  GROUP BY "c"."id", "c"."description", "c"."title", "c"."user_id", "c"."category", "c"."status", "c"."vote_count", "c"."created_at", "c"."updated_at";
-
-
-ALTER VIEW "public"."claims_full" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."expert_contributions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "expert_id" "uuid" NOT NULL,
@@ -364,11 +357,16 @@ CREATE TABLE IF NOT EXISTS "public"."experts" (
     "location" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "member_type" "public"."member_type" DEFAULT 'expert'::"public"."member_type" NOT NULL,
     CONSTRAINT "experts_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'more_information'::"text"])))
 );
 
 
 ALTER TABLE "public"."experts" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."experts"."member_type" IS 'Type of membership the applicant is requesting: expert (provides services) or researcher (evaluates research)';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
@@ -408,6 +406,7 @@ CREATE OR REPLACE VIEW "public"."expert_stats" AS
     "e"."location",
     "e"."education",
     "e"."motivation",
+    "e"."member_type",
     "p"."display_name",
     "p"."avatar_url",
     "p"."bio",
@@ -440,35 +439,14 @@ CREATE OR REPLACE VIEW "public"."expert_stats" AS
      LEFT JOIN "public"."expert_contributions" "ec" ON (("e"."id" = "ec"."expert_id")))
      LEFT JOIN "public"."social_media_links" "sml" ON (("e"."user_id" = "sml"."expert_id")))
   WHERE ("e"."status" = 'accepted'::"text")
-  GROUP BY "e"."id", "e"."user_id", "e"."expertise_area", "e"."years_of_experience", "e"."created_at", "e"."status", "e"."website", "e"."location", "e"."education", "e"."motivation", "p"."display_name", "p"."avatar_url", "p"."bio";
+  GROUP BY "e"."id", "e"."user_id", "e"."expertise_area", "e"."years_of_experience", "e"."created_at", "e"."status", "e"."website", "e"."location", "e"."education", "e"."motivation", "e"."member_type", "p"."display_name", "p"."avatar_url", "p"."bio";
 
 
 ALTER VIEW "public"."expert_stats" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."experts_full" AS
- SELECT "e"."id",
-    "e"."user_id",
-    "e"."expertise_area",
-    "e"."education",
-    "e"."motivation",
-    "e"."website",
-    "e"."years_of_experience",
-    "e"."location",
-    "e"."created_at",
-    "p"."display_name",
-    "p"."avatar_url" AS "profile_avatar_url",
-    COALESCE(( SELECT "json_agg"("sml_row".*) AS "json_agg"
-           FROM ( SELECT "sml"."platform",
-                    "sml"."url"
-                   FROM "public"."social_media_links" "sml"
-                  WHERE ("sml"."expert_id" = "e"."user_id")) "sml_row"), '[]'::json) AS "social_media_links"
-   FROM ("public"."experts" "e"
-     LEFT JOIN "public"."profiles" "p" ON (("p"."user_id" = "e"."user_id")))
-  WHERE ("e"."status" = 'accepted'::"text");
+COMMENT ON VIEW "public"."expert_stats" IS 'Comprehensive view of expert statistics including member type (expert/researcher), contributions, and profile information';
 
-
-ALTER VIEW "public"."experts_full" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."feature_requests" (
@@ -528,6 +506,73 @@ CREATE OR REPLACE VIEW "public"."feature_requests_full" AS
 
 
 ALTER VIEW "public"."feature_requests_full" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."publication_scores" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "publication_id" "uuid" NOT NULL,
+    "expert_user_id" "uuid" NOT NULL,
+    "comments" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "review_data" "jsonb" DEFAULT '{}'::"jsonb"
+);
+
+
+ALTER TABLE "public"."publication_scores" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."publication_scores"."review_data" IS 'Flexible JSON storage for review data. Can contain any review-specific fields as needed.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."publications" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "claim_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "journal" "text" NOT NULL,
+    "publication_year" integer NOT NULL,
+    "doi" "text",
+    "url" "text",
+    "abstract" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "submitted_by" "uuid"
+);
+
+
+ALTER TABLE "public"."publications" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."resource_reviews" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "resource_id" "uuid" NOT NULL,
+    "reviewer_user_id" "uuid" NOT NULL,
+    "supports" boolean NOT NULL,
+    "comments" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."resource_reviews" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."resources" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "url" "text" NOT NULL,
+    "expertise_area" "public"."expertise_area" NOT NULL,
+    "description" "text" NOT NULL,
+    "status" "text" DEFAULT 'waiting_decision'::"text" NOT NULL,
+    "submitted_by" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "resources_status_check" CHECK (("status" = ANY (ARRAY['waiting_decision'::"text", 'under_review'::"text", 'trusted'::"text", 'rejected'::"text"])))
+);
+
+
+ALTER TABLE "public"."resources" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."sources" (
@@ -640,12 +685,27 @@ ALTER TABLE ONLY "public"."publication_scores"
 
 
 ALTER TABLE ONLY "public"."publication_scores"
-    ADD CONSTRAINT "publication_scores_publication_id_expert_user_id_category_key" UNIQUE ("publication_id", "expert_user_id", "category");
+    ADD CONSTRAINT "publication_scores_publication_id_expert_user_id_key" UNIQUE ("publication_id", "expert_user_id");
 
 
 
 ALTER TABLE ONLY "public"."publications"
     ADD CONSTRAINT "publications_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."resource_reviews"
+    ADD CONSTRAINT "resource_reviews_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."resource_reviews"
+    ADD CONSTRAINT "resource_reviews_resource_id_reviewer_user_id_key" UNIQUE ("resource_id", "reviewer_user_id");
+
+
+
+ALTER TABLE ONLY "public"."resources"
+    ADD CONSTRAINT "resources_pkey" PRIMARY KEY ("id");
 
 
 
@@ -689,14 +749,6 @@ CREATE INDEX "idx_claims_user_id" ON "public"."claims" USING "btree" ("user_id")
 
 
 
-CREATE INDEX "idx_publication_scores_expert" ON "public"."publication_scores" USING "btree" ("expert_user_id");
-
-
-
-CREATE INDEX "idx_publication_scores_publication_id" ON "public"."publication_scores" USING "btree" ("publication_id");
-
-
-
 CREATE INDEX "idx_publications_claim_id" ON "public"."publications" USING "btree" ("claim_id");
 
 
@@ -714,6 +766,10 @@ CREATE OR REPLACE TRIGGER "claim_vote_count_trigger_delete" AFTER DELETE ON "pub
 
 
 CREATE OR REPLACE TRIGGER "claim_vote_count_trigger_insert" AFTER INSERT ON "public"."claim_votes" FOR EACH ROW EXECUTE FUNCTION "public"."update_claim_vote_count"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_publication_scores_updated_at" BEFORE UPDATE ON "public"."publication_scores" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -741,7 +797,11 @@ CREATE OR REPLACE TRIGGER "update_profiles_updated_at" BEFORE UPDATE ON "public"
 
 
 
-CREATE OR REPLACE TRIGGER "update_publication_scores_updated_at" BEFORE UPDATE ON "public"."publication_scores" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+CREATE OR REPLACE TRIGGER "update_resource_reviews_updated_at" BEFORE UPDATE ON "public"."resource_reviews" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_resources_updated_at" BEFORE UPDATE ON "public"."resources" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
 
@@ -785,7 +845,7 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 ALTER TABLE ONLY "public"."publication_scores"
-    ADD CONSTRAINT "publication_scores_publication_id_fkey" FOREIGN KEY ("publication_id") REFERENCES "public"."publications"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "publication_scores_publication_id_fkey" FOREIGN KEY ("publication_id") REFERENCES "public"."publications"("id");
 
 
 
@@ -834,7 +894,19 @@ CREATE POLICY "Admins can update all feature requests" ON "public"."feature_requ
 
 
 
+CREATE POLICY "Admins can update all resources" ON "public"."resources" FOR UPDATE USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+
+
 CREATE POLICY "Admins can view all expert applications" ON "public"."experts" FOR SELECT USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+
+
+CREATE POLICY "All authenticated users can view resource reviews" ON "public"."resource_reviews" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "All authenticated users can view resources" ON "public"."resources" FOR SELECT USING (true);
 
 
 
@@ -886,7 +958,7 @@ CREATE POLICY "Experts and admins can view all publications" ON "public"."public
 
 
 
-CREATE POLICY "Experts can create scores" ON "public"."publication_scores" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
+CREATE POLICY "Experts and researchers can create reviews" ON "public"."resource_reviews" FOR INSERT WITH CHECK ((("auth"."uid"() = "reviewer_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
 
 
 
@@ -906,7 +978,7 @@ CREATE POLICY "Experts can update their own links" ON "public"."claim_links" FOR
 
 
 
-CREATE POLICY "Experts can update their own scores" ON "public"."publication_scores" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role")))) WITH CHECK ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
+CREATE POLICY "Experts, researchers, and ambassadors can submit resources" ON "public"."resources" FOR INSERT WITH CHECK ((("auth"."uid"() = "submitted_by") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'ambassador'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
 
 
 
@@ -940,11 +1012,11 @@ CREATE POLICY "Only experts can create links" ON "public"."claim_links" FOR INSE
 
 
 
-CREATE POLICY "Publication scores are viewable by authenticated users" ON "public"."publication_scores" FOR SELECT TO "authenticated" USING (true);
-
-
-
 CREATE POLICY "Reactions are viewable by authenticated users" ON "public"."claim_reactions" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Reviewers can update their own reviews" ON "public"."resource_reviews" FOR UPDATE USING (("auth"."uid"() = "reviewer_user_id")) WITH CHECK (("auth"."uid"() = "reviewer_user_id"));
 
 
 
@@ -1008,6 +1080,10 @@ CREATE POLICY "Users can update their own pending publications" ON "public"."pub
 
 
 
+CREATE POLICY "Users can update their own pending resources" ON "public"."resources" FOR UPDATE USING ((("auth"."uid"() = "submitted_by") AND ("status" = 'waiting_decision'::"text"))) WITH CHECK ((("auth"."uid"() = "submitted_by") AND ("status" = 'waiting_decision'::"text")));
+
+
+
 CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "user_id"));
 
 
@@ -1066,10 +1142,13 @@ ALTER TABLE "public"."feature_votes" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."publication_scores" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."publications" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."resource_reviews" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."resources" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."social_media_links" ENABLE ROW LEVEL SECURITY;
@@ -1255,6 +1334,18 @@ GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."a
 
 
 
+GRANT ALL ON FUNCTION "public"."record_expert_contribution_after_score"() TO "anon";
+GRANT ALL ON FUNCTION "public"."record_expert_contribution_after_score"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."record_expert_contribution_after_score"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_claim_vote_count"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_claim_vote_count"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_claim_vote_count"() TO "service_role";
@@ -1312,24 +1403,6 @@ GRANT ALL ON TABLE "public"."claims" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."publication_scores" TO "anon";
-GRANT ALL ON TABLE "public"."publication_scores" TO "authenticated";
-GRANT ALL ON TABLE "public"."publication_scores" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."publications" TO "anon";
-GRANT ALL ON TABLE "public"."publications" TO "authenticated";
-GRANT ALL ON TABLE "public"."publications" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."claims_full" TO "anon";
-GRANT ALL ON TABLE "public"."claims_full" TO "authenticated";
-GRANT ALL ON TABLE "public"."claims_full" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."expert_contributions" TO "anon";
 GRANT ALL ON TABLE "public"."expert_contributions" TO "authenticated";
 GRANT ALL ON TABLE "public"."expert_contributions" TO "service_role";
@@ -1360,12 +1433,6 @@ GRANT ALL ON TABLE "public"."expert_stats" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."experts_full" TO "anon";
-GRANT ALL ON TABLE "public"."experts_full" TO "authenticated";
-GRANT ALL ON TABLE "public"."experts_full" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."feature_requests" TO "anon";
 GRANT ALL ON TABLE "public"."feature_requests" TO "authenticated";
 GRANT ALL ON TABLE "public"."feature_requests" TO "service_role";
@@ -1381,6 +1448,30 @@ GRANT ALL ON TABLE "public"."feature_votes" TO "service_role";
 GRANT ALL ON TABLE "public"."feature_requests_full" TO "anon";
 GRANT ALL ON TABLE "public"."feature_requests_full" TO "authenticated";
 GRANT ALL ON TABLE "public"."feature_requests_full" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."publication_scores" TO "anon";
+GRANT ALL ON TABLE "public"."publication_scores" TO "authenticated";
+GRANT ALL ON TABLE "public"."publication_scores" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."publications" TO "anon";
+GRANT ALL ON TABLE "public"."publications" TO "authenticated";
+GRANT ALL ON TABLE "public"."publications" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."resource_reviews" TO "anon";
+GRANT ALL ON TABLE "public"."resource_reviews" TO "authenticated";
+GRANT ALL ON TABLE "public"."resource_reviews" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."resources" TO "anon";
+GRANT ALL ON TABLE "public"."resources" TO "authenticated";
+GRANT ALL ON TABLE "public"."resources" TO "service_role";
 
 
 

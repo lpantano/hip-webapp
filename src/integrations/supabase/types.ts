@@ -384,33 +384,30 @@ export type Database = {
       }
       publication_scores: {
         Row: {
-          category: Database["public"]["Enums"]["evidence_score_category"]
+          comments: string | null
           created_at: string
           expert_user_id: string
           id: string
-          notes: string | null
           publication_id: string
-          score: number
+          review_data: Json
           updated_at: string
         }
         Insert: {
-          category: Database["public"]["Enums"]["evidence_score_category"]
+          comments?: string | null
           created_at?: string
           expert_user_id: string
           id?: string
-          notes?: string | null
           publication_id: string
-          score: number
+          review_data?: Json
           updated_at?: string
         }
         Update: {
-          category?: Database["public"]["Enums"]["evidence_score_category"]
+          comments?: string | null
           created_at?: string
           expert_user_id?: string
           id?: string
-          notes?: string | null
           publication_id?: string
-          score?: number
+          review_data?: Json
           updated_at?: string
         }
         Relationships: [

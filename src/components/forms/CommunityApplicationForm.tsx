@@ -55,6 +55,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     resolver: zodResolver(communityApplicationSchema),
     defaultValues: {
       role: memberType,
+      memberType: memberType,
     }
   });
 
@@ -95,6 +96,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
         .from("experts")
         .insert({
           user_id: user.id,
+          member_type: data.role,
           education: data.education,
           expertise_area: data.expertiseArea,
           years_of_experience: data.yearsOfExperience,
@@ -176,7 +178,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
               {/* Role Selection */}
               <div className="space-y-4">
                 <Label htmlFor="role">I am applying as a: *</Label>
-                <Select onValueChange={(value) => setValue("role", value as any)}>
+                <Select onValueChange={(value) => setValue("role", value as "expert" | "researcher")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
@@ -211,7 +213,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
               {/* Expertise Area */}
               <div className="space-y-2">
                 <Label htmlFor="expertiseArea">Area of Expertise *</Label>
-                <Select onValueChange={(value) => setValue("expertiseArea", value as any)}>
+                <Select onValueChange={(value) => setValue("expertiseArea", value as "nutrition" | "fitness" | "mental_health" | "pregnancy" | "menopause" | "general_health" | "perimenopause")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your primary expertise area" />
                   </SelectTrigger>

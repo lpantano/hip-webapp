@@ -16,8 +16,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, User, Link as LinkIcon } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
+import { FileText, User, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { 
+  type ReviewCategory, 
+  type ReviewAnswer, 
+  type ReviewData,
+  createEmptyReviewData,
+  AGE_RANGES,
+  ETHNICITY_OPTIONS
+} from '@/types/review';
 
 interface Publication {
   id: string;
@@ -37,88 +47,36 @@ interface PublicationReviewFormProps {
   onReviewSubmitted?: () => void;
 }
 
-interface ScoreCategory {
-  key: string;        // UI key
-  label: string;
-  description?: string;
-  dbKey: Database['public']['Enums']['evidence_score_category']; // maps to DB enum
-}
-
-const scoreCategories: ScoreCategory[] = [
-  {
-    key: 'alignment',
-    label: 'Alignment of Claim with Evidence',
-    description: 'How well does the paper support or contradict the claim being evaluated?',
-    dbKey: 'interpretation'
-  },
-  {
-    key: 'study_size',
-    label: 'Study Size',
-    description: 'Assess adequacy of sample size for reliable conclusions',
-    dbKey: 'study_size'
-  },
-  {
-    key: 'population',
-    label: 'Population Representation',
-    description: 'Diversity and representativeness of participants related to the claim',
-    dbKey: 'population'
-  },
-  {
-    key: 'data_analysis',
-    label: 'Data Analysis Method',
-    description: 'Appropriateness and rigor of statistical or analysis methods',
-    dbKey: 'consensus'
-  }
-];
-
-const scoreLabels = {
-  1: 'Low',
-  2: 'Medium',
-  3: 'High'
-};
-
 interface ExistingReview {
-  id?: string;
-  publication_id?: string;
-  expert_user_id?: string;
-  category: Database['public']['Enums']['evidence_score_category'];
-  score: number;
-  notes?: string | null;
+  id: string;
+  publication_id: string;
+  expert_user_id: string;
+  review_data: ReviewData | null;
+  comments: string | null;
+  created_at: string;
+  updated_at: string;
 }
+
+const REVIEW_CATEGORIES: ReviewCategory[] = [
+  'Unreliable',
+  'Not Tested in Humans',
+  'Limited Tested in Humans',
+  'Tested in Humans',
+  'Widely Tested in Humans'
+];
 
 const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted }: PublicationReviewFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Scores keyed by UI key, notes removed per-category in favor of a single comment box
-  const [scores, setScores] = useState<Record<string, { score: number }>>({});
-
-  // Single comment for the whole review
+  const [reviewData, setReviewData] = useState<ReviewData>(createEmptyReviewData());
   const [comment, setComment] = useState('');
+  const [customEthnicity, setCustomEthnicity] = useState('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // Evidence classification (only one may be selected)
-  const [classification, setClassification] = useState<
-    'early' | 'preliminary' | 'strong' | 'established' | null
-  >(null);
-
-  // Multiple links input
-  const [links, setLinks] = useState<string[]>(['']);
-
-  // Fetch existing review (single row) for this publication by this expert
-  const { data: existingReview } = useQuery<{
-    id?: string;
-    publication_id?: string;
-    expert_user_id?: string;
-    evidence_classification?: 'early' | 'preliminary' | 'strong' | 'established' | null;
-    alignment?: number | null;
-    study_size?: number | null;
-    population?: number | null;
-    consensus?: number | null;
-    comments?: string | null;
-    created_at?: string;
-    updated_at?: string;
-  } | null>({
+  // Fetch existing review for this publication by this expert
+  const { data: existingReview } = useQuery({
     queryKey: ['publication-review', publication?.id, user?.id],
     queryFn: async () => {
       if (!publication?.id || !user?.id) return null;
@@ -136,44 +94,75 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     enabled: !!publication?.id && !!user?.id && isOpen
   });
 
-  // Set form values when existing review loads
+  // Load existing review data into form
   useEffect(() => {
-    const initial: Record<string, { score: number }> = {};
-    scoreCategories.forEach(cat => {
-      initial[cat.key] = { score: 0 };
-    });
-
     if (existingReview) {
-      // map consolidated columns into UI keys
-      if (typeof existingReview.alignment === 'number') initial['alignment'] = { score: existingReview.alignment };
-      if (typeof existingReview.study_size === 'number') initial['study_size'] = { score: existingReview.study_size };
-      if (typeof existingReview.population === 'number') initial['population'] = { score: existingReview.population };
-      // UI key `data_analysis` maps to DB column `consensus`
-      if (typeof existingReview.consensus === 'number') initial['data_analysis'] = { score: existingReview.consensus };
-
-      if (existingReview.comments) setComment(existingReview.comments || '');
-      // safe assignment for classification without using `any`
-      setClassification(existingReview.evidence_classification ?? null);
+      if (existingReview.review_data) {
+        try {
+          // Handle both cases: direct object or JSON string
+          const reviewData = typeof existingReview.review_data === 'string' 
+            ? JSON.parse(existingReview.review_data) 
+            : existingReview.review_data;
+          
+          // Validate that the parsed data has the expected structure
+          if (reviewData && typeof reviewData === 'object' && 'category' in reviewData) {
+            setReviewData(reviewData as ReviewData);
+          } else {
+            setReviewData(createEmptyReviewData());
+          }
+        } catch (error) {
+          console.error('Error parsing review data:', error);
+          setReviewData(createEmptyReviewData());
+        }
+      } else {
+        setReviewData(createEmptyReviewData());
+      }
+      setComment(existingReview.comments || '');
+    } else {
+      // Reset to empty when no existing review
+      setReviewData(createEmptyReviewData());
+      setComment('');
     }
-
-    setScores(initial);
   }, [existingReview]);
+
+  // Validation function
+  const validateForm = (): string[] => {
+    const errors: string[] = [];
+    
+    // Check if evidence category is selected
+    if (!reviewData.category) {
+      errors.push('Please select an evidence category');
+    }
+    
+    // Check if at least one quality check is answered (not all NA)
+    const qualityChecks = Object.values(reviewData.qualityChecks);
+    const allNA = qualityChecks.every(check => check === 'NA');
+    if (allNA) {
+      errors.push('Please answer at least one quality check question');
+    }
+    
+    return errors;
+  };
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
       if (!publication?.id || !user?.id) throw new Error('Missing required data');
+      
+      // Validate form before submission
+      const errors = validateForm();
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        throw new Error('Please fix validation errors before submitting');
+      }
+      
+      setValidationErrors([]); // Clear any previous errors
 
-      // Build consolidated payload matching new table schema
       const payload = {
         publication_id: publication.id,
         expert_user_id: user.id,
-        evidence_classification: classification || null,
-        alignment: scores['alignment']?.score ?? null,
-        study_size: scores['study_size']?.score ?? null,
-        population: scores['population']?.score ?? null,
-        consensus: scores['data_analysis']?.score ?? null,
+        review_data: JSON.parse(JSON.stringify(reviewData)), // Ensure proper JSON serialization
         comments: comment || null
-      } as const;
+      };
 
       const { error } = await supabase
         .from('publication_scores')
@@ -203,232 +192,285 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     }
   });
 
-  const updateScore = (category: string, score: number) => {
-    setScores(prev => ({
+  const updateCategory = (category: ReviewCategory) => {
+    setReviewData(prev => ({ ...prev, category }));
+  };
+
+
+
+  const toggleEthnicity = (ethnicity: string) => {
+    setReviewData(prev => {
+      const current = prev.tags.ethnicityLabels;
+      const newLabels = current.includes(ethnicity)
+        ? current.filter(e => e !== ethnicity)
+        : [...current, ethnicity];
+      return {
+        ...prev,
+        tags: { ...prev.tags, ethnicityLabels: newLabels }
+      };
+    });
+  };
+
+  const addCustomEthnicity = () => {
+    if (customEthnicity.trim()) {
+      toggleEthnicity(customEthnicity.trim());
+      setCustomEthnicity('');
+    }
+  };
+
+  const removeEthnicity = (ethnicity: string) => {
+    setReviewData(prev => ({
       ...prev,
-      [category]: {
-        ...prev[category],
-        score
+      tags: {
+        ...prev.tags,
+        ethnicityLabels: prev.tags.ethnicityLabels.filter(e => e !== ethnicity)
       }
     }));
   };
 
-  const updateLink = (index: number, value: string) => {
-    setLinks(prev => {
-      const copy = [...prev];
-      copy[index] = value;
-      return copy;
+  const toggleAgeRange = (range: string) => {
+    setReviewData(prev => {
+      const current = prev.tags.ageRanges;
+      const newRanges = current.includes(range)
+        ? current.filter(r => r !== range)
+        : [...current, range];
+      return {
+        ...prev,
+        tags: { ...prev.tags, ageRanges: newRanges }
+      };
     });
   };
 
-  const addLink = () => setLinks(prev => [...prev, '']);
-  const removeLink = (index: number) => setLinks(prev => prev.filter((_, i) => i !== index));
+  const updateQualityCheck = (field: keyof ReviewData['qualityChecks'], value: ReviewAnswer) => {
+    setReviewData(prev => ({
+      ...prev,
+      qualityChecks: {
+        ...prev.qualityChecks,
+        [field]: value
+      }
+    }));
+  };
+
+  const getQualityColor = (value: ReviewAnswer) => {
+    switch (value) {
+      case 'PASS':
+        return 'text-green-700 bg-green-50 border-green-200';
+      case 'NO':
+        return 'text-red-700 bg-red-50 border-red-200';
+      case 'NA':
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
 
   if (!publication) return null;
 
   const isUpdate = !!existingReview;
 
+  // Custom ethnicities (not in the predefined list)
+  const customEthnicities = reviewData.tags.ethnicityLabels.filter(
+    e => !ETHNICITY_OPTIONS.includes(e)
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[65vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
             {isUpdate ? 'Update Publication Review' : 'Review Publication'}
           </DialogTitle>
           <DialogDescription>
-            Provide expert scores for different aspects of this research publication
+            Evaluate this research publication with comprehensive review criteria
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 overflow-hidden">
-          {/* Publication Info + Classification + Alignment Score (LEFT) */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">{publication.title}</h3>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                {publication.authors && <p><strong>Authors:</strong> {publication.authors}</p>}
-                <p><strong>Journal:</strong> {publication.journal} ({publication.publication_year})</p>
-                {publication.doi && <p><strong>DOI:</strong> {publication.doi}</p>}
-              </div>
-            </div>
-            
-            {publication.abstract && (
-              <div>
-                <Label className="text-sm font-medium">Abstract</Label>
-                <ScrollArea className="h-32 w-full rounded border p-2 text-sm">
-                  {publication.abstract}
-                </ScrollArea>
-              </div>
-            )}
-
-            {/* Evidence Classification (moved to left column) */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Evidence Classification (pick one)</Label>
-              <p className="text-xs text-muted-foreground">Select the best single classification for the evidence presented in this paper.</p>
-              <div className="flex flex-col gap-2 mt-2">
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="classification" checked={classification === 'early'} onChange={() => setClassification('early')} />
-                  <span className="text-sm ml-2">Early Evidence (cells and/or animals)</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="classification" checked={classification === 'preliminary'} onChange={() => setClassification('preliminary')} />
-                  <span className="text-sm ml-2">Preliminary Human Evidence (small / early trials)</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="classification" checked={classification === 'strong'} onChange={() => setClassification('strong')} />
-                  <span className="text-sm ml-2">Strong Human Evidence (controlled trials)</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="classification" checked={classification === 'established'} onChange={() => setClassification('established')} />
-                  <span className="text-sm ml-2">Established Consensus (repeated + reviewed)</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Alignment Score (moved to left column) */}
-            <div className="space-y-3">
-              <div>
-                <Label className="text-sm font-medium">{scoreCategories.find(sc => sc.key === 'alignment')?.label}</Label>
-                {scoreCategories.find(sc => sc.key === 'alignment')?.description && (
-                  <p className="text-xs text-muted-foreground mt-1">{scoreCategories.find(sc => sc.key === 'alignment')?.description}</p>
-                )}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-[65vh] pr-2">
+            <div className="space-y-3 pb-2">
+              {/* Publication Info */}
+              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-2 flex flex-col gap-1">
+                <h3 className="font-semibold text-base line-clamp-2">{publication.title}</h3>
+                <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
+                  {publication.authors && <span className="truncate"><strong>Authors:</strong> {publication.authors}</span>}
+                  <span><strong>Journal:</strong> {publication.journal} ({publication.publication_year})</span>
+                  {publication.doi && <span><strong>DOI:</strong> {publication.doi}</span>}
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {[1, 2, 3].map((score) => (
-                  <Button
-                    key={score}
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 h-8 w-8"
-                    onClick={() => updateScore('alignment', score)}
-                  >
-                    <div 
-                      className={`w-3 h-3 rounded-full transition-colors ${
-                        scores['alignment']?.score >= score 
-                          ? 'bg-primary' 
-                          : 'bg-muted-foreground/30'
-                      }`}
-                    />
-                  </Button>
-                ))}
-                {scores['alignment']?.score > 0 && (
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {scoreLabels[scores['alignment'].score as keyof typeof scoreLabels]}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Existing Reviews Count */}
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="w-4 h-4" />
-                <span>{existingReview ? 'You have submitted a review' : 'You have not reviewed this publication'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Review Form (RIGHT) - other scores, comment, links */}
-          <div className="space-y-4">
-            <ScrollArea className="h-96 w-full">
-              <div className="space-y-6 pr-4">
-
-                {/* Score Categories (excluding alignment which is on the left) */}
-                {scoreCategories.filter(c => c.key !== 'alignment').map((category) => (
-                  <div key={category.key} className="space-y-3">
-                    <div>
-                      <Label className="text-sm font-medium">{category.label}</Label>
-                      {category.description && <p className="text-xs text-muted-foreground mt-1">{category.description}</p>}
+              {/* Main Form Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-3">
+                {/* Quality Checks */}
+                <div className="space-y-2 py-4">
+                  <Label className="text-base font-semibold">Quality Checks</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {/* Study Design */}
+                    <div className="border rounded-lg p-2 flex items-center gap-2">
+                      <Label className="text-xs font-medium min-w-[90px]">Study Design</Label>
+                      <RadioGroup value={reviewData.qualityChecks.studyDesign} onValueChange={(val) => updateQualityCheck('studyDesign', val as ReviewAnswer)} className="flex gap-2">
+                        <RadioGroupItem value="PASS" id="design-pass" />
+                        <Label htmlFor="design-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
+                        <RadioGroupItem value="NO" id="design-no" />
+                        <Label htmlFor="design-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
+                        <RadioGroupItem value="NA" id="design-na" />
+                        <Label htmlFor="design-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
+                      </RadioGroup>
                     </div>
-
-                    {/* Dot Rating */}
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3].map((score) => (
-                        <Button
-                          key={score}
-                          variant="ghost"
-                          size="sm"
-                          className="p-1 h-8 w-8"
-                          onClick={() => updateScore(category.key, score)}
-                        >
-                          <div 
-                            className={`w-3 h-3 rounded-full transition-colors ${
-                              scores[category.key]?.score >= score 
-                                ? 'bg-primary' 
-                                : 'bg-muted-foreground/30'
-                            }`}
-                          />
-                        </Button>
-                      ))}
-                      {scores[category.key]?.score > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {scoreLabels[scores[category.key].score as keyof typeof scoreLabels]}
-                        </Badge>
-                      )}
+                    {/* Representation */}
+                    <div className="border rounded-lg p-2 flex items-center gap-2">
+                      <Label className="text-xs font-medium min-w-[90px]">Representation</Label>
+                      <RadioGroup value={reviewData.qualityChecks.representation} onValueChange={(val) => updateQualityCheck('representation', val as ReviewAnswer)} className="flex gap-2">
+                        <RadioGroupItem value="PASS" id="rep-pass" />
+                        <Label htmlFor="rep-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
+                        <RadioGroupItem value="NO" id="rep-no" />
+                        <Label htmlFor="rep-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
+                        <RadioGroupItem value="NA" id="rep-na" />
+                        <Label htmlFor="rep-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
+                      </RadioGroup>
                     </div>
-
-                    {category.key !== scoreCategories[scoreCategories.length - 1].key && (
-                      <Separator />
-                    )}
+                    {/* Control Group */}
+                    <div className="border rounded-lg p-2 flex items-center gap-2">
+                      <Label className="text-xs font-medium min-w-[90px]">Control Group</Label>
+                      <RadioGroup value={reviewData.qualityChecks.controlGroup} onValueChange={(val) => updateQualityCheck('controlGroup', val as ReviewAnswer)} className="flex gap-2">
+                        <RadioGroupItem value="PASS" id="control-pass" />
+                        <Label htmlFor="control-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
+                        <RadioGroupItem value="NO" id="control-no" />
+                        <Label htmlFor="control-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
+                        <RadioGroupItem value="NA" id="control-na" />
+                        <Label htmlFor="control-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
+                      </RadioGroup>
+                    </div>
+                    {/* Bias Addressed */}
+                    <div className="border rounded-lg p-2 flex items-center gap-2">
+                      <Label className="text-xs font-medium min-w-[90px]">Bias Addressed</Label>
+                      <RadioGroup value={reviewData.qualityChecks.biasAddressed} onValueChange={(val) => updateQualityCheck('biasAddressed', val as ReviewAnswer)} className="flex gap-2">
+                        <RadioGroupItem value="PASS" id="bias-pass" />
+                        <Label htmlFor="bias-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
+                        <RadioGroupItem value="NO" id="bias-no" />
+                        <Label htmlFor="bias-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
+                        <RadioGroupItem value="NA" id="bias-na" />
+                        <Label htmlFor="bias-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
+                      </RadioGroup>
+                    </div>
+                    {/* Statistics */}
+                    <div className="border rounded-lg p-2 flex items-center gap-2">
+                      <Label className="text-xs font-medium min-w-[90px]">Statistics</Label>
+                      <RadioGroup value={reviewData.qualityChecks.statistics} onValueChange={(val) => updateQualityCheck('statistics', val as ReviewAnswer)} className="flex gap-2">
+                        <RadioGroupItem value="PASS" id="stats-pass" />
+                        <Label htmlFor="stats-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
+                        <RadioGroupItem value="NO" id="stats-no" />
+                        <Label htmlFor="stats-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
+                        <RadioGroupItem value="NA" id="stats-na" />
+                        <Label htmlFor="stats-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
+                      </RadioGroup>
+                    </div>
                   </div>
-                ))}
-
-                <Separator />
-
-                {/* Single Comment Box */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Reviewer Comment</Label>
-                  <Textarea
-                    placeholder={`Overall notes, interpretation, or context...`}
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={4}
-                    className="text-sm"
-                  />
                 </div>
 
-                {/* Links
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Related Links</Label>
-                  <p className="text-xs text-muted-foreground">Add zero or more links to supplementary sources, platforms, or webpages.</p>
-                  <div className="flex flex-col gap-2 mt-2">
-                    {links.map((link, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <LinkIcon className="w-4 h-4 text-muted-foreground" />
-                        <input
-                          className="flex-1 rounded border px-2 py-1 text-sm"
-                          placeholder="https://..."
-                          value={link}
-                          onChange={(e) => updateLink(idx, e.target.value)}
-                        />
-                        {links.length > 1 && (
-                          <Button variant="ghost" size="sm" onClick={() => removeLink(idx)}>Remove</Button>
-                        )}
-                      </div>
-                    ))}
+                {/* Evidence Category & Tags */}
+                <div className="space-y-2 py-4">
+                  <Label className="text-base font-semibold">Evidence & Tags</Label>
+                  <div className="space-y-2">
                     <div>
-                      <Button variant="outline" size="sm" onClick={addLink}>Add link</Button>
+                      <Select value={reviewData.category} onValueChange={(val) => updateCategory(val as ReviewCategory)}>
+                        <SelectTrigger className="w-full max-w-xs">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {REVIEW_CATEGORIES.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </div> */}
-
+                  {/* Ethnicity/Population */}
+                  <div>
+                    <Label className="text-xs font-medium">Ethnicity/Population</Label>
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                      {ETHNICITY_OPTIONS.slice(0, 6).map(ethnicity => (
+                        <label key={ethnicity} className="flex items-center space-x-1 cursor-pointer">
+                          <Checkbox checked={reviewData.tags.ethnicityLabels.includes(ethnicity)} onCheckedChange={() => toggleEthnicity(ethnicity)} className="h-3 w-3" />
+                          <span className="text-xs truncate">{ethnicity}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      <input type="text" placeholder="Custom..." value={customEthnicity} onChange={(e) => setCustomEthnicity(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())} className="flex-1 rounded border px-2 py-1 text-xs" />
+                      <Button size="sm" variant="outline" onClick={addCustomEthnicity} disabled={!customEthnicity.trim()} className="text-xs px-2 py-1 h-7">+</Button>
+                    </div>
+                    {customEthnicities.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {customEthnicities.map(ethnicity => (
+                          <Badge key={ethnicity} variant="secondary" className="text-xs gap-1 px-1">
+                            {ethnicity}
+                            <X className="w-2 h-2 cursor-pointer" onClick={() => removeEthnicity(ethnicity)} />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Age Ranges - new row below ethnicity */}
+                  <div className="mt-2">
+                    <Label className="text-xs font-medium">Age Ranges (decades)</Label>
+                    <div className="grid grid-cols-3 gap-1">
+                      {AGE_RANGES.map(range => (
+                        <label key={range} className="flex items-center space-x-1 cursor-pointer">
+                          <Checkbox checked={reviewData.tags.ageRanges.includes(range)} onCheckedChange={() => toggleAgeRange(range)} className="h-3 w-3" />
+                          <span className="text-xs">{range}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </ScrollArea>
 
-            <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => submitReviewMutation.mutate()}
-                disabled={submitReviewMutation.isPending}
-              >
-                {submitReviewMutation.isPending ? (isUpdate ? 'Updating...' : 'Submitting...') : (isUpdate ? 'Update Review' : 'Submit Review')}
-              </Button>
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                  <div className="text-red-800 text-sm font-medium mb-1">Please fix the following issues:</div>
+                  <ul className="text-red-700 text-sm space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index} className="flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Comments & Review Status */}
+              <div className="space-y-2 mt-2">
+                <Label className="text-sm font-medium">Comments</Label>
+                <Textarea placeholder="Additional notes or assessment..." value={comment} onChange={(e) => setComment(e.target.value)} rows={3} className="text-sm" />
+                {existingReview && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    <User className="w-3 h-3 inline mr-1" />
+                    Review exists (updated: {new Date(existingReview.updated_at).toLocaleDateString()})
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </ScrollArea>
+        </div>
+
+        {/* Action Buttons - Compact */}
+        <div className="flex gap-2 pt-3 border-t">
+          <Button variant="outline" onClick={onClose} className="px-4">
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => submitReviewMutation.mutate()}
+            disabled={submitReviewMutation.isPending}
+            className="px-6"
+          >
+            {submitReviewMutation.isPending 
+              ? (isUpdate ? 'Updating...' : 'Submitting...') 
+              : (isUpdate ? 'Update' : 'Submit')
+            }
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
