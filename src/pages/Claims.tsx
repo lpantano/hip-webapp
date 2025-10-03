@@ -751,15 +751,43 @@ const Claims = () => {
                 {/* Scores */}
                 {reviewCard.expert.scores.length > 0 && (
                   <div className="mb-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="flex flex-row flex-wrap gap-3 items-center">
                       {reviewCard.expert.scores.map((scoreItem, idx) => (
-                        <div key={idx} className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm text-muted-foreground">{getCategoryLabel(scoreItem.category)}:</span>
-                              <Badge className="text-xs px-2 py-1">
-                                {scoreItem.score ?? 'No score'}
-                              </Badge>
-                          </div>
+                        <div key={idx} className="flex items-center gap-1">
+                          {(() => {
+                            // Explanations and human labels for each score category
+                            const explanations: Record<string, string> = {
+                              studyDesign: 'Was the study designed to answer this claim?',
+                              representation: 'Do the people in the study represent the kinds of people the claim is about?',
+                              controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
+                              biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
+                              statistics: 'Were statistical tests appropriate for the study design and data type?'
+                            };
+                            const humanLabels: Record<string, string> = {
+                              studyDesign: 'Study Design',
+                              representation: 'Representation',
+                              controlGroup: 'Control Group',
+                              biasAddressed: 'Bias Addressed',
+                              statistics: 'Statistics'
+                            };
+                            const label = humanLabels[scoreItem.category] || getCategoryLabel(scoreItem.category);
+                            const explanation = explanations[scoreItem.category] || '';
+                            return explanation ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
+                                </PopoverTrigger>
+                                <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                  {explanation}
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">{label}:</span>
+                            );
+                          })()}
+                          <Badge className="text-xs px-1 py-1">
+                            {scoreItem.score ?? 'No score'}
+                          </Badge>
                         </div>
                       ))}
                     </div>
@@ -954,13 +982,7 @@ const Claims = () => {
                         })}
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Expert Score Distributions */}
-                  {expertDistributions[claim.id] && (
-                    <ExpertScoreDistribution distributions={expertDistributions[claim.id]} />
-                  )}
-
+                  </div>                  
                   {/* Aggregated Category Labels from all expert reviews, color-coded */}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {(() => {
