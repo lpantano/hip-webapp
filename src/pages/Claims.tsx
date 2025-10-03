@@ -11,7 +11,6 @@ import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
-import ExpertScoreDistribution from '@/components/ui/expert-score-distribution';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -244,118 +243,6 @@ const Claims = () => {
     return scoresTemplate;
   }, []);
 
-  const fetchExpertDistributions = useCallback(async () => {
-    try {
-      // Fetch review data and create distributions from quality checks
-      const { data: scoreData, error } = await sb.from('publication_scores')
-        .select(`
-          review_data,
-          publication_id,
-          publications!inner(claim_id)
-        `);
-      
-      if (error) throw error;
-
-      // Process the review data to create distributions
-      const distributionMap: Record<string, Record<string, { low: number; medium: number; high: number; }>> = {};
-      
-      type ScoreItem = { 
-        review_data?: Record<string, unknown>;
-        publication_id?: string;
-        publications?: { claim_id?: string } | Array<{ claim_id?: string }> | null;
-      };
-      
-      const rows = (scoreData || []) as ScoreItem[];
-      rows.forEach((itemRaw) => {
-        // Supabase can return the related row as an object or an array depending on the join shape.
-        let claimId: string | undefined;
-        if (itemRaw.publications) {
-          if (Array.isArray(itemRaw.publications)) {
-            claimId = itemRaw.publications[0]?.claim_id || undefined;
-          } else {
-            claimId = itemRaw.publications?.claim_id || undefined;
-          }
-        }
-
-        // If claimId not present, we cannot attribute this score to a claim so skip it.
-        if (!claimId || !itemRaw.review_data) return;
-        
-        if (!distributionMap[claimId]) {
-          distributionMap[claimId] = {};
-        }
-        
-        // Extract quality checks from review data
-        const reviewData = itemRaw.review_data;
-        const qualityChecks = (reviewData && typeof reviewData === 'object' && 'qualityChecks' in reviewData) 
-          ? reviewData.qualityChecks as Record<string, unknown>
-          : {};
-        
-        // Map quality assessments to distribution categories
-        const mapQualityToScore = (quality?: string): 'low' | 'medium' | 'high' => {
-          switch (quality) {
-            case 'PASS': return 'high';
-            case 'NO': return 'low';
-            case 'NA': return 'medium';
-            default: return 'low';
-          }
-        };
-        
-        // Process each quality check with type safety
-        const getQualityValue = (obj: Record<string, unknown>, key: string): string | undefined => {
-          const value = obj[key];
-          return typeof value === 'string' ? value : undefined;
-        };
-        
-        const categories = [
-          { key: 'study_design', value: getQualityValue(qualityChecks, 'studyDesign') },
-          { key: 'representation', value: getQualityValue(qualityChecks, 'representation') },
-          { key: 'control_group', value: getQualityValue(qualityChecks, 'controlGroup') },
-          { key: 'bias_addressed', value: getQualityValue(qualityChecks, 'biasAddressed') },
-          { key: 'statistics', value: getQualityValue(qualityChecks, 'statistics') }
-        ];
-        
-        categories.forEach(({ key, value }) => {
-          if (value) {
-            if (!distributionMap[claimId][key]) {
-              distributionMap[claimId][key] = { low: 0, medium: 0, high: 0 };
-            }
-            
-            const scoreLevel = mapQualityToScore(value);
-            distributionMap[claimId][key][scoreLevel]++;
-          }
-        });
-      });
-
-      // Convert to the format expected by the component
-      const distributions: Record<string, ExpertDistribution[]> = {};
-      
-      Object.entries(distributionMap).forEach(([claimId, categories]) => {
-        distributions[claimId] = Object.entries(categories).map(([category, dist]) => {
-          const totalExperts = dist.low + dist.medium + dist.high;
-          
-          const categoryLabels: Record<string, string> = {
-            'study_design': 'Study Design',
-            'representation': 'Population Representation',
-            'control_group': 'Control Group',
-            'bias_addressed': 'Bias Control',
-            'statistics': 'Statistical Analysis'
-          };
-          
-          return {
-            category,
-            categoryLabel: categoryLabels[category] || category,
-            totalExperts,
-            distribution: dist
-          };
-        });
-      });
-
-      setExpertDistributions(distributions);
-    } catch (error) {
-      console.error('Error fetching expert distributions:', error);
-    }
-  }, [sb]);
-
   const fetchClaimsData = useCallback(async () => {
     try {
       // Fetch claims directly instead of using the problematic view
@@ -545,14 +432,14 @@ const Claims = () => {
       // Fetch claims data
       await Promise.all([
         fetchClaimsData(),
-        fetchExpertDistributions()
+        // fetchExpertDistributions()
       ]);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
-  }, [fetchExpertDistributions, fetchClaimsData]);
+  }, [fetchClaimsData]);
 
   // Ensure data is loaded on mount
   useEffect(() => {
@@ -1073,8 +960,46 @@ const Claims = () => {
                   {expertDistributions[claim.id] && (
                     <ExpertScoreDistribution distributions={expertDistributions[claim.id]} />
                   )}
-                </CardHeader>
 
+                  {/* Aggregated Category Labels from all expert reviews, color-coded */}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(() => {
+                      // Aggregate all review_data.category labels for this claim
+                      const labelCounts: Record<string, number> = {};
+                      claim.publications.forEach(pub => {
+                        (pub.rawScores || []).forEach(score => {
+                          const label = score.review_data?.category;
+                          if (label) {
+                            labelCounts[label] = (labelCounts[label] || 0) + 1;
+                          }
+                        });
+                      });
+                      // Color map for categories (all lowercase, no extra spaces)
+                      const categoryColors: Record<string, string> = {
+                        'unreliable': 'bg-gray-200 text-gray-700 border border-gray-300',
+                        'not tested in humans': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+                        'limited tested in humans': 'bg-blue-100 text-blue-800 border border-blue-300',
+                        'tested in human': 'bg-green-100 text-green-800 border border-green-300',
+                        'widely tested in humans': 'bg-green-300 text-green-900 border border-green-400',
+                      };
+                      return Object.entries(labelCounts).map(([label, count]) => {
+                        // Normalize label for color matching: lowercase and single spaces
+                        const key = label.trim().toLowerCase().replace(/\s+/g, ' ');
+                        const color = categoryColors[key] || 'bg-gray-100 text-gray-800 border border-gray-200';
+                        // console.log('Label:', label, 'Key:', key, 'Color:', color);
+                        return (
+                          <span
+                            key={label}
+                            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${color} !border-2`}
+                            style={{ borderWidth: 2 }}
+                          >
+                            {label} <span className="ml-1">({count})</span>
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                </CardHeader>
                 {/* Expanded view with individual reviews */}
                 {expandedClaim === claim.id && (
                   <CardContent className="pt-0">

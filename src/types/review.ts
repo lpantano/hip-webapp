@@ -2,8 +2,8 @@
 
 export type ReviewCategory = 
   | 'Unreliable'
-  | 'Not tested in human'
-  | 'Limited Tested in humans'
+  | 'Not Tested in Humans'
+  | 'Limited Tested in Humans'
   | 'Tested in Humans'
   | 'Widely Tested in Humans';
 
@@ -31,7 +31,7 @@ export interface ReviewData {
 
 // Helper to create empty review data
 export const createEmptyReviewData = (): ReviewData => ({
-  category: 'Not tested in human',
+  category: 'Not Tested in Humans',
   tags: {
     testedInHuman: false,
     ethnicityLabels: [],

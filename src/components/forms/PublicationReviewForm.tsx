@@ -59,8 +59,8 @@ interface ExistingReview {
 
 const REVIEW_CATEGORIES: ReviewCategory[] = [
   'Unreliable',
-  'Not tested in human',
-  'Limited Tested in humans',
+  'Not Tested in Humans',
+  'Limited Tested in Humans',
   'Tested in Humans',
   'Widely Tested in Humans'
 ];
