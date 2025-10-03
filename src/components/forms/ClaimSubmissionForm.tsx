@@ -19,7 +19,7 @@ import { URLMetadataService } from '@/services/URLMetadataService';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
-  description: z.string().min(20, 'Description must be at least 20 characters'),
+  description: z.string().optional(),
   category: z.enum(['nutrition', 'fitness', 'mental_health', 'pregnancy', 'menopause', 'general_health', 'perimenopause']),
   sources: z.array(z.object({
     source_url: z.string().url('Please enter a valid URL'),
@@ -36,7 +36,7 @@ const formSchema = z.object({
     publication_year: z.number().optional(),
     abstract: z.string().optional(),
     url: z.string().optional(),
-  })).min(1, 'At least one publication is required'),
+  })).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -168,29 +168,36 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
       console.log('Claim inserted:', claimData);
 
-      // Insert publications
-      const publicationsToInsert = data.publications.map(pub => ({
-        claim_id: claimData.id,
-        title: pub.title || '',
-        journal: pub.journal || '',
-        publication_year: pub.publication_year || new Date().getFullYear(),
-        doi: pub.doi,
-        url: pub.url || `https://doi.org/${pub.doi}`,
-        abstract: pub.abstract || '',
-      }));
+      // Insert publications if any (filter out empty publications)
+      if (data.publications && data.publications.length > 0) {
+        const validPublications = data.publications.filter(pub => pub.doi && pub.doi.trim() !== '');
+        
+        if (validPublications.length > 0) {
+          const publicationsToInsert = validPublications.map(pub => ({
+            claim_id: claimData.id,
+            title: pub.title || '',
+            journal: pub.journal || '',
+            publication_year: pub.publication_year || new Date().getFullYear(),
+            doi: pub.doi,
+            url: pub.url || `https://doi.org/${pub.doi}`,
+            abstract: pub.abstract || '',
+            submitted_by: user.id,
+          }));
 
-      console.log('Inserting publications:', publicationsToInsert);
+          console.log('Inserting publications:', publicationsToInsert);
 
-      const { error: pubError } = await supabase
-        .from('publications')
-        .insert(publicationsToInsert);
+          const { error: pubError } = await supabase
+            .from('publications')
+            .insert(publicationsToInsert);
 
-      if (pubError) {
-        console.error('Publications insert error:', pubError);
-        throw pubError;
+          if (pubError) {
+            console.error('Publications insert error:', pubError);
+            throw pubError;
+          }
+
+          console.log('Publications inserted successfully');
+        }
       }
-
-      console.log('Publications inserted successfully');
 
       // Insert sources if any
       if (data.sources && data.sources.length > 0) {
@@ -226,11 +233,12 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
       form.reset();
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting claim:', error);
+      const message = error instanceof Error ? error.message : "Failed to submit claim. Please try again.";
       toast({
         title: "Submission Error",
-        description: error.message || "Failed to submit claim. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {

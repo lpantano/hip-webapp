@@ -97,44 +97,68 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('Form submit handler called');
     e.preventDefault();
     
     if (!user) {
+      console.log('No user found, cannot submit');
       setError('You must be signed in to submit papers');
       return;
     }
+    
+    console.log('User found:', user.id);
 
     const validationError = validateForm();
+    console.log('Validation result:', validationError);
     if (validationError) {
+      console.log('Validation failed:', validationError);
       setError(validationError);
       return;
     }
 
+    console.log('Validation passed, starting submission...');
     setLoading(true);
     setError(null);
 
     try {
-      const { error: insertError } = await supabase
+      const insertData = {
+        claim_id: claimId,
+        title: formData.title.trim(),
+        journal: formData.journal.trim(),
+        publication_year: parseInt(formData.publicationYear),
+        doi: formData.doi.trim() || null,
+        url: formData.url.trim() || null,
+        abstract: formData.abstract.trim() || null,
+        submitted_by: user.id,
+        status: 'pending'
+      };
+      
+      console.log('Attempting to insert paper with data:', insertData);
+      
+      // Check current auth session
+      const { data: authUser, error: authError } = await supabase.auth.getUser();
+      console.log('Current auth user from supabase:', authUser?.user?.id);
+      console.log('Auth error:', authError);
+      console.log('User ID from context:', user.id);
+      console.log('User IDs match:', authUser?.user?.id === user.id);
+      
+      const { data: insertResult, error: insertError } = await supabase
         .from('publications')
-        .insert({
-          claim_id: claimId,
-          title: formData.title.trim(),
-          journal: formData.journal.trim(),
-          publication_year: parseInt(formData.publicationYear),
-          doi: formData.doi.trim() || null,
-          url: formData.url.trim() || null,
-          abstract: formData.abstract.trim() || null,
-          submitted_by: user.id,
-          status: 'pending'
-        });
+        .insert(insertData)
+        .select();
+
+      console.log('Insert result:', insertResult);
+      console.log('Insert error:', insertError);
 
       if (insertError) throw insertError;
 
+      console.log('Paper inserted successfully, calling onSuccess...');
       toast.success('Paper submitted successfully! It will be reviewed by experts before appearing on the claim.');
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting paper:', err);
-      setError(err.message || 'Failed to submit paper. Please try again.');
+      const message = err instanceof Error ? err.message : 'Failed to submit paper. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
