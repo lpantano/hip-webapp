@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { ResourceReviewForm } from "@/components/forms/ResourceReviewForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -36,9 +37,11 @@ export const ResourceList = ({ status }: ResourceListProps) => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedResource, setSelectedResource] = useState<string | null>(null);
+  const [isExpertOrResearcher, setIsExpertOrResearcher] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase.from("resources").select("*");
@@ -65,16 +68,50 @@ export const ResourceList = ({ status }: ResourceListProps) => {
         );
         setResources(resourcesWithReviews);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching resources:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch resources. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, toast]);
 
   useEffect(() => {
     fetchResources();
-  }, [status]);
+  }, [status, fetchResources]);
+
+  useEffect(() => {
+    const checkExpertStatus = async () => {
+      if (!user) {
+        setIsExpertOrResearcher(false);
+        return;
+      }
+      
+      try {
+        // Check if user has expert or researcher role
+        const { data: expertData } = await supabase.rpc('has_role', { 
+          _user_id: user.id, 
+          _role: 'expert' 
+        });
+        
+        const { data: researcherData } = await supabase.rpc('has_role', { 
+          _user_id: user.id, 
+          _role: 'researcher' 
+        });
+        
+        setIsExpertOrResearcher((expertData || false) || (researcherData || false));
+      } catch (error) {
+        console.error('Error checking expert/researcher status:', error);
+        setIsExpertOrResearcher(false);
+      }
+    };
+
+    checkExpertStatus();
+  }, [user]);
 
   const getStatusColor = (resourceStatus: string) => {
     switch (resourceStatus) {
@@ -97,7 +134,36 @@ export const ResourceList = ({ status }: ResourceListProps) => {
 
   const canReview = (resource: Resource) => {
     // Check if user can review (expert, researcher, admin) and hasn't reviewed yet
-    return user && !resource.reviews?.some(review => review.reviewer_user_id === user.id);
+    // Only allow reviews for resources that are under_review
+    return user && resource.status === 'under_review' && isExpertOrResearcher && !resource.reviews?.some(review => review.reviewer_user_id === user.id);
+  };
+
+  const approveForReview = async (resourceId: string) => {
+    if (!user || !isExpertOrResearcher) return;
+    
+    try {
+      const { error } = await supabase
+        .from('resources')
+        .update({ status: 'under_review' })
+        .eq('id', resourceId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Resource approved for review. It will now be available for expert evaluation.",
+      });
+      
+      // Refresh the resources list
+      fetchResources();
+    } catch (error) {
+      console.error('Error approving resource for review:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve resource. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -178,6 +244,17 @@ export const ResourceList = ({ status }: ResourceListProps) => {
 
               {/* Review Actions */}
               <div className="flex gap-2">
+                {/* Approve for Review button for waiting_decision resources */}
+                {resource.status === 'waiting_decision' && isExpertOrResearcher && (
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => approveForReview(resource.id)}
+                  >
+                    Approve for Review
+                  </Button>
+                )}
+                
                 {canReview(resource) && (
                   <Dialog>
                     <DialogTrigger asChild>

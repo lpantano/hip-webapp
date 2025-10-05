@@ -21,7 +21,11 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export const ResourceSubmissionForm = () => {
+type Props = {
+  onSuccess?: () => void;
+};
+
+export const ResourceSubmissionForm = ({ onSuccess }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -63,10 +67,15 @@ export const ResourceSubmissionForm = () => {
       });
 
       form.reset();
-    } catch (error: any) {
+      
+      // Close the form if onSuccess callback is provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
       toast({
         title: "Error submitting resource",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
