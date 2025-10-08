@@ -60,7 +60,7 @@ const FeatureRequestForm: React.FC<Props> = ({ onSuccess, onCancel }) => {
         labels: selectedLabels.length ? selectedLabels : null,
         user_id: user.id,
         status: 'pending', // default
-        priority: null // no priority by default
+        priority: 'low' // default priority, admin can change later
       }]);
 
       if (error) throw error;

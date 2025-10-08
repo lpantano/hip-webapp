@@ -256,7 +256,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
       case 'PASS':
         return 'text-green-700 bg-green-50 border-green-200';
       case 'NO':
-        return 'text-red-700 bg-red-50 border-red-200';
+        return 'text-white bg-yellow-700 border-yellow-800';
       case 'NA':
         return 'text-gray-600 bg-gray-50 border-gray-200';
       default:

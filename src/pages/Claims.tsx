@@ -637,6 +637,21 @@ const Claims = () => {
     return labels[category] || category;
   };
 
+  const getEvidenceClassificationColor = (classification: string) => {
+    // Color map for evidence classifications (all lowercase, no extra spaces)
+    const classificationColors: Record<string, string> = {
+      'unreliable': 'bg-gray-200 text-gray-700 border border-gray-300',
+      'not tested in humans': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+      'limited tested in humans': 'bg-blue-100 text-blue-800 border border-blue-300',
+      'tested in humans': 'bg-green-100 text-green-800 border border-green-300',
+      'tested in human': 'bg-green-100 text-green-800 border border-green-300', // Handle singular form
+      'widely tested in humans': 'bg-green-300 text-green-900 border border-green-400',
+    };
+    // Normalize label for color matching: lowercase and single spaces
+    const key = classification.trim().toLowerCase().replace(/\s+/g, ' ');
+    return classificationColors[key] || 'bg-gray-100 text-gray-800 border border-gray-200';
+  };
+
   // Individual expert review cards
   type ExpertReviewCard = {
     publication: {
@@ -718,7 +733,7 @@ const Claims = () => {
                     <div className="text-xs text-muted-foreground">Expert Review</div>
                     {reviewCard.expert.classification && (
                       <div className="mt-1">
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
                           {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                         </Badge>
                       </div>
@@ -792,7 +807,7 @@ const Claims = () => {
                               <span className="text-sm text-muted-foreground">{label}:</span>
                             );
                           })()}
-                          <Badge className="text-xs px-1 py-1">
+                          <Badge className={`text-xs px-1 py-1 ${scoreItem.score === 'NO' ? 'bg-yellow-700 text-white hover:bg-yellow-800' : ''}`}>
                             {scoreItem.score ?? 'No score'}
                           </Badge>
                         </div>
@@ -1003,19 +1018,8 @@ const Claims = () => {
                           }
                         });
                       });
-                      // Color map for categories (all lowercase, no extra spaces)
-                      const categoryColors: Record<string, string> = {
-                        'unreliable': 'bg-gray-200 text-gray-700 border border-gray-300',
-                        'not tested in humans': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-                        'limited tested in humans': 'bg-blue-100 text-blue-800 border border-blue-300',
-                        'tested in human': 'bg-green-100 text-green-800 border border-green-300',
-                        'widely tested in humans': 'bg-green-300 text-green-900 border border-green-400',
-                      };
                       return Object.entries(labelCounts).map(([label, count]) => {
-                        // Normalize label for color matching: lowercase and single spaces
-                        const key = label.trim().toLowerCase().replace(/\s+/g, ' ');
-                        const color = categoryColors[key] || 'bg-gray-100 text-gray-800 border border-gray-200';
-                        // console.log('Label:', label, 'Key:', key, 'Color:', color);
+                        const color = getEvidenceClassificationColor(label);
                         return (
                           <span
                             key={label}

@@ -33,7 +33,7 @@ export const ResourcesSection = () => {
               <DialogHeader>
                 <DialogTitle>Submit New Resource</DialogTitle>
               </DialogHeader>
-              <ResourceSubmissionForm />
+              <ResourceSubmissionForm onSuccess={() => window.location.reload()} />
             </DialogContent>
           </Dialog>
         )}
