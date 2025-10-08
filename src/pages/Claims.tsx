@@ -15,6 +15,7 @@ import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
+import { getClassificationReasons, type ReviewData } from '@/types/review';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -63,6 +64,7 @@ interface PublicationScoreRow {
       biasAddressed?: 'PASS' | 'NO' | 'NA' | null;
       statistics?: 'PASS' | 'NO' | 'NA' | null;
     };
+    womenNotIncluded?: boolean;
   } | null;
   comments?: string | null;
   created_at: string;
@@ -680,6 +682,9 @@ const Claims = () => {
         ethnicityLabels?: string[];
         ageRanges?: string[];
       } | null;
+      womenNotIncluded?: boolean;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      reviewData?: any;
     };
   };
 
@@ -736,6 +741,30 @@ const Claims = () => {
                         <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
                           {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                         </Badge>
+                        {/* Show reasons for negative classifications */}
+                        {reviewCard.expert.reviewData && 
+                         (reviewCard.expert.classification === 'Invalid' || 
+                          reviewCard.expert.classification === 'Unreliable' || 
+                          reviewCard.expert.classification === 'Fallacy') && (
+                          <div className="mt-2">
+                            {(() => {
+                              const reasons = getClassificationReasons(reviewCard.expert.reviewData);
+                              if (reasons.length > 0) {
+                                return (
+                                  <div className="text-xs text-muted-foreground">
+                                    <div className="font-medium mb-1">Reason{reasons.length > 1 ? 's' : ''}:</div>
+                                    <ul className="list-disc list-inside space-y-1">
+                                      {reasons.map((reason, i) => (
+                                        <li key={i}>{reason}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        )}
                       </div>
                     )}
                     {/* Show tags if present */}
@@ -757,6 +786,14 @@ const Claims = () => {
                             ))}
                           </span>
                         )}
+                      </div>
+                    )}
+                    {/* Show Women Not Included label if flagged */}
+                    {reviewCard.expert.womenNotIncluded && (
+                      <div className="mt-2">
+                        <Badge className="text-xs bg-red-100 text-red-800 border border-red-300">
+                          ♀ Women Not Included
+                        </Badge>
                       </div>
                     )}
                   </div>
@@ -1010,26 +1047,97 @@ const Claims = () => {
                     {(() => {
                       // Aggregate all review_data.category labels for this claim
                       const labelCounts: Record<string, number> = {};
+                      let womenNotIncludedCount = 0;
+
                       claim.publications.forEach(pub => {
                         (pub.rawScores || []).forEach(score => {
                           const label = score.review_data?.category;
                           if (label) {
                             labelCounts[label] = (labelCounts[label] || 0) + 1;
                           }
+                          // Check for womenNotIncluded flag
+                          if (score.review_data?.womenNotIncluded) {
+                            womenNotIncludedCount++;
+                          }
                         });
                       });
-                      return Object.entries(labelCounts).map(([label, count]) => {
+                      
+                      const labels = Object.entries(labelCounts).map(([label, count]) => {
                         const color = getEvidenceClassificationColor(label);
-                        return (
+                        
+                        // Get aggregated reasons for negative classifications
+                        let aggregatedReasons: string[] = [];
+                        if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
+                          const allReasons: string[] = [];
+                          claim.publications.forEach(pub => {
+                            (pub.rawScores || []).forEach(score => {
+                              if (score.review_data?.category === label) {
+                                const reasons = getClassificationReasons(score.review_data);
+                                allReasons.push(...reasons);
+                              }
+                            });
+                          });
+                          // Get unique reasons and their counts
+                          const reasonCounts: Record<string, number> = {};
+                          allReasons.forEach(reason => {
+                            reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+                          });
+                          aggregatedReasons = Object.entries(reasonCounts)
+                            .sort(([,a], [,b]) => b - a) // Sort by count descending
+                            .map(([reason, reasonCount]) => 
+                              reasonCount > 1 ? `${reason} (${reasonCount})` : reason
+                            );
+                        }
+                        
+                        const labelElement = (
                           <span
                             key={label}
-                            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${color} !border-2`}
+                            className={`inline-flex items-center rounded-xl px-3 py-1 text-m font-semibold ${color} !border-2 shadow-sm`}
                             style={{ borderWidth: 2 }}
                           >
-                            {label} <span className="ml-1">({count})</span>
+                            {label} <span className="ml-2">({count})</span>
                           </span>
                         );
+                        
+                        // If there are reasons, wrap in a popover
+                        if (aggregatedReasons.length > 0) {
+                          return (
+                            <Popover key={label}>
+                              <PopoverTrigger asChild>
+                                <div className="cursor-help">
+                                  {labelElement}
+                                </div>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80">
+                                <div className="space-y-2">
+                                  <h4 className="font-medium">Reasons for {label} classification:</h4>
+                                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                    {aggregatedReasons.map((reason, i) => (
+                                      <li key={i}>{reason}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          );
+                        }
+                        
+                        return labelElement;
                       });
+                      
+                      // Add women not included label if any reviews marked it
+                      if (womenNotIncludedCount > 0) {
+                        labels.push(
+                          <span
+                            key="women-included"
+                            className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold bg-red-100 text-red-800 border-2 border-red-300 shadow-sm"
+                          >
+                            ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
+                          </span>
+                        );
+                      }
+                      
+                      return labels;
                     })()}
                   </div>
                 </CardHeader>
@@ -1229,7 +1337,9 @@ const Claims = () => {
                         scores: expertScores,
                         comments: mergedComments,
                         classification: latestRow?.review_data?.category ?? null,
-                        tags: latestRow?.review_data?.tags ?? null
+                        tags: latestRow?.review_data?.tags ?? null,
+                        womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
+                        reviewData: latestRow?.review_data ?? null
                       }
                     });
                   });

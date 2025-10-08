@@ -1,6 +1,7 @@
 // Type definitions for the publication review data structure
 
 export type ReviewCategory = 
+  | 'Fallacy'
   | 'Invalid'
   | 'Unreliable'
   | 'Not Tested in Humans'
@@ -32,8 +33,16 @@ export interface ReviewData {
     hasConflictOfInterest: boolean;
     isReview: boolean;
     isCategoricalMetaAnalysis: boolean;
+    overstatesEvidence: boolean;
     isValid: boolean; // computed field based on the above
   };
+  systemUsed: {
+    cells: boolean;
+    animals: boolean;
+    humans: boolean;
+  };
+  studySize: 'less_than_100' | 'less_than_500k' | 'more_than_500k' | null;
+  womenNotIncluded: boolean;
 }
 
 // Helper to create empty review data
@@ -55,8 +64,16 @@ export const createEmptyReviewData = (): ReviewData => ({
     hasConflictOfInterest: false,
     isReview: false,
     isCategoricalMetaAnalysis: false,
+    overstatesEvidence: false,
     isValid: true // Default to valid unless validation flags are set
-  }
+  },
+  systemUsed: {
+    cells: false,
+    animals: false,
+    humans: false
+  },
+  studySize: null,
+  womenNotIncluded: false
 });
 
 // Age range options
@@ -84,3 +101,48 @@ export const ETHNICITY_OPTIONS = [
   'Mixed/Multiple',
   'Not specified'
 ];
+
+// Helper function to get classification reasons for Invalid, Unreliable, or Fallacy categories
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getClassificationReasons = (data: any): string[] => {
+  const reasons: string[] = [];
+  
+  if (!data) return reasons;
+  
+  // Check for Fallacy reasons
+  if (data.validation?.overstatesEvidence) {
+    reasons.push("Claim overstates or misinterprets the evidence");
+  }
+  
+  // Check for Invalid reasons (excluding overstatesEvidence as it's already Fallacy)
+  if (!data.validation?.overstatesEvidence) {
+    if (data.validation?.hasConflictOfInterest) {
+      reasons.push("Has conflict of interest");
+    }
+    if (data.validation?.isReview) {
+      reasons.push("Is a review/meta-analysis");
+    }
+    if (data.validation?.isCategoricalMetaAnalysis) {
+      reasons.push("Is a categorical meta-analysis");
+    }
+  }
+  
+  // Check for Unreliable reasons (quality checks)
+  if (data.qualityChecks?.studyDesign === 'NO') {
+    reasons.push("Poor study design");
+  }
+  if (data.qualityChecks?.representation === 'NO') {
+    reasons.push("Poor representation");
+  }
+  if (data.qualityChecks?.controlGroup === 'NO') {
+    reasons.push("No adequate control group");
+  }
+  if (data.qualityChecks?.biasAddressed === 'NO') {
+    reasons.push("Bias not adequately addressed");
+  }
+  if (data.qualityChecks?.statistics === 'NO') {
+    reasons.push("Poor statistical analysis");
+  }
+  
+  return reasons;
+};

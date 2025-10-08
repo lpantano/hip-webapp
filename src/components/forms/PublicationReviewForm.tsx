@@ -16,15 +16,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, User, X } from 'lucide-react';
+import { FileText, User, X, Check, ChevronsUpDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { 
   type ReviewCategory, 
   type ReviewAnswer, 
   type ReviewData,
   createEmptyReviewData,
+  getClassificationReasons,
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
@@ -58,6 +61,7 @@ interface ExistingReview {
 }
 
 const REVIEW_CATEGORIES: ReviewCategory[] = [
+  'Fallacy',
   'Invalid',
   'Unreliable',
   'Not Tested in Humans',
@@ -75,6 +79,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const [comment, setComment] = useState('');
   const [customEthnicity, setCustomEthnicity] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [ethnicityOpen, setEthnicityOpen] = useState(false);
+  const [ageRangeOpen, setAgeRangeOpen] = useState(false);
 
   // Fetch existing review for this publication by this expert
   const { data: existingReview } = useQuery({
@@ -107,26 +113,53 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           
           // Validate that the parsed data has the expected structure
           if (reviewData && typeof reviewData === 'object' && 'category' in reviewData) {
-            // Ensure validation fields exist for backwards compatibility
+            // Ensure all fields exist for backwards compatibility
             const loadedData = reviewData as ReviewData;
             if (!loadedData.validation) {
               loadedData.validation = {
                 hasConflictOfInterest: false,
                 isReview: false,
                 isCategoricalMetaAnalysis: false,
+                overstatesEvidence: false,
                 isValid: true
               };
             }
-            // Recompute isValid based on validation fields
-            loadedData.validation.isValid = !(
-              loadedData.validation.hasConflictOfInterest || 
-              loadedData.validation.isReview || 
-              loadedData.validation.isCategoricalMetaAnalysis
-            );
-            // Auto-set category to Invalid if validation fails
-            if (!loadedData.validation.isValid && loadedData.category !== 'Invalid') {
-              loadedData.category = 'Invalid';
+            // Ensure all validation fields exist for backwards compatibility
+            const validationWithDefaults = {
+              hasConflictOfInterest: loadedData.validation.hasConflictOfInterest || false,
+              isReview: loadedData.validation.isReview || false,
+              isCategoricalMetaAnalysis: loadedData.validation.isCategoricalMetaAnalysis || false,
+              overstatesEvidence: (loadedData.validation as {overstatesEvidence?: boolean}).overstatesEvidence || false,
+              isValid: true
+            };
+            
+            if (!loadedData.systemUsed) {
+              loadedData.systemUsed = {
+                cells: false,
+                animals: false,
+                humans: false
+              };
             }
+            if (!loadedData.studySize) {
+              loadedData.studySize = null;
+            }
+            if (typeof loadedData.womenNotIncluded === 'undefined') {
+              loadedData.womenNotIncluded = false;
+            }
+            
+            // Recompute isValid based on validation fields
+            validationWithDefaults.isValid = !(
+              validationWithDefaults.hasConflictOfInterest || 
+              validationWithDefaults.isReview || 
+              validationWithDefaults.isCategoricalMetaAnalysis ||
+              validationWithDefaults.overstatesEvidence
+            );
+            
+            loadedData.validation = validationWithDefaults;
+            
+            // Recompute category based on decision tree
+            loadedData.category = computeCategory(loadedData);
+            
             setReviewData(loadedData);
           } else {
             setReviewData(createEmptyReviewData());
@@ -150,18 +183,33 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const validateForm = (): string[] => {
     const errors: string[] = [];
     
-    // Check if evidence category is selected
-    if (!reviewData.category) {
-      errors.push('Please select an evidence category');
+    // If publication overstates evidence (Fallacy), no further validation needed
+    if (reviewData.validation.overstatesEvidence) {
+      return errors; // Empty array - no validation errors for Fallacy
     }
     
-    // If publication is marked as invalid, quality checks are less critical
-    if (reviewData.validation.isValid) {
-      // Check if at least one quality check is answered (not all NA) for valid publications
+    // If publication has other validation issues (Invalid), no further validation needed
+    if (!reviewData.validation.isValid) {
+      return errors; // Empty array - no validation errors for Invalid
+    }
+    
+    // For valid publications, check system selection
+    const hasSystemSelected = Object.values(reviewData.systemUsed).some(system => system);
+    if (!hasSystemSelected) {
+      errors.push('Please select one study system (cells, animals, or humans)');
+    }
+    
+    // If humans are selected, study size should be selected
+    if (reviewData.systemUsed.humans && !reviewData.studySize) {
+      errors.push('Please select the study size for human studies');
+    }
+    
+    // If publication is valid and has human studies, quality checks are important
+    if (reviewData.systemUsed.humans) {
       const qualityChecks = Object.values(reviewData.qualityChecks);
       const allNA = qualityChecks.every(check => check === 'NA');
       if (allNA) {
-        errors.push('Please answer at least one quality check question for valid publications');
+        errors.push('Please answer at least one quality check question for human studies');
       }
     }
     
@@ -217,41 +265,115 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   });
 
   const updateCategory = (category: ReviewCategory) => {
+    // Categories are now automatically computed, manual changes not allowed
+    return;
+  };
+
+  const updateSystemUsed = (system: keyof ReviewData['systemUsed'], value: boolean) => {
     setReviewData(prev => {
-      // Don't allow manual category changes if publication is invalid
-      if (!prev.validation.isValid) {
-        return prev;
-      }
-      return { ...prev, category };
+      // Reset all systems to false, then set the selected one to true (exclusive selection)
+      const newSystemUsed = {
+        cells: false,
+        animals: false,
+        humans: false,
+        [system]: value
+      };
+      
+      const newData = {
+        ...prev,
+        systemUsed: newSystemUsed
+      };
+      
+      return {
+        ...newData,
+        category: computeCategory(newData)
+      };
     });
   };
 
-  // Helper function to update validation and compute isValid
+  const updateStudySize = (size: ReviewData['studySize']) => {
+    setReviewData(prev => {
+      const newData = {
+        ...prev,
+        studySize: size
+      };
+      return {
+        ...newData,
+        category: computeCategory(newData)
+      };
+    });
+  };
+
+  const updateWomenIncluded = (included: boolean) => {
+    setReviewData(prev => {
+      const newData = {
+        ...prev,
+        womenNotIncluded: included
+      };
+      return {
+        ...newData,
+        category: computeCategory(newData)
+      };
+    });
+  };
+
+  // Compute category based on decision tree
+  const computeCategory = (data: ReviewData): ReviewCategory => {
+    // 1. If claim overstates evidence, it's a Fallacy (highest priority)
+    if (data.validation.overstatesEvidence) {
+      return 'Fallacy';
+    }
+    
+    // 2. If any other validation issue, it's Invalid
+    if (!data.validation.isValid) {
+      return 'Invalid';
+    }
+    
+    // 3. If any quality check is "NO", it's Unreliable
+    const hasNoQualityChecks = Object.values(data.qualityChecks).some(check => check === 'NO');
+    if (hasNoQualityChecks) {
+      return 'Unreliable';
+    }
+    
+    // 4. If humans not selected in system used, it's Not Tested in Humans
+    if (!data.systemUsed.humans) {
+      return 'Not Tested in Humans';
+    }
+    
+    // 5. Based on study size for human studies
+    switch (data.studySize) {
+      case 'less_than_100':
+        return 'Limited Tested in Humans';
+      case 'less_than_500k':
+        return 'Tested in Humans';
+      case 'more_than_500k':
+        return 'Widely Tested in Humans';
+      default:
+        // If humans selected but no study size yet, default to Limited
+        return 'Limited Tested in Humans';
+    }
+  };
+
+  // Helper function to update validation and compute category
   const updateValidation = (field: keyof ReviewData['validation'], value: boolean) => {
     setReviewData(prev => {
       const newValidation = { ...prev.validation, [field]: value };
-      // Compute isValid: true if none of the disqualifying factors are present
       const isValid = !(
         newValidation.hasConflictOfInterest || 
         newValidation.isReview || 
-        newValidation.isCategoricalMetaAnalysis
+        newValidation.isCategoricalMetaAnalysis ||
+        newValidation.overstatesEvidence
       );
       newValidation.isValid = isValid;
       
-      // Automatically set category based on validation status
-      let newCategory = prev.category;
-      if (!isValid) {
-        // If invalid, force category to "Invalid"
-        newCategory = 'Invalid';
-      } else if (prev.category === 'Invalid') {
-        // If becoming valid and currently set to Invalid, reset to default
-        newCategory = 'Not Tested in Humans';
-      }
+      const newData = {
+        ...prev,
+        validation: newValidation
+      };
       
       return {
-        ...prev,
-        category: newCategory,
-        validation: newValidation
+        ...newData,
+        category: computeCategory(newData)
       };
     });
   };
@@ -302,13 +424,19 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   };
 
   const updateQualityCheck = (field: keyof ReviewData['qualityChecks'], value: ReviewAnswer) => {
-    setReviewData(prev => ({
-      ...prev,
-      qualityChecks: {
-        ...prev.qualityChecks,
-        [field]: value
-      }
-    }));
+    setReviewData(prev => {
+      const newData = {
+        ...prev,
+        qualityChecks: {
+          ...prev.qualityChecks,
+          [field]: value
+        }
+      };
+      return {
+        ...newData,
+        category: computeCategory(newData)
+      };
+    });
   };
 
   const getQualityColor = (value: ReviewAnswer) => {
@@ -335,8 +463,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
             {isUpdate ? 'Update Publication Review' : 'Review Publication'}
@@ -346,9 +474,9 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full pr-4">
-            <div className="space-y-4 pb-6">
+        <div className="flex-1 min-h-0 overflow-auto">
+          <ScrollArea className="h-full w-full pr-4">
+            <div className="space-y-4 pb-8 px-1">
               {/* Publication Info */}
               <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-2 flex flex-col gap-1">
                 <h3 className="font-semibold text-base line-clamp-2">{publication.title}</h3>
@@ -421,6 +549,22 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       </p>
                     </div>
                   </div>
+
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="overstates-evidence"
+                      checked={reviewData.validation.overstatesEvidence}
+                      onCheckedChange={(checked) => updateValidation('overstatesEvidence', checked === true)}
+                    />
+                    <div>
+                      <Label htmlFor="overstates-evidence" className="text-xs font-medium cursor-pointer text-red-600">
+                        Overstates Evidence
+                      </Label>
+                      <p className="text-xs text-red-500">
+                        Does the claim overstate or misinterpret the evidence?
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {!reviewData.validation.isValid && (
@@ -432,151 +576,457 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 )}
               </div>
 
-              {/* Main Form Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-4">
-                {/* Quality Checks */}
-                <div className={`space-y-3 ${!reviewData.validation.isValid ? 'opacity-60' : ''}`}>
-                  <Label className="text-base font-semibold">
-                    Quality Checks 
-                    {!reviewData.validation.isValid && (
-                      <span className="text-xs text-muted-foreground ml-2">(Optional for invalid publications)</span>
-                    )}
-                  </Label>
-                  <div className="grid grid-cols-1 gap-2">
+              {/* Quality Checks Section - Only show if validation passed */}
+              {reviewData.validation.isValid && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-3">
+                  <Label className="text-sm font-semibold text-orange-800">Quality Assessment</Label>
+                  <p className="text-xs text-orange-700">
+                    Evaluate the study design and methodology. Any "NO" will classify as "Unreliable".
+                  </p>
+                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
                     {/* Study Design */}
-                    <div className="border rounded-lg p-2 flex items-center gap-2">
-                      <Label className="text-xs font-medium min-w-[90px]">Study Design</Label>
-                      <RadioGroup value={reviewData.qualityChecks.studyDesign} onValueChange={(val) => updateQualityCheck('studyDesign', val as ReviewAnswer)} className="flex gap-2">
-                        <RadioGroupItem value="PASS" id="design-pass" />
-                        <Label htmlFor="design-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
-                        <RadioGroupItem value="NO" id="design-no" />
-                        <Label htmlFor="design-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
-                        <RadioGroupItem value="NA" id="design-na" />
-                        <Label htmlFor="design-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
-                      </RadioGroup>
-                    </div>
-                    {/* Representation */}
-                    <div className="border rounded-lg p-2 flex items-center gap-2">
-                      <Label className="text-xs font-medium min-w-[90px]">Representation</Label>
-                      <RadioGroup value={reviewData.qualityChecks.representation} onValueChange={(val) => updateQualityCheck('representation', val as ReviewAnswer)} className="flex gap-2">
-                        <RadioGroupItem value="PASS" id="rep-pass" />
-                        <Label htmlFor="rep-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
-                        <RadioGroupItem value="NO" id="rep-no" />
-                        <Label htmlFor="rep-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
-                        <RadioGroupItem value="NA" id="rep-na" />
-                        <Label htmlFor="rep-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
-                      </RadioGroup>
-                    </div>
-                    {/* Control Group */}
-                    <div className="border rounded-lg p-2 flex items-center gap-2">
-                      <Label className="text-xs font-medium min-w-[90px]">Control Group</Label>
-                      <RadioGroup value={reviewData.qualityChecks.controlGroup} onValueChange={(val) => updateQualityCheck('controlGroup', val as ReviewAnswer)} className="flex gap-2">
-                        <RadioGroupItem value="PASS" id="control-pass" />
-                        <Label htmlFor="control-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
-                        <RadioGroupItem value="NO" id="control-no" />
-                        <Label htmlFor="control-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
-                        <RadioGroupItem value="NA" id="control-na" />
-                        <Label htmlFor="control-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
-                      </RadioGroup>
-                    </div>
-                    {/* Bias Addressed */}
-                    <div className="border rounded-lg p-2 flex items-center gap-2">
-                      <Label className="text-xs font-medium min-w-[90px]">Bias Addressed</Label>
-                      <RadioGroup value={reviewData.qualityChecks.biasAddressed} onValueChange={(val) => updateQualityCheck('biasAddressed', val as ReviewAnswer)} className="flex gap-2">
-                        <RadioGroupItem value="PASS" id="bias-pass" />
-                        <Label htmlFor="bias-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
-                        <RadioGroupItem value="NO" id="bias-no" />
-                        <Label htmlFor="bias-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
-                        <RadioGroupItem value="NA" id="bias-na" />
-                        <Label htmlFor="bias-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
-                      </RadioGroup>
-                    </div>
-                    {/* Statistics */}
-                    <div className="border rounded-lg p-2 flex items-center gap-2">
-                      <Label className="text-xs font-medium min-w-[90px]">Statistics</Label>
-                      <RadioGroup value={reviewData.qualityChecks.statistics} onValueChange={(val) => updateQualityCheck('statistics', val as ReviewAnswer)} className="flex gap-2">
-                        <RadioGroupItem value="PASS" id="stats-pass" />
-                        <Label htmlFor="stats-pass" className={`text-xs px-2 py-1 rounded ${getQualityColor('PASS')}`}>PASS</Label>
-                        <RadioGroupItem value="NO" id="stats-no" />
-                        <Label htmlFor="stats-no" className={`text-xs px-2 py-1 rounded ${getQualityColor('NO')}`}>NO</Label>
-                        <RadioGroupItem value="NA" id="stats-na" />
-                        <Label htmlFor="stats-na" className={`text-xs px-2 py-1 rounded ${getQualityColor('NA')}`}>NA</Label>
-                      </RadioGroup>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Evidence Category & Tags */}
-                <div className={`space-y-3 ${!reviewData.validation.isValid ? 'opacity-60' : ''}`}>
-                  <Label className="text-base font-semibold">
-                    Evidence & Tags
-                    {!reviewData.validation.isValid && (
-                      <span className="text-xs text-muted-foreground ml-2">(Less critical for invalid publications)</span>
-                    )}
-                  </Label>
-                  <div className="space-y-2">
-                    <div>
-                      <Select 
-                        value={reviewData.category} 
-                        onValueChange={(val) => updateCategory(val as ReviewCategory)}
-                        disabled={!reviewData.validation.isValid}
-                      >
-                        <SelectTrigger className={`w-full max-w-xs ${!reviewData.validation.isValid ? 'opacity-60' : ''}`}>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {REVIEW_CATEGORIES.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {!reviewData.validation.isValid && (
-                        <p className="text-xs text-muted-foreground">
-                          Category automatically set to "Invalid" based on validation criteria
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {/* Ethnicity/Population */}
-                  <div>
-                    <Label className="text-xs font-medium">Ethnicity/Population</Label>
-                    <div className="grid grid-cols-2 gap-1 text-xs">
-                      {ETHNICITY_OPTIONS.slice(0, 6).map(ethnicity => (
-                        <label key={ethnicity} className="flex items-center space-x-1 cursor-pointer">
-                          <Checkbox checked={reviewData.tags.ethnicityLabels.includes(ethnicity)} onCheckedChange={() => toggleEthnicity(ethnicity)} className="h-3 w-3" />
-                          <span className="text-xs truncate">{ethnicity}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="flex gap-1 mt-1">
-                      <input type="text" placeholder="Custom..." value={customEthnicity} onChange={(e) => setCustomEthnicity(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())} className="flex-1 rounded border px-2 py-1 text-xs" />
-                      <Button size="sm" variant="outline" onClick={addCustomEthnicity} disabled={!customEthnicity.trim()} className="text-xs px-2 py-1 h-7">+</Button>
-                    </div>
-                    {customEthnicities.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {customEthnicities.map(ethnicity => (
-                          <Badge key={ethnicity} variant="secondary" className="text-xs gap-1 px-1">
-                            {ethnicity}
-                            <X className="w-2 h-2 cursor-pointer" onClick={() => removeEthnicity(ethnicity)} />
-                          </Badge>
+                    <div className="bg-white border rounded-lg p-2">
+                      <Label className="text-xs font-medium block mb-3 text-gray-700">Study Design</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => updateQualityCheck('studyDesign', option)}
+                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.qualityChecks.studyDesign === option
+                                ? option === 'PASS'
+                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
+                                  : option === 'NO'
+                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
+                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {option}
+                          </button>
                         ))}
                       </div>
-                    )}
-                  </div>
-                  {/* Age Ranges - new row below ethnicity */}
-                  <div className="mt-2">
-                    <Label className="text-xs font-medium">Age Ranges (decades)</Label>
-                    <div className="grid grid-cols-3 gap-1">
-                      {AGE_RANGES.map(range => (
-                        <label key={range} className="flex items-center space-x-1 cursor-pointer">
-                          <Checkbox checked={reviewData.tags.ageRanges.includes(range)} onCheckedChange={() => toggleAgeRange(range)} className="h-3 w-3" />
-                          <span className="text-xs">{range}</span>
-                        </label>
-                      ))}
+                    </div>
+                    
+                    {/* Representation */}
+                    <div className="bg-white border rounded-lg p-3">
+                      <Label className="text-xs font-medium block mb-3 text-gray-700">Representation</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => updateQualityCheck('representation', option)}
+                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.qualityChecks.representation === option
+                                ? option === 'PASS'
+                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
+                                  : option === 'NO'
+                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
+                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Control Group */}
+                    <div className="bg-white border rounded-lg p-3">
+                      <Label className="text-xs font-medium block mb-3 text-gray-700">Control Group</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => updateQualityCheck('controlGroup', option)}
+                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.qualityChecks.controlGroup === option
+                                ? option === 'PASS'
+                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
+                                  : option === 'NO'
+                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
+                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Bias Addressed */}
+                    <div className="bg-white border rounded-lg p-3">
+                      <Label className="text-xs font-medium block mb-3 text-gray-700">Bias Addressed</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => updateQualityCheck('biasAddressed', option)}
+                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.qualityChecks.biasAddressed === option
+                                ? option === 'PASS'
+                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
+                                  : option === 'NO'
+                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
+                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Statistics */}
+                    <div className="bg-white border rounded-lg p-3">
+                      <Label className="text-xs font-medium block mb-3 text-gray-700">Statistics</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => updateQualityCheck('statistics', option)}
+                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.qualityChecks.statistics === option
+                                ? option === 'PASS'
+                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
+                                  : option === 'NO'
+                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
+                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
+                  
+                  {Object.values(reviewData.qualityChecks).some(check => check === 'NO') && (
+                    <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
+                      <p className="text-xs text-red-700 font-medium">
+                        ⚠️ This publication will be classified as "Unreliable" due to quality issues
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* System Used Section - Only show if validation passed AND no quality issues */}
+              {reviewData.validation.isValid && !Object.values(reviewData.qualityChecks).some(check => check === 'NO') && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-3">
+                  <Label className="text-sm font-semibold text-blue-800">Study System</Label>
+                  <p className="text-xs text-blue-700">
+                    Select the primary biological system used in this study (choose one).
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="system-cells"
+                        name="studySystem"
+                        checked={reviewData.systemUsed.cells}
+                        onChange={() => updateSystemUsed('cells', true)}
+                        className="text-xs"
+                      />
+                      <Label htmlFor="system-cells" className="text-xs font-medium cursor-pointer">
+                        Cell Culture
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="system-animals"
+                        name="studySystem"
+                        checked={reviewData.systemUsed.animals}
+                        onChange={() => updateSystemUsed('animals', true)}
+                        className="text-xs"
+                      />
+                      <Label htmlFor="system-animals" className="text-xs font-medium cursor-pointer">
+                        Animal Models
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="system-humans"
+                        name="studySystem"
+                        checked={reviewData.systemUsed.humans}
+                        onChange={() => updateSystemUsed('humans', true)}
+                        className="text-xs"
+                      />
+                      <Label htmlFor="system-humans" className="text-xs font-medium cursor-pointer">
+                        Human Studies
+                      </Label>
+                    </div>
+                  </div>
+                  {!reviewData.systemUsed.humans && (reviewData.systemUsed.cells || reviewData.systemUsed.animals) && (
+                    <div className="bg-orange-50 border border-orange-200 rounded p-2">
+                      <p className="text-xs text-orange-700">
+                        Study will be categorized as "Not Tested in Humans"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}              {/* Study Size Section - Only show if humans are selected AND quality passed */}
+              {reviewData.validation.isValid && !Object.values(reviewData.qualityChecks).some(check => check === 'NO') && reviewData.systemUsed.humans && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-3">
+                  <Label className="text-sm font-semibold text-green-800">Study Size (Human Participants)</Label>
+                  <p className="text-xs text-green-700">
+                    Select the approximate number of human participants in this study.
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="size-small"
+                        name="studySize"
+                        checked={reviewData.studySize === 'less_than_100'}
+                        onChange={() => updateStudySize('less_than_100')}
+                        className="text-xs"
+                      />
+                      <Label htmlFor="size-small" className="text-xs cursor-pointer">
+                        Less than 100 participants
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="size-medium"
+                        name="studySize"
+                        checked={reviewData.studySize === 'less_than_500k'}
+                        onChange={() => updateStudySize('less_than_500k')}
+                        className="text-xs"
+                      />
+                      <Label htmlFor="size-medium" className="text-xs cursor-pointer">
+                        100 to 500,000 participants
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="size-large"
+                        name="studySize"
+                        checked={reviewData.studySize === 'more_than_500k'}
+                        onChange={() => updateStudySize('more_than_500k')}
+                        className="text-xs"
+                      />
+                      <Label htmlFor="size-large" className="text-xs cursor-pointer">
+                        More than 500,000 participants
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  {/* Women Not Included Chip */}
+                  <div className="border-t border-green-200 pt-3">
+                    <Label className="text-xs font-medium text-green-800 block mb-2">Study Demographics</Label>
+                    <button
+                      type="button"
+                      onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
+                      className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                        reviewData.womenNotIncluded
+                          ? 'bg-pink-100 text-pink-800 border-pink-400 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {reviewData.womenNotIncluded ? '✓ ' : ''}Women Not Included in Study
+                    </button>
+                    <p className="text-xs text-green-600 mt-1">
+                      Select if women/females were not included as participants in this study
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Category Display */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
+                <div className="mt-2">
+                  <Badge 
+                    variant={
+                      reviewData.category === 'Invalid' ? 'destructive' :
+                      reviewData.category === 'Unreliable' ? 'secondary' :
+                      reviewData.category === 'Widely Tested in Humans' ? 'default' : 'outline'
+                    }
+                    className="text-sm"
+                  >
+                    {reviewData.category}
+                  </Badge>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Category automatically determined based on your responses above.
+                  </p>
                 </div>
               </div>
+
+              {/* Evidence & Tags - Only show for valid human studies with good quality */}
+              {(() => {
+                const showEvidenceTags = reviewData.validation.isValid && 
+                                       !Object.values(reviewData.qualityChecks).some(check => check === 'NO') && 
+                                       reviewData.systemUsed.humans;
+                
+                if (!showEvidenceTags) return null;
+                
+                return (
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Evidence & Tags</Label>
+                    <div className="space-y-2">
+                    {/* Ethnicity & Age - Side by side dropdowns */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Ethnicity/Population Dropdown */}
+                      <div>
+                        <Label className="text-xs font-medium">Ethnicity/Population</Label>
+                        <Popover open={ethnicityOpen} onOpenChange={setEthnicityOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full justify-between text-xs h-8"
+                            >
+                              {reviewData.tags.ethnicityLabels.length > 0
+                                ? `${reviewData.tags.ethnicityLabels.length} selected`
+                                : "Select ethnicities..."
+                              }
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-60 p-0">
+                            <Command>
+                              <CommandInput placeholder="Search ethnicities..." className="h-8 text-xs" />
+                              <CommandEmpty>No ethnicity found.</CommandEmpty>
+                              <CommandGroup className="max-h-48 overflow-auto">
+                                {ETHNICITY_OPTIONS.map((ethnicity) => (
+                                  <CommandItem
+                                    key={ethnicity}
+                                    value={ethnicity}
+                                    onSelect={() => toggleEthnicity(ethnicity)}
+                                    className="text-xs"
+                                  >
+                                    <Check
+                                      className={`mr-2 h-3 w-3 ${
+                                        reviewData.tags.ethnicityLabels.includes(ethnicity)
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      }`}
+                                    />
+                                    {ethnicity}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        {/* Custom ethnicity input */}
+                        <div className="flex gap-1 mt-1">
+                          <input 
+                            type="text" 
+                            placeholder="Custom..." 
+                            value={customEthnicity} 
+                            onChange={(e) => setCustomEthnicity(e.target.value)} 
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())} 
+                            className="flex-1 rounded border px-2 py-1 text-xs h-6" 
+                          />
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={addCustomEthnicity} 
+                            disabled={!customEthnicity.trim()} 
+                            className="text-xs px-2 py-1 h-6"
+                          >
+                            +
+                          </Button>
+                        </div>
+                        
+                        {/* Selected badges */}
+                        {reviewData.tags.ethnicityLabels.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {reviewData.tags.ethnicityLabels.map(ethnicity => (
+                              <Badge key={ethnicity} variant="secondary" className="text-xs gap-1 px-1">
+                                {ethnicity}
+                                <X className="w-2 h-2 cursor-pointer" onClick={() => removeEthnicity(ethnicity)} />
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Age Ranges Dropdown */}
+                      <div>
+                        <Label className="text-xs font-medium">Age Ranges</Label>
+                        <Popover open={ageRangeOpen} onOpenChange={setAgeRangeOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full justify-between text-xs h-8"
+                            >
+                              {reviewData.tags.ageRanges.length > 0
+                                ? `${reviewData.tags.ageRanges.length} selected`
+                                : "Select age ranges..."
+                              }
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48 p-0">
+                            <Command>
+                              <CommandInput placeholder="Search ranges..." className="h-8 text-xs" />
+                              <CommandEmpty>No age range found.</CommandEmpty>
+                              <CommandGroup className="max-h-48 overflow-auto">
+                                {AGE_RANGES.map((range) => (
+                                  <CommandItem
+                                    key={range}
+                                    value={range}
+                                    onSelect={() => toggleAgeRange(range)}
+                                    className="text-xs"
+                                  >
+                                    <Check
+                                      className={`mr-2 h-3 w-3 ${
+                                        reviewData.tags.ageRanges.includes(range)
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      }`}
+                                    />
+                                    {range}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      
+                      {/* Selected badges */}
+                      {reviewData.tags.ageRanges.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {reviewData.tags.ageRanges.map(range => (
+                            <Badge key={range} variant="secondary" className="text-xs gap-1 px-1">
+                              {range}
+                              <X className="w-2 h-2 cursor-pointer" onClick={() => {
+                                setReviewData(prev => ({
+                                  ...prev,
+                                  tags: {
+                                    ...prev.tags,
+                                    ageRanges: prev.tags.ageRanges.filter(r => r !== range)
+                                  }
+                                }));
+                              }} />
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      </div>
+                    </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Validation Errors */}
               {validationErrors.length > 0 && (

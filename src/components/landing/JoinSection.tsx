@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import CommunityApplicationForm from "@/components/forms/CommunityApplicationForm";
 import ExpertOnboardingDialog from "@/components/forms/ExpertOnboardingDialog";
 
@@ -13,6 +14,7 @@ const JoinSection = () => {
   const [showExpertForm, setShowExpertForm] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { user } = useAuth();
+  const { isExpertOrResearcher } = useUserRole();
 
   const handleMailingList = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,10 +71,16 @@ const JoinSection = () => {
                   <span>Learn how we review science</span>
                 </div>
               </div>
-              <Button asChild className="w-full mt-6 bg-primary hover:bg-primary/90">
-                <Link to="/auth">
-                  {user ? 'Welcome Back!' : 'Sign Up Now'}
-                </Link>
+              <Button 
+                asChild={!user} 
+                disabled={!!user}
+                className="w-full mt-6 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {user ? (
+                  <span>Welcome Back!</span>
+                ) : (
+                  <Link to="/auth">Sign Up Now</Link>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -118,17 +126,19 @@ const JoinSection = () => {
               <div className="flex gap-3 mt-6">
                 <Button 
                   variant="outline" 
-                  className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted"
+                  className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowOnboarding(true)}
+                  disabled={isExpertOrResearcher}
                 >
-                  Learn How It Works
+                  {isExpertOrResearcher ? 'Already Member' : 'Learn How It Works'}
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="flex-1 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                  className="flex-1 border-accent text-accent hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowExpertForm(true)}
+                  disabled={isExpertOrResearcher}
                 >
-                  Request Invitation
+                  {isExpertOrResearcher ? 'Already Member' : 'Request Invitation'}
                 </Button>
               </div>
             </CardContent>

@@ -10,12 +10,20 @@ interface PublicationData {
 export class DOIService {
   private static readonly CROSSREF_API = 'https://api.crossref.org/works/';
   private static readonly OPENALEX_API = 'https://api.openalex.org/works/';
+  private static readonly PUBMED_ESUMMARY_API = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi';
+  private static readonly PUBMED_EFETCH_API = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
 
-  static async fetchPublicationData(doi: string): Promise<PublicationData | null> {
-    if (!doi) return null;
+  static async fetchPublicationData(input: string): Promise<PublicationData | null> {
+    if (!input) return null;
+
+    // Check if input is a PubMed URL
+    const pmid = this.extractPMID(input);
+    if (pmid) {
+      return await this.fetchFromPubMed(pmid);
+    }
 
     // Clean DOI
-    const cleanDoi = doi.replace(/^(https?:\/\/)?(dx\.)?doi\.org\//, '');
+    const cleanDoi = input.replace(/^(https?:\/\/)?(dx\.)?doi\.org\//, '');
 
     try {
       // Try Crossref first (more reliable for DOI lookups)
@@ -31,6 +39,29 @@ export class DOIService {
       console.error('Error fetching publication data:', error);
       return null;
     }
+  }
+
+  private static extractPMID(input: string): string | null {
+    // Match various PubMed URL formats
+    const pubmedPatterns = [
+      /(?:https?:\/\/)?(?:www\.)?pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?/i,
+      /(?:https?:\/\/)?(?:www\.)?ncbi\.nlm\.nih\.gov\/pubmed\/(\d+)\/?/i,
+      /pmid:?\s*(\d+)/i,
+    ];
+
+    for (const pattern of pubmedPatterns) {
+      const match = input.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    // Check if input is just a PMID number
+    if (/^\d+$/.test(input.trim())) {
+      return input.trim();
+    }
+
+    return null;
   }
 
   private static async fetchFromCrossref(doi: string): Promise<PublicationData | null> {
@@ -50,7 +81,7 @@ export class DOIService {
                    new Date().getFullYear();
       
       const abstract = work.abstract || '';
-      const authors = work.author?.map((author: any) => 
+      const authors = work.author?.map((author: { given?: string; family?: string }) => 
         `${author.given || ''} ${author.family || ''}`.trim()
       ).filter(Boolean) || [];
 
@@ -82,7 +113,7 @@ export class DOIService {
       const abstract = work.abstract_inverted_index ? 
         this.reconstructAbstract(work.abstract_inverted_index) : '';
       
-      const authors = work.authorships?.map((authorship: any) => 
+      const authors = work.authorships?.map((authorship: { author?: { display_name?: string } }) => 
         authorship.author?.display_name
       ).filter(Boolean) || [];
 
@@ -96,6 +127,59 @@ export class DOIService {
       };
     } catch (error) {
       console.error('OpenAlex API error:', error);
+      return null;
+    }
+  }
+
+  private static async fetchFromPubMed(pmid: string): Promise<PublicationData | null> {
+    try {
+      // Fetch summary data
+      const summaryResponse = await fetch(
+        `${this.PUBMED_ESUMMARY_API}?db=pubmed&id=${pmid}&retmode=json`
+      );
+      
+      if (!summaryResponse.ok) return null;
+      
+      const summaryData = await summaryResponse.json();
+      const articleData = summaryData.result?.[pmid];
+      
+      if (!articleData) return null;
+
+      // Fetch detailed abstract using efetch
+      let abstract = '';
+      try {
+        const abstractResponse = await fetch(
+          `${this.PUBMED_EFETCH_API}?db=pubmed&id=${pmid}&retmode=text&rettype=abstract`
+        );
+        if (abstractResponse.ok) {
+          abstract = await abstractResponse.text();
+          // Clean up the abstract text
+          abstract = abstract.replace(/^\d+\.\s*/, '').trim();
+        }
+      } catch (abstractError) {
+        console.warn('Could not fetch abstract for PMID:', pmid);
+      }
+
+      const title = articleData.title || '';
+      const journal = articleData.fulljournalname || articleData.source || '';
+      const year = articleData.pubdate ? 
+        parseInt(articleData.pubdate.split(' ')[0]) || new Date().getFullYear() :
+        new Date().getFullYear();
+
+      const authors = articleData.authors?.map((author: { name: string }) => 
+        author.name
+      ).filter(Boolean) || [];
+
+      return {
+        title: title.replace(/\.$/, ''), // Remove trailing period
+        journal,
+        year,
+        abstract,
+        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
+        authors,
+      };
+    } catch (error) {
+      console.error('PubMed API error:', error);
       return null;
     }
   }

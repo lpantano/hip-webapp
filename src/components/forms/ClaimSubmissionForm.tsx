@@ -30,7 +30,17 @@ const formSchema = z.object({
     published_date: z.string().optional(),
   })).optional(),
   publications: z.array(z.object({
-    doi: z.string().min(1, 'DOI is required'),
+    doi: z.string().refine((val) => {
+      // If DOI field is empty, that's fine (user can remove the publication entry)
+      if (!val || val.trim() === '') return true;
+      
+      // If DOI field has content, validate the format
+      const doiPattern = /^10\.\d{4,}\/[^\s]+$/;
+      const pubmedUrlPattern = /(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/\d+\/?/i;
+      const pmidPattern = /^(?:pmid:?\s*)?\d+$/i;
+      
+      return doiPattern.test(val) || pubmedUrlPattern.test(val) || pmidPattern.test(val) || val.includes('doi.org');
+    }, 'Please enter a valid DOI, PubMed URL, or PMID'),
     title: z.string().optional(),
     journal: z.string().optional(),
     publication_year: z.number().optional(),
@@ -60,7 +70,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       description: '',
       category: 'general_health',
       sources: [],
-      publications: [{ doi: '' }],
+      publications: [],
     },
   });
 
@@ -93,9 +103,9 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         });
       }
     } catch (error) {
-      console.error('Error fetching DOI data:', error);
+      console.error('Error fetching publication data:', error);
       toast({
-        title: "DOI Fetch Error",
+        title: "Publication Fetch Error",
         description: "Could not retrieve publication data. Please enter details manually.",
         variant: "destructive",
       });
@@ -443,7 +453,12 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <FormLabel className="text-base">Supporting Publications</FormLabel>
+                <div>
+                  <FormLabel className="text-base">Supporting Publications (Optional)</FormLabel>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Add scientific publications that support your claim. You can also add these later.
+                  </p>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -454,6 +469,13 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                   Add Publication
                 </Button>
               </div>
+
+              {fields.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
+                  <p className="text-sm">No publications added yet.</p>
+                  <p className="text-xs mt-1">You can submit your claim without publications and add them later.</p>
+                </div>
+              )}
 
               {fields.map((field, index) => {
                 const publication = form.watch(`publications.${index}`);
@@ -466,11 +488,11 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                           name={`publications.${index}.doi`}
                           render={({ field }) => (
                             <FormItem className="flex-1">
-                              <FormLabel>DOI</FormLabel>
+                              <FormLabel>DOI or PubMed Link</FormLabel>
                               <div className="flex gap-2">
                                 <FormControl>
                                   <Input 
-                                    placeholder="10.1000/xyz123" 
+                                    placeholder="10.1000/xyz123 or https://pubmed.ncbi.nlm.nih.gov/12345678/" 
                                     {...field}
                                   />
                                 </FormControl>
@@ -488,6 +510,9 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                                   )}
                                 </Button>
                               </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Supports DOI (10.1000/xyz123), PubMed URLs, or PMID numbers
+                              </p>
                               <FormMessage />
                             </FormItem>
                           )}
