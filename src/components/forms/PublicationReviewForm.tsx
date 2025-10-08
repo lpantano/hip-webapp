@@ -58,6 +58,7 @@ interface ExistingReview {
 }
 
 const REVIEW_CATEGORIES: ReviewCategory[] = [
+  'Invalid',
   'Unreliable',
   'Not Tested in Humans',
   'Limited Tested in Humans',
@@ -106,7 +107,27 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           
           // Validate that the parsed data has the expected structure
           if (reviewData && typeof reviewData === 'object' && 'category' in reviewData) {
-            setReviewData(reviewData as ReviewData);
+            // Ensure validation fields exist for backwards compatibility
+            const loadedData = reviewData as ReviewData;
+            if (!loadedData.validation) {
+              loadedData.validation = {
+                hasConflictOfInterest: false,
+                isReview: false,
+                isCategoricalMetaAnalysis: false,
+                isValid: true
+              };
+            }
+            // Recompute isValid based on validation fields
+            loadedData.validation.isValid = !(
+              loadedData.validation.hasConflictOfInterest || 
+              loadedData.validation.isReview || 
+              loadedData.validation.isCategoricalMetaAnalysis
+            );
+            // Auto-set category to Invalid if validation fails
+            if (!loadedData.validation.isValid && loadedData.category !== 'Invalid') {
+              loadedData.category = 'Invalid';
+            }
+            setReviewData(loadedData);
           } else {
             setReviewData(createEmptyReviewData());
           }
@@ -134,11 +155,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
       errors.push('Please select an evidence category');
     }
     
-    // Check if at least one quality check is answered (not all NA)
-    const qualityChecks = Object.values(reviewData.qualityChecks);
-    const allNA = qualityChecks.every(check => check === 'NA');
-    if (allNA) {
-      errors.push('Please answer at least one quality check question');
+    // If publication is marked as invalid, quality checks are less critical
+    if (reviewData.validation.isValid) {
+      // Check if at least one quality check is answered (not all NA) for valid publications
+      const qualityChecks = Object.values(reviewData.qualityChecks);
+      const allNA = qualityChecks.every(check => check === 'NA');
+      if (allNA) {
+        errors.push('Please answer at least one quality check question for valid publications');
+      }
     }
     
     return errors;
@@ -193,7 +217,43 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   });
 
   const updateCategory = (category: ReviewCategory) => {
-    setReviewData(prev => ({ ...prev, category }));
+    setReviewData(prev => {
+      // Don't allow manual category changes if publication is invalid
+      if (!prev.validation.isValid) {
+        return prev;
+      }
+      return { ...prev, category };
+    });
+  };
+
+  // Helper function to update validation and compute isValid
+  const updateValidation = (field: keyof ReviewData['validation'], value: boolean) => {
+    setReviewData(prev => {
+      const newValidation = { ...prev.validation, [field]: value };
+      // Compute isValid: true if none of the disqualifying factors are present
+      const isValid = !(
+        newValidation.hasConflictOfInterest || 
+        newValidation.isReview || 
+        newValidation.isCategoricalMetaAnalysis
+      );
+      newValidation.isValid = isValid;
+      
+      // Automatically set category based on validation status
+      let newCategory = prev.category;
+      if (!isValid) {
+        // If invalid, force category to "Invalid"
+        newCategory = 'Invalid';
+      } else if (prev.category === 'Invalid') {
+        // If becoming valid and currently set to Invalid, reset to default
+        newCategory = 'Not Tested in Humans';
+      }
+      
+      return {
+        ...prev,
+        category: newCategory,
+        validation: newValidation
+      };
+    });
   };
 
 
@@ -275,8 +335,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[65vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
             {isUpdate ? 'Update Publication Review' : 'Review Publication'}
@@ -286,9 +346,9 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-[65vh] pr-2">
-            <div className="space-y-3 pb-2">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full pr-4">
+            <div className="space-y-4 pb-6">
               {/* Publication Info */}
               <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-2 flex flex-col gap-1">
                 <h3 className="font-semibold text-base line-clamp-2">{publication.title}</h3>
@@ -299,11 +359,89 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 </div>
               </div>
 
+              {/* Validation Section */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-semibold text-yellow-800">Publication Validation</Label>
+                  {(!reviewData.validation.isValid) && (
+                    <Badge variant="destructive" className="text-xs font-medium">
+                      Category: Invalid
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-yellow-700">
+                  Check if any apply. If so, publication will be marked as invalid for evidence assessment.
+                </p>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="conflict-of-interest"
+                      checked={reviewData.validation.hasConflictOfInterest}
+                      onCheckedChange={(checked) => updateValidation('hasConflictOfInterest', checked === true)}
+                    />
+                    <div>
+                      <Label htmlFor="conflict-of-interest" className="text-xs font-medium cursor-pointer">
+                        Conflict of Interest
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Company funding benefits from results
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="is-review"
+                      checked={reviewData.validation.isReview}
+                      onCheckedChange={(checked) => updateValidation('isReview', checked === true)}
+                    />
+                    <div>
+                      <Label htmlFor="is-review" className="text-xs font-medium cursor-pointer">
+                        Review Study
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Review study (not original research)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="is-categorical-meta"
+                      checked={reviewData.validation.isCategoricalMetaAnalysis}
+                      onCheckedChange={(checked) => updateValidation('isCategoricalMetaAnalysis', checked === true)}
+                    />
+                    <div>
+                      <Label htmlFor="is-categorical-meta" className="text-xs font-medium cursor-pointer">
+                        Categorical Meta-Analysis
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Categorical meta-analysis study
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {!reviewData.validation.isValid && (
+                  <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
+                    <p className="text-xs text-red-700 font-medium">
+                      ⚠️ This publication will be marked as invalid for evidence assessment
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Main Form Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-4">
                 {/* Quality Checks */}
-                <div className="space-y-2 py-4">
-                  <Label className="text-base font-semibold">Quality Checks</Label>
+                <div className={`space-y-3 ${!reviewData.validation.isValid ? 'opacity-60' : ''}`}>
+                  <Label className="text-base font-semibold">
+                    Quality Checks 
+                    {!reviewData.validation.isValid && (
+                      <span className="text-xs text-muted-foreground ml-2">(Optional for invalid publications)</span>
+                    )}
+                  </Label>
                   <div className="grid grid-cols-1 gap-2">
                     {/* Study Design */}
                     <div className="border rounded-lg p-2 flex items-center gap-2">
@@ -369,12 +507,21 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 </div>
 
                 {/* Evidence Category & Tags */}
-                <div className="space-y-2 py-4">
-                  <Label className="text-base font-semibold">Evidence & Tags</Label>
+                <div className={`space-y-3 ${!reviewData.validation.isValid ? 'opacity-60' : ''}`}>
+                  <Label className="text-base font-semibold">
+                    Evidence & Tags
+                    {!reviewData.validation.isValid && (
+                      <span className="text-xs text-muted-foreground ml-2">(Less critical for invalid publications)</span>
+                    )}
+                  </Label>
                   <div className="space-y-2">
                     <div>
-                      <Select value={reviewData.category} onValueChange={(val) => updateCategory(val as ReviewCategory)}>
-                        <SelectTrigger className="w-full max-w-xs">
+                      <Select 
+                        value={reviewData.category} 
+                        onValueChange={(val) => updateCategory(val as ReviewCategory)}
+                        disabled={!reviewData.validation.isValid}
+                      >
+                        <SelectTrigger className={`w-full max-w-xs ${!reviewData.validation.isValid ? 'opacity-60' : ''}`}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -383,6 +530,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           ))}
                         </SelectContent>
                       </Select>
+                      {!reviewData.validation.isValid && (
+                        <p className="text-xs text-muted-foreground">
+                          Category automatically set to "Invalid" based on validation criteria
+                        </p>
+                      )}
                     </div>
                   </div>
                   {/* Ethnicity/Population */}
@@ -456,8 +608,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           </ScrollArea>
         </div>
 
-        {/* Action Buttons - Compact */}
-        <div className="flex gap-2 pt-3 border-t">
+        {/* Action Buttons - Fixed Footer */}
+        <div className="flex gap-2 pt-4 border-t bg-background flex-shrink-0">
           <Button variant="outline" onClick={onClose} className="px-4">
             Cancel
           </Button>

@@ -1,6 +1,7 @@
 // Type definitions for the publication review data structure
 
 export type ReviewCategory = 
+  | 'Invalid'
   | 'Unreliable'
   | 'Not Tested in Humans'
   | 'Limited Tested in Humans'
@@ -27,6 +28,12 @@ export interface ReviewData {
   category: ReviewCategory;
   tags: ReviewTags;
   qualityChecks: ReviewQualityChecks;
+  validation: {
+    hasConflictOfInterest: boolean;
+    isReview: boolean;
+    isCategoricalMetaAnalysis: boolean;
+    isValid: boolean; // computed field based on the above
+  };
 }
 
 // Helper to create empty review data
@@ -43,6 +50,12 @@ export const createEmptyReviewData = (): ReviewData => ({
     controlGroup: 'NA',
     biasAddressed: 'NA',
     statistics: 'NA'
+  },
+  validation: {
+    hasConflictOfInterest: false,
+    isReview: false,
+    isCategoricalMetaAnalysis: false,
+    isValid: true // Default to valid unless validation flags are set
   }
 });
 
