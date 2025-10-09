@@ -486,18 +486,32 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                   {publication.doi && <span><strong>DOI:</strong> {publication.doi}</span>}
                 </div>
               </div>
-
-              {/* Validation Section */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm font-semibold text-yellow-800">Publication Validation</Label>
-                  {(!reviewData.validation.isValid) && (
-                    <Badge variant="destructive" className="text-xs font-medium">
-                      Category: Invalid
-                    </Badge>
-                  )}
+              {/* Category Display */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
+                <div className="mt-2">
+                  <Badge 
+                    variant={
+                      reviewData.category === 'Invalid' ? 'destructive' :
+                      reviewData.category === 'Unreliable' ? 'secondary' :
+                      reviewData.category === 'Widely Tested in Humans' ? 'default' : 'outline'
+                    }
+                    className="text-sm"
+                  >
+                    {reviewData.category}
+                  </Badge>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Category automatically determined based on your responses above.
+                  </p>
                 </div>
-                <p className="text-xs text-yellow-700">
+              </div>
+              {/* Validation Section */}
+              <div className="bg-slate-50  rounded-lg p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-semibold">Publication Validation</Label>
+                  
+                </div>
+                <p className="text-xs">
                   Check if any apply. If so, publication will be marked as invalid for evidence assessment.
                 </p>
                 
@@ -557,10 +571,10 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       onCheckedChange={(checked) => updateValidation('overstatesEvidence', checked === true)}
                     />
                     <div>
-                      <Label htmlFor="overstates-evidence" className="text-xs font-medium cursor-pointer text-red-600">
+                      <Label htmlFor="overstates-evidence" className="text-xs font-medium cursor-pointer text-red-800">
                         Overstates Evidence
                       </Label>
-                      <p className="text-xs text-red-500">
+                      <p className="text-xs">
                         Does the claim overstate or misinterpret the evidence?
                       </p>
                     </div>
@@ -568,8 +582,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 </div>
 
                 {!reviewData.validation.isValid && (
-                  <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
-                    <p className="text-xs text-red-700 font-medium">
+                  <div className="bg-red-50 rounded p-2 mt-2">
+                    <p className="text-xs font-medium">
                       ⚠️ This publication will be marked as invalid for evidence assessment
                     </p>
                   </div>
@@ -578,12 +592,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
               {/* Quality Checks Section - Only show if validation passed */}
               {reviewData.validation.isValid && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-3">
-                  <Label className="text-sm font-semibold text-orange-800">Quality Assessment</Label>
-                  <p className="text-xs text-orange-700">
+                <div className="bg-slate-50  rounded-lg p-3 space-y-3">
+                  <Label className="text-sm font-semibold">Quality Assessment</Label>
+                  <p className="text-xs">
                     Evaluate the study design and methodology. Any "NO" will classify as "Unreliable".
                   </p>
-                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                     {/* Study Design */}
                     <div className="bg-white border rounded-lg p-2">
                       <Label className="text-xs font-medium block mb-3 text-gray-700">Study Design</Label>
@@ -720,151 +734,137 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 </div>
               )}
 
-              {/* System Used Section - Only show if validation passed AND no quality issues */}
+              {/* System Used Section and Study Size Section - Responsive flex layout */}
               {reviewData.validation.isValid && !Object.values(reviewData.qualityChecks).some(check => check === 'NO') && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-3">
-                  <Label className="text-sm font-semibold text-blue-800">Study System</Label>
-                  <p className="text-xs text-blue-700">
-                    Select the primary biological system used in this study (choose one).
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="system-cells"
-                        name="studySystem"
-                        checked={reviewData.systemUsed.cells}
-                        onChange={() => updateSystemUsed('cells', true)}
-                        className="text-xs"
-                      />
-                      <Label htmlFor="system-cells" className="text-xs font-medium cursor-pointer">
-                        Cell Culture
-                      </Label>
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Study System Section */}
+                  <div className="bg-slate-50 rounded-lg p-3 space-y-3 flex-1">
+                    <Label className="text-sm font-semibold">Study System</Label>
+                    <p className="text-xs">
+                      Select the primary biological system used in this study (choose one).
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="system-cells"
+                          name="studySystem"
+                          checked={reviewData.systemUsed.cells}
+                          onChange={() => updateSystemUsed('cells', true)}
+                          className="text-xs"
+                        />
+                        <Label htmlFor="system-cells" className="text-xs font-medium cursor-pointer">
+                          Cell Culture
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="system-animals"
+                          name="studySystem"
+                          checked={reviewData.systemUsed.animals}
+                          onChange={() => updateSystemUsed('animals', true)}
+                          className="text-xs"
+                        />
+                        <Label htmlFor="system-animals" className="text-xs font-medium cursor-pointer">
+                          Animal Models
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="system-humans"
+                          name="studySystem"
+                          checked={reviewData.systemUsed.humans}
+                          onChange={() => updateSystemUsed('humans', true)}
+                          className="text-xs"
+                        />
+                        <Label htmlFor="system-humans" className="text-xs font-medium cursor-pointer">
+                          Human Studies
+                        </Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="system-animals"
-                        name="studySystem"
-                        checked={reviewData.systemUsed.animals}
-                        onChange={() => updateSystemUsed('animals', true)}
-                        className="text-xs"
-                      />
-                      <Label htmlFor="system-animals" className="text-xs font-medium cursor-pointer">
-                        Animal Models
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="system-humans"
-                        name="studySystem"
-                        checked={reviewData.systemUsed.humans}
-                        onChange={() => updateSystemUsed('humans', true)}
-                        className="text-xs"
-                      />
-                      <Label htmlFor="system-humans" className="text-xs font-medium cursor-pointer">
-                        Human Studies
-                      </Label>
-                    </div>
+                    {!reviewData.systemUsed.humans && (reviewData.systemUsed.cells || reviewData.systemUsed.animals) && (
+                      <div className="bg-orange-50 border border-orange-200 rounded p-2">
+                        <p className="text-xs text-orange-700">
+                          Study will be categorized as "Not Tested in Humans"
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {!reviewData.systemUsed.humans && (reviewData.systemUsed.cells || reviewData.systemUsed.animals) && (
-                    <div className="bg-orange-50 border border-orange-200 rounded p-2">
-                      <p className="text-xs text-orange-700">
-                        Study will be categorized as "Not Tested in Humans"
+
+                  {/* Study Size Section - Only show if humans are selected */}
+                  {reviewData.systemUsed.humans && (
+                    <div className="bg-slate-50 rounded-lg p-3 space-y-3 flex-1">
+                      <Label className="text-sm font-semibold">Study Size (Human Participants)</Label>
+                      <p className="text-xs">
+                        Select the approximate number of human participants in this study.
                       </p>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="size-small"
+                            name="studySize"
+                            checked={reviewData.studySize === 'less_than_100'}
+                            onChange={() => updateStudySize('less_than_100')}
+                            className="text-xs"
+                          />
+                          <Label htmlFor="size-small" className="text-xs cursor-pointer">
+                            Less than 100 participants
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="size-medium"
+                            name="studySize"
+                            checked={reviewData.studySize === 'less_than_500k'}
+                            onChange={() => updateStudySize('less_than_500k')}
+                            className="text-xs"
+                          />
+                          <Label htmlFor="size-medium" className="text-xs cursor-pointer">
+                            100 to 500,000 participants
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="size-large"
+                            name="studySize"
+                            checked={reviewData.studySize === 'more_than_500k'}
+                            onChange={() => updateStudySize('more_than_500k')}
+                            className="text-xs"
+                          />
+                          <Label htmlFor="size-large" className="text-xs cursor-pointer">
+                            More than 500,000 participants
+                          </Label>
+                        </div>
+                      </div>
+                      
+                      {/* Women Not Included Chip */}
+                      <div className="border-t pt-3">
+                        <button
+                          type="button"
+                          onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
+                          className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            reviewData.womenNotIncluded
+                              ? 'bg-pink-100 text-pink-800 border-pink-400 shadow-sm'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {reviewData.womenNotIncluded ? '✓ ' : ''}Women Not Included in Study
+                        </button>
+                        <p className="text-xs  mt-1">
+                          Select if women/females were not included as participants in this study
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}              {/* Study Size Section - Only show if humans are selected AND quality passed */}
-              {reviewData.validation.isValid && !Object.values(reviewData.qualityChecks).some(check => check === 'NO') && reviewData.systemUsed.humans && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-3">
-                  <Label className="text-sm font-semibold text-green-800">Study Size (Human Participants)</Label>
-                  <p className="text-xs text-green-700">
-                    Select the approximate number of human participants in this study.
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="size-small"
-                        name="studySize"
-                        checked={reviewData.studySize === 'less_than_100'}
-                        onChange={() => updateStudySize('less_than_100')}
-                        className="text-xs"
-                      />
-                      <Label htmlFor="size-small" className="text-xs cursor-pointer">
-                        Less than 100 participants
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="size-medium"
-                        name="studySize"
-                        checked={reviewData.studySize === 'less_than_500k'}
-                        onChange={() => updateStudySize('less_than_500k')}
-                        className="text-xs"
-                      />
-                      <Label htmlFor="size-medium" className="text-xs cursor-pointer">
-                        100 to 500,000 participants
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="size-large"
-                        name="studySize"
-                        checked={reviewData.studySize === 'more_than_500k'}
-                        onChange={() => updateStudySize('more_than_500k')}
-                        className="text-xs"
-                      />
-                      <Label htmlFor="size-large" className="text-xs cursor-pointer">
-                        More than 500,000 participants
-                      </Label>
-                    </div>
-                  </div>
-                  
-                  {/* Women Not Included Chip */}
-                  <div className="border-t border-green-200 pt-3">
-                    <Label className="text-xs font-medium text-green-800 block mb-2">Study Demographics</Label>
-                    <button
-                      type="button"
-                      onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
-                      className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
-                        reviewData.womenNotIncluded
-                          ? 'bg-pink-100 text-pink-800 border-pink-400 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {reviewData.womenNotIncluded ? '✓ ' : ''}Women Not Included in Study
-                    </button>
-                    <p className="text-xs text-green-600 mt-1">
-                      Select if women/females were not included as participants in this study
-                    </p>
-                  </div>
-                </div>
               )}
 
-              {/* Category Display */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
-                <div className="mt-2">
-                  <Badge 
-                    variant={
-                      reviewData.category === 'Invalid' ? 'destructive' :
-                      reviewData.category === 'Unreliable' ? 'secondary' :
-                      reviewData.category === 'Widely Tested in Humans' ? 'default' : 'outline'
-                    }
-                    className="text-sm"
-                  >
-                    {reviewData.category}
-                  </Badge>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Category automatically determined based on your responses above.
-                  </p>
-                </div>
-              </div>
+              
 
               {/* Evidence & Tags - Only show for valid human studies with good quality */}
               {(() => {
@@ -949,7 +949,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                         {reviewData.tags.ethnicityLabels.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {reviewData.tags.ethnicityLabels.map(ethnicity => (
-                              <Badge key={ethnicity} variant="secondary" className="text-xs gap-1 px-1">
+                              <Badge key={ethnicity} variant="default" className="text-xs gap-1 px-1">
                                 {ethnicity}
                                 <X className="w-2 h-2 cursor-pointer" onClick={() => removeEthnicity(ethnicity)} />
                               </Badge>
@@ -1006,7 +1006,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       {reviewData.tags.ageRanges.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {reviewData.tags.ageRanges.map(range => (
-                            <Badge key={range} variant="secondary" className="text-xs gap-1 px-1">
+                            <Badge key={range} variant="default" className="text-xs gap-1 px-1">
                               {range}
                               <X className="w-2 h-2 cursor-pointer" onClick={() => {
                                 setReviewData(prev => ({
