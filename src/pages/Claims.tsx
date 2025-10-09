@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, Shield, CheckCircle } from 'lucide-react';
+
+import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -15,7 +15,7 @@ import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
-import { getClassificationReasons, type ReviewData } from '@/types/review';
+import { getClassificationReasons } from '@/types/review';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -121,16 +121,7 @@ interface ClaimUI {
   status: 'pending' | 'under_review' | 'approved';
 }
 
-interface ExpertDistribution {
-  category: string;
-  categoryLabel: string;
-  totalExperts: number;
-  distribution: {
-    low: number;
-    medium: number;
-    high: number;
-  };
-}
+
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
 
@@ -144,11 +135,9 @@ const Claims = () => {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
-  const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
-  const [claimComments, setClaimComments] = useState<Record<string, ClaimCommentRow[]>>({});
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
@@ -185,13 +174,6 @@ const Claims = () => {
     
     checkExpertStatus();
   }, [user, sb]);
-
-  const mapScoreIntToLabel = useCallback((n: number): 'low' | 'medium' | 'high' => {
-    // New schema uses 1..3 where 1=low,2=medium,3=high
-    if (n >= 3) return 'high';
-    if (n === 2) return 'medium';
-    return 'low';
-  }, []);
 
   const mapEvidenceRowToScores = useCallback((rows: PublicationScoreRow[] = []) => {
     const scoresTemplate: {
@@ -365,7 +347,6 @@ const Claims = () => {
       setClaims(mappedClaims);
       setReactions(reactionsByClaim);
       setUserReactions(userReactionsByClaim);
-      setClaimComments(commentsByClaim);
 
       // Fetch user's votes
       if (user) {
@@ -454,10 +435,7 @@ const Claims = () => {
     setLoading(true);
     try {
       // Fetch claims data
-      await Promise.all([
-        fetchClaimsData(),
-        // fetchExpertDistributions()
-      ]);
+      await fetchClaimsData();
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -624,12 +602,12 @@ const Claims = () => {
     // Only map colors for DB-backed categories. Any unknown category falls back to neutral styling.
     const colors: Record<string, string> = {
       nutrition: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      fitness: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      mental_health: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      pregnancy: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-      menopause: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      general_health: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      perimenopause: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+      fitness: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      mental_health: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      pregnancy: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      menopause: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      general_health: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      perimenopause: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
     };
 
     return colors[category] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
@@ -673,16 +651,18 @@ const Claims = () => {
   const getEvidenceClassificationColor = (classification: string) => {
     // Color map for evidence classifications (all lowercase, no extra spaces)
     const classificationColors: Record<string, string> = {
-      'unreliable': 'bg-gray-200 text-gray-700 border border-gray-300',
-      'not tested in humans': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-      'limited tested in humans': 'bg-blue-100 text-blue-800 border border-blue-300',
-      'tested in humans': 'bg-green-100 text-green-800 border border-green-300',
-      'tested in human': 'bg-green-100 text-green-800 border border-green-300', // Handle singular form
-      'widely tested in humans': 'bg-green-300 text-green-900 border border-green-400',
+      'unreliable': 'bg-gray-200 text-gray-700',
+      'invalid': 'bg-gray-200 text-gray-700',
+      'fallacy': 'bg-orange-200 text-gray-700',
+      'not tested in humans': 'bg-gray-300 text-grey-700',
+      'limited tested in humans': 'bg-blue-100 text-blue-800',
+      'tested in humans': 'bg-teal-300 text-gray-700 ',
+      'tested in human': 'bg-green-600 text-gray-200', // Handle singular form
+      'widely tested in humans': 'bg-green-300 text-green-900',
     };
     // Normalize label for color matching: lowercase and single spaces
     const key = classification.trim().toLowerCase().replace(/\s+/g, ' ');
-    return classificationColors[key] || 'bg-gray-100 text-gray-800 border border-gray-200';
+    return classificationColors[key] || 'bg-gray-100 text-gray-800';
   };
 
   // Individual expert review cards
@@ -734,7 +714,7 @@ const Claims = () => {
           role="list"
           aria-label="Expert reviews"
         >
-          {reviewCards.map((reviewCard, index) => {
+          {reviewCards.map((reviewCard) => {
             // Extract tags from the reviewCard (if present)
             // The tags are not currently passed in the reviewCard, so we need to get them from classification or add them to the reviewCard in the parent if possible.
             // For now, try to get them from the expert.classification if it is an object (future-proofing), else skip.
@@ -822,7 +802,7 @@ const Claims = () => {
                     {/* Show Women Not Included label if flagged */}
                     {reviewCard.expert.womenNotIncluded && (
                       <div className="mt-2">
-                        <Badge className="text-xs bg-red-100 text-red-800 border border-red-300">
+                        <Badge className="text-xs bg-red-100 text-red-800">
                           ♀ Women Not Included
                         </Badge>
                       </div>
@@ -1124,8 +1104,8 @@ const Claims = () => {
                         const labelElement = (
                           <span
                             key={label}
-                            className={`inline-flex items-center rounded-xl px-3 py-1 text-m font-semibold ${color} !border-2 shadow-sm`}
-                            style={{ borderWidth: 2 }}
+                            className={`inline-flex items-center rounded-xl px-3 py-1 text-m font-semibold ${color} `}
+                            style={{ borderWidth: 0 }}
                           >
                             {label} <span className="ml-2">({count})</span>
                           </span>
@@ -1162,7 +1142,7 @@ const Claims = () => {
                         labels.push(
                           <span
                             key="women-included"
-                            className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold bg-red-100 text-red-800 border-2 border-red-300 shadow-sm"
+                            className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold bg-red-100 text-red-800"
                           >
                             ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
                           </span>
