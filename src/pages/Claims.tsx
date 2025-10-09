@@ -149,6 +149,7 @@ const Claims = () => {
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [claimComments, setClaimComments] = useState<Record<string, ClaimCommentRow[]>>({});
+  const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
   // component-scoped Supabase client
@@ -366,6 +367,20 @@ const Claims = () => {
       setUserReactions(userReactionsByClaim);
       setClaimComments(commentsByClaim);
 
+      // Fetch user's votes
+      if (user) {
+        const { data: userVotesData, error: votesError } = await sb
+          .from('claim_votes')
+          .select('claim_id')
+          .eq('user_id', user.id);
+
+        if (!votesError && userVotesData) {
+          setUserVotes(new Set(userVotesData.map(v => v.claim_id)));
+        }
+      } else {
+        setUserVotes(new Set());
+      }
+
       // Fetch publication scores and attach to publications
       try {
         const pubIds = mappedClaims.flatMap(c => c.publications.map(p => p.id));
@@ -456,38 +471,54 @@ const Claims = () => {
   }, [fetchData]);
 
   const handleVote = async (id: string) => {
-    // optimistic UI update
-    setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
+    if (!user) {
+      console.warn('User not authenticated');
+      return;
+    }
+
+    const hasVoted = userVotes.has(id);
+
+    // Optimistic UI update
+    if (hasVoted) {
+      // Remove vote
+      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
+      setUserVotes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    } else {
+      // Add vote
+      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
+      setUserVotes(prev => new Set(prev).add(id));
+    }
 
     try {
-      const { data: userResp } = await supabase.auth.getUser();
-      const userId = (userResp as { user?: { id?: string } })?.user?.id;
-      if (!userId) {
-        // revert
-        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
-        return;
-      }
-
-      // Check for existing vote
-      const { data: existingVotes, error: voteErr } = await sb.from('claim_votes').select('*').eq('claim_id', id).eq('user_id', userId).limit(1).maybeSingle();
-      if (voteErr) throw voteErr;
-
-      if (existingVotes) {
-        // user already voted -> remove vote
-        const { error: delError } = await sb.from('claim_votes').delete().eq('claim_id', id).eq('user_id', userId);
+      if (hasVoted) {
+        // Remove vote from database
+        const { error: delError } = await sb.from('claim_votes').delete().eq('claim_id', id).eq('user_id', user.id);
         if (delError) throw delError;
-        // update local state (decrement)
-        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
       } else {
-        // insert vote
-        const { error: insertError } = await sb.from('claim_votes').insert({ claim_id: id, user_id: userId });
+        // Add vote to database
+        const { error: insertError } = await sb.from('claim_votes').insert({ claim_id: id, user_id: user.id });
         if (insertError) throw insertError;
-        // vote_count trigger in DB will have incremented; we already optimistically incremented so nothing further to do
       }
     } catch (err) {
       console.error('Vote failed:', err);
-      // revert optimistic increment
-      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
+      // Revert optimistic update on error
+      if (hasVoted) {
+        // Restore vote
+        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
+        setUserVotes(prev => new Set(prev).add(id));
+      } else {
+        // Remove vote
+        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
+        setUserVotes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+      }
     }
   };
 
@@ -1009,10 +1040,11 @@ const Claims = () => {
 
                     <div className="flex flex-col items-end gap-2">
                       <Button
-                        variant="outline"
+                        variant={userVotes.has(claim.id) ? "default" : "outline"}
                         size="sm"
                         onClick={() => handleVote(claim.id)}
                         className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground"
+                        disabled={!user}
                       >
                         <ChevronUp className="w-4 h-4" />
                         {claim.votes}
