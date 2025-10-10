@@ -116,8 +116,13 @@ interface ClaimUI {
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
 
+const CLAIMS_PER_PAGE = 20;
+
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalClaims, setTotalClaims] = useState(0);
+  const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
@@ -168,34 +173,57 @@ const Claims = () => {
 
 
 
-  const fetchClaimsData = useCallback(async () => {
+  const fetchClaimsData = useCallback(async (page: number = 0) => {
     try {
+      // Build the claims query with pagination, filtering, and sorting
+      let claimsQuery = sb
+        .from('claims')
+        .select('*', { count: 'exact' })
+        .range(page * CLAIMS_PER_PAGE, (page + 1) * CLAIMS_PER_PAGE - 1);
+
+      // Apply category filter
+      if (filterByCategory !== 'all') {
+        claimsQuery = claimsQuery.eq('category', filterByCategory);
+      }
+
+      // Apply sorting
+      if (sortBy === 'votes') {
+        claimsQuery = claimsQuery.order('vote_count', { ascending: false });
+      } else {
+        claimsQuery = claimsQuery.order('created_at', { ascending: false });
+      }
+
       // Batch the first set of queries in parallel for better performance
       const [
-        { data: claimsData, error: claimsError },
-        { data: commentsData, error: commentsError },
+        { data: claimsData, error: claimsError, count },
         { data: userVotesData, error: votesError }
       ] = await Promise.all([
-        sb.from('claims').select('*'),
-        sb.from('claim_comments').select('*').order('created_at', { ascending: true }),
+        claimsQuery,
         user ? sb.from('claim_votes').select('claim_id').eq('user_id', user.id) : Promise.resolve({ data: null, error: null })
       ]);
 
       if (claimsError) throw claimsError;
-      if (commentsError) throw commentsError;
+
+      // Update pagination state
+      setTotalClaims(count || 0);
+      const totalPages = Math.ceil((count || 0) / CLAIMS_PER_PAGE);
+      setHasMoreClaims(page < totalPages - 1);
 
       // Batch the claim-dependent queries in parallel
       const claimIds = claimsData?.map(c => c.id) || [];
       const [
         { data: publicationsData, error: publicationsError },
-        { data: reactionsData, error: reactionsError }
+        { data: reactionsData, error: reactionsError },
+        { data: commentsData, error: commentsError }
       ] = await Promise.all([
         sb.from('publications').select('*').in('claim_id', claimIds),
-        sb.from('claim_reactions').select('*').in('claim_id', claimIds)
+        sb.from('claim_reactions').select('*').in('claim_id', claimIds),
+        sb.from('claim_comments').select('*').in('claim_id', claimIds).order('created_at', { ascending: true })
       ]);
 
       if (publicationsError) throw publicationsError;
       if (reactionsError) throw reactionsError;
+      if (commentsError) throw commentsError;
 
       // Build reaction counts from the fetched reactions data
       const reactionsByClaim: Record<string, Record<string, number>> = {};
@@ -349,14 +377,15 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user]);
+  }, [sb, user, filterByCategory, sortBy]);
 
   // Move fetchData outside useEffect so it can be called from form submission
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page: number = 0) => {
     setLoading(true);
     try {
-      // Fetch claims data
-      await fetchClaimsData();
+      // Fetch claims data for the specified page
+      await fetchClaimsData(page);
+      setCurrentPage(page);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -364,10 +393,17 @@ const Claims = () => {
     }
   }, [fetchClaimsData]);
 
-  // Ensure data is loaded on mount
+  // Load data when filters, sorting, or page changes
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(currentPage);
+  }, [currentPage, fetchData]);
+
+  // Reset to first page when filters or sorting change
+  useEffect(() => {
+    if (currentPage !== 0) {
+      setCurrentPage(0);
+    }
+  }, [filterByCategory, sortBy, currentPage]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -785,14 +821,8 @@ const Claims = () => {
     { value: 'general_health', label: 'General Health' }
   ];
 
-  const filteredAndSortedClaims = [...claims]
-    .filter(claim => filterByCategory === 'all' || claim.category === filterByCategory)
-    .sort((a, b) => {
-      if (sortBy === 'votes') {
-        return b.votes - a.votes;
-      }
-      return 0; // For 'recent' we'd sort by date when we have real data
-    });
+  // Claims are now filtered and sorted by the database query
+  const filteredAndSortedClaims = claims;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
@@ -839,7 +869,7 @@ const Claims = () => {
                         onSuccess={() => {
                           setShowSubmissionForm(false);
                           // Refresh the claims data by re-running the fetch
-                          fetchData();
+                          fetchData(currentPage);
                         }}
                         onCancel={() => setShowSubmissionForm(false)}
                       />
@@ -878,6 +908,15 @@ const Claims = () => {
                   </Button>
                 </div>
               </div>
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center px-4 py-2 text-sm text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                    Loading claims...
+                  </div>
+                </div>
+              )}
+              
               {filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>No claims found for the selected category.</p>
@@ -1140,6 +1179,46 @@ const Claims = () => {
                 {/* The full review reel is available via the 'See Full Review' button which opens the dialog. */}
               </Card>
             ))}
+            
+            {/* Pagination Controls */}
+            {totalClaims > 0 && (
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
+                <div className="text-sm text-muted-foreground">
+                  Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    disabled={currentPage === 0 || loading}
+                    className="min-w-[80px]"
+                  >
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    ) : (
+                      'Previous'
+                    )}
+                  </Button>
+                  <div className="px-3 py-1 text-sm bg-background rounded border min-w-[100px] text-center">
+                    Page {currentPage + 1} of {Math.ceil(totalClaims / CLAIMS_PER_PAGE)}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={!hasMoreClaims || loading}
+                    className="min-w-[80px]"
+                  >
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    ) : (
+                      'Next'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
             </TabsContent>
 
             <TabsContent value="trusted-resources" className="space-y-6">
@@ -1159,7 +1238,7 @@ const Claims = () => {
                       claimTitle={claim.claim}
                       onSuccess={() => {
                         setShowPaperForm(null);
-                        fetchData();
+                        fetchData(currentPage);
                       }}
                       onCancel={() => setShowPaperForm(null)}
                     />
@@ -1260,7 +1339,7 @@ const Claims = () => {
             onClose={() => setReviewPublication(null)}
             onReviewSubmitted={() => {
               // refresh claims and expert distributions after an expert submits/updates a review
-              fetchData();
+              fetchData(currentPage);
             }}
           />
         </div>
