@@ -31,6 +31,7 @@ import {
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
+import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 
 interface Publication {
   id: string;
@@ -491,12 +492,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
                 <div className="mt-2">
                   <Badge 
-                    variant={
-                      reviewData.category === 'Invalid' ? 'destructive' :
-                      reviewData.category === 'Unreliable' ? 'secondary' :
-                      reviewData.category === 'Widely Tested in Humans' ? 'default' : 'outline'
-                    }
-                    className="text-sm"
+                    className={`text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
                   >
                     {reviewData.category}
                   </Badge>

@@ -16,6 +16,7 @@ import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
+import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -42,6 +43,7 @@ interface PublicationRow {
   doi?: string | null;
   url?: string | null;
   authors?: string | null;
+  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
   created_at: string;
 }
 
@@ -79,12 +81,7 @@ interface ReactionRow {
   created_at: string;
 }
 
-interface VoteRow {
-  id: string;
-  claim_id: string;
-  user_id: string;
-  created_at: string;
-}
+
 
 interface ClaimCommentRow {
   id: string;
@@ -108,12 +105,6 @@ interface ClaimUI {
     journal: string;
     year: number;
     url: string;
-    scores: {
-      sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
-      populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
-      consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
-      evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
-    };
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];
@@ -175,94 +166,36 @@ const Claims = () => {
     checkExpertStatus();
   }, [user, sb]);
 
-  const mapEvidenceRowToScores = useCallback((rows: PublicationScoreRow[] = []) => {
-    const scoresTemplate: {
-      sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
-      populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
-      consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
-      evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
-    } = {
-      sampleSize: { score: 'low', explanation: '' },
-      populationRepresentation: { score: 'low', explanation: '' },
-      consensus: { score: 'low', explanation: '' },
-      evidence: { score: 'low', explanation: '' }
-    };
 
-    if (!rows || rows.length === 0) return scoresTemplate;
-
-    // Get the most recent review
-    const latestRow = rows.reduce((a, b) => {
-      const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return bTime >= aTime ? b : a;
-    }, rows[0]);
-
-    if (latestRow?.review_data) {
-      const reviewData = latestRow.review_data;
-      const qualityChecks = reviewData.qualityChecks;
-      const comments = latestRow.comments || '';
-      
-      // Map quality checks to score levels
-      const mapQualityToScore = (quality?: string): 'low' | 'medium' | 'high' => {
-        switch (quality) {
-          case 'PASS': return 'high';
-          case 'NO': return 'low';
-          case 'NA': return 'medium';
-          default: return 'low';
-        }
-      };
-
-      // Map the quality checks to our score categories
-      if (qualityChecks?.studyDesign) {
-        scoresTemplate.evidence = { score: mapQualityToScore(qualityChecks.studyDesign), explanation: comments };
-      }
-      if (qualityChecks?.representation) {
-        scoresTemplate.populationRepresentation = { score: mapQualityToScore(qualityChecks.representation), explanation: comments };
-      }
-      if (qualityChecks?.statistics) {
-        scoresTemplate.consensus = { score: mapQualityToScore(qualityChecks.statistics), explanation: comments };
-      }
-      if (qualityChecks?.controlGroup || qualityChecks?.biasAddressed) {
-        // Combine control group and bias for sample size score
-        const controlScore = mapQualityToScore(qualityChecks.controlGroup);
-        const biasScore = mapQualityToScore(qualityChecks.biasAddressed);
-        const avgScore = controlScore === 'high' && biasScore === 'high' ? 'high' : 
-                        (controlScore === 'low' || biasScore === 'low') ? 'low' : 'medium';
-        scoresTemplate.sampleSize = { score: avgScore, explanation: comments };
-      }
-    }
-
-    return scoresTemplate;
-  }, []);
 
   const fetchClaimsData = useCallback(async () => {
     try {
-      // Fetch claims directly instead of using the problematic view
-      const { data: claimsData, error: claimsError } = await sb.from('claims').select('*');
+      // Batch the first set of queries in parallel for better performance
+      const [
+        { data: claimsData, error: claimsError },
+        { data: commentsData, error: commentsError },
+        { data: userVotesData, error: votesError }
+      ] = await Promise.all([
+        sb.from('claims').select('*'),
+        sb.from('claim_comments').select('*').order('created_at', { ascending: true }),
+        user ? sb.from('claim_votes').select('claim_id').eq('user_id', user.id) : Promise.resolve({ data: null, error: null })
+      ]);
+
       if (claimsError) throw claimsError;
-
-      // Fetch all publications for these claims
-      const claimIds = claimsData?.map(c => c.id) || [];
-      const { data: publicationsData, error: publicationsError } = await sb
-        .from('publications')
-        .select('*')
-        .in('claim_id', claimIds);
-      if (publicationsError) throw publicationsError;
-
-      // Fetch all reactions for these claims
-      const { data: reactionsData, error: reactionsError } = await sb
-        .from('claim_reactions')
-        .select('*')
-        .in('claim_id', claimIds);
-      if (reactionsError) throw reactionsError;
-
-      // Fetch claim comments
-      const { data: commentsData, error: commentsError } = await sb
-        .from('claim_comments')
-        .select('*')
-        .order('created_at', { ascending: true });
-
       if (commentsError) throw commentsError;
+
+      // Batch the claim-dependent queries in parallel
+      const claimIds = claimsData?.map(c => c.id) || [];
+      const [
+        { data: publicationsData, error: publicationsError },
+        { data: reactionsData, error: reactionsError }
+      ] = await Promise.all([
+        sb.from('publications').select('*').in('claim_id', claimIds),
+        sb.from('claim_reactions').select('*').in('claim_id', claimIds)
+      ]);
+
+      if (publicationsError) throw publicationsError;
+      if (reactionsError) throw reactionsError;
 
       // Build reaction counts from the fetched reactions data
       const reactionsByClaim: Record<string, Record<string, number>> = {};
@@ -314,13 +247,6 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
-            scores: {
-              sampleSize: { score: 'low' as const, explanation: '' },
-              populationRepresentation: { score: 'low' as const, explanation: '' },
-              consensus: { score: 'low' as const, explanation: '' },
-              evidence: { score: 'low' as const, explanation: '' }
-            },
-            // Will be populated later with actual scores
             rawScores: []
           };
         });
@@ -348,24 +274,18 @@ const Claims = () => {
       setReactions(reactionsByClaim);
       setUserReactions(userReactionsByClaim);
 
-      // Fetch user's votes
-      if (user) {
-        const { data: userVotesData, error: votesError } = await sb
-          .from('claim_votes')
-          .select('claim_id')
-          .eq('user_id', user.id);
-
-        if (!votesError && userVotesData) {
-          setUserVotes(new Set(userVotesData.map(v => v.claim_id)));
-        }
+      // Set user votes from the batched query above
+      if (!votesError && userVotesData) {
+        setUserVotes(new Set(userVotesData.map(v => v.claim_id)));
       } else {
         setUserVotes(new Set());
       }
 
-      // Fetch publication scores and attach to publications
+      // Batch the final queries for publication scores and expert profiles
       try {
         const pubIds = mappedClaims.flatMap(c => c.publications.map(p => p.id));
         if (pubIds.length > 0) {
+          // Fetch scores first to determine which experts we need
           const { data: scoreRows, error: scoreErr } = await sb
             .from('publication_scores')
             .select('*')
@@ -374,51 +294,52 @@ const Claims = () => {
           if (!scoreErr && scoreRows) {
             const scoreRowsTyped = scoreRows as PublicationScoreRow[];
             const scoreMap: Record<string, PublicationScoreRow[]> = {};
+            const expertIdsSet = new Set<string>();
+            
+            // Build score map and collect expert IDs in one pass
             scoreRowsTyped.forEach((r) => {
               if (!scoreMap[r.publication_id]) scoreMap[r.publication_id] = [];
               scoreMap[r.publication_id].push(r);
+              if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
             });
 
+            // Fetch expert profiles in parallel with updating claims
+            const expertIds = Array.from(expertIdsSet);
+            const expertProfilesPromise = expertIds.length > 0 
+              ? sb.from('expert_stats').select('user_id, display_name, avatar_url').in('user_id', expertIds as string[])
+              : Promise.resolve({ data: null, error: null });
+
+            const [{ data: statsRows, error: statsErr }] = await Promise.all([
+              expertProfilesPromise
+            ]);
+
+            // Update claims with scores
             const updatedClaims = mappedClaims.map((cl) => ({
               ...cl,
               publications: cl.publications.map((pub) => {
                 const rows = scoreMap[pub.id] || pub.rawScores || [];
                 return {
                   ...pub,
-                  rawScores: rows,
-                  scores: mapEvidenceRowToScores(rows)
+                  rawScores: rows
                 };
               })
             }));
 
             setClaims(updatedClaims);
 
-            // fetch expert profiles for score authors
-            const expertIdsSet = new Set<string>();
-            scoreRowsTyped.forEach((r) => {
-              if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
-            });
-
-            const expertIds = Array.from(expertIdsSet);
-            if (expertIds.length > 0) {
-              const { data: statsRows, error: statsErr } = await sb
-                .from('expert_stats')
-                .select('user_id, display_name, avatar_url')
-                .in('user_id', expertIds as string[]);
-
-              if (!statsErr && statsRows) {
-                const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-                (statsRows as unknown[]).forEach((r) => {
-                  if (!r || typeof r !== 'object') return;
-                  const rec = r as Record<string, unknown>;
-                  const key = typeof rec.user_id === 'string' ? rec.user_id : null;
-                  if (!key) return;
-                  const display = typeof rec.display_name === 'string' ? rec.display_name : null;
-                  const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-                  statsMap[key] = { display_name: display, avatar_url: avatar };
-                });
-                setExpertProfiles(prev => ({ ...prev, ...statsMap }));
-              }
+            // Set expert profiles
+            if (!statsErr && statsRows) {
+              const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+              (statsRows as unknown[]).forEach((r) => {
+                if (!r || typeof r !== 'object') return;
+                const rec = r as Record<string, unknown>;
+                const key = typeof rec.user_id === 'string' ? rec.user_id : null;
+                if (!key) return;
+                const display = typeof rec.display_name === 'string' ? rec.display_name : null;
+                const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
+                statsMap[key] = { display_name: display, avatar_url: avatar };
+              });
+              setExpertProfiles(prev => ({ ...prev, ...statsMap }));
             }
           }
         }
@@ -428,7 +349,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, mapEvidenceRowToScores, user]);
+  }, [sb, user]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async () => {
@@ -622,48 +543,13 @@ const Claims = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const getScoreColor = (score: 'low' | 'medium' | 'high', hasScore: boolean = true) => {
-    if (!hasScore) {
-      return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-    }
-    const colors = {
-      low: 'bg-blue-50 text-blue-500 border border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
-      medium: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
-      high: 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white'
-    };
-    return colors[score];
-  };
+
 
   const toggleClaimExpansion = (claimId: string) => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      'study_size': 'Sample Size',
-      'population': 'Population', 
-      'consensus': 'Consensus'
-      // 'interpretation' (Evidence Quality) intentionally omitted from publication score labels
-    };
-    return labels[category] || category;
-  };
 
-  const getEvidenceClassificationColor = (classification: string) => {
-    // Color map for evidence classifications (all lowercase, no extra spaces)
-    const classificationColors: Record<string, string> = {
-      'unreliable': 'bg-gray-200 text-gray-700',
-      'invalid': 'bg-gray-200 text-gray-700',
-      'fallacy': 'bg-orange-200 text-gray-700',
-      'not tested in humans': 'bg-gray-300 text-grey-700',
-      'limited tested in humans': 'bg-blue-100 text-blue-800',
-      'tested in humans': 'bg-teal-300 text-gray-700 ',
-      'tested in human': 'bg-green-600 text-gray-200', // Handle singular form
-      'widely tested in humans': 'bg-green-300 text-green-900',
-    };
-    // Normalize label for color matching: lowercase and single spaces
-    const key = classification.trim().toLowerCase().replace(/\s+/g, ' ');
-    return classificationColors[key] || 'bg-gray-100 text-gray-800';
-  };
 
   // Individual expert review cards
   type ExpertReviewCard = {
@@ -840,7 +726,7 @@ const Claims = () => {
                               biasAddressed: 'Bias Addressed',
                               statistics: 'Statistics'
                             };
-                            const label = humanLabels[scoreItem.category] || getCategoryLabel(scoreItem.category);
+                            const label = humanLabels[scoreItem.category] || scoreItem.category;
                             const explanation = explanations[scoreItem.category] || '';
                             return explanation ? (
                               <Popover>
