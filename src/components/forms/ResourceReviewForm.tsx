@@ -67,10 +67,10 @@ export const ResourceReviewForm = ({ resourceId, resourceName, onReviewSubmitted
 
       form.reset();
       onReviewSubmitted?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error submitting review",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
     } finally {

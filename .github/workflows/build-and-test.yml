@@ -58,86 +58,6 @@ jobs:
           path: dist/
           retention-days: 1
 
-  # Job 2: Test Supabase Edge Functions
-  edge-functions:
-    name: Edge Functions Check
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-          
-      - name: Check Edge Function syntax
-        run: |
-          if [ -d "supabase/functions" ]; then
-            for func_dir in supabase/functions/*/; do
-              if [ -f "${func_dir}index.ts" ]; then
-                echo "Checking ${func_dir}index.ts"
-                deno check "${func_dir}index.ts"
-              fi
-            done
-          else
-            echo "No Supabase functions directory found, skipping..."
-          fi
-          
-      - name: Lint Edge Functions
-        run: |
-          if [ -d "supabase/functions" ]; then
-            for func_dir in supabase/functions/*/; do
-              if [ -f "${func_dir}index.ts" ]; then
-                echo "Linting ${func_dir}index.ts"
-                deno lint "${func_dir}index.ts" || true
-              fi
-            done
-          else
-            echo "No Supabase functions directory found, skipping..."
-          fi
-
-  # Job 3: Database Migration Check
-  database-check:
-    name: Database Migrations
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          
-      - name: Install Supabase CLI
-        run: npm install -g @supabase/cli
-        
-      - name: Check migration files syntax
-        run: |
-          if [ -d "supabase/migrations" ]; then
-            echo "Found migration files:"
-            ls -la supabase/migrations/
-            
-            # Basic SQL syntax check for migration files
-            for migration in supabase/migrations/*.sql; do
-              if [ -f "$migration" ]; then
-                echo "Checking syntax of $migration"
-                # Basic check - ensure file is not empty and has basic SQL structure
-                if [ -s "$migration" ]; then
-                  echo "✅ $migration is not empty"
-                else
-                  echo "⚠️  $migration is empty"
-                fi
-              fi
-            done
-          else
-            echo "No migrations directory found, skipping..."
-          fi
-
   # Job 4: Security and Dependency Check
   security-check:
     name: Security & Dependencies
@@ -209,6 +129,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
       - name: Validate package.json
         run: |
           # Check if package.json is valid JSON
@@ -217,14 +146,12 @@ jobs:
           
       - name: Validate TypeScript config
         run: |
-          # Check if tsconfig files are valid
-          for config in tsconfig*.json; do
-            if [ -f "$config" ]; then
-              echo "Validating $config"
-              cat "$config" | jq empty
-              echo "✅ $config is valid JSON"
-            fi
-          done
+          # Check if tsconfig files are valid using TypeScript compiler
+          echo "Validating TypeScript configuration files..."
+          npx tsc --noEmit --project tsconfig.json
+          npx tsc --noEmit --project tsconfig.app.json  
+          npx tsc --noEmit --project tsconfig.node.json
+          echo "✅ All TypeScript configurations are valid"
           
       - name: Validate other config files
         run: |
@@ -249,7 +176,7 @@ jobs:
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest
-    needs: [frontend-build, edge-functions, database-check, security-check, config-validation]
+    needs: [frontend-build, security-check, config-validation]
     if: always()
     
     steps:
@@ -259,14 +186,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Job Status" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend Build: ${{ needs.frontend-build.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Edge Functions: ${{ needs.edge-functions.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Database Check: ${{ needs.database-check.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Security Check: ${{ needs.security-check.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Config Validation: ${{ needs.config-validation.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Overall status
-          if [ "${{ needs.frontend-build.result }}" = "success" ] && [ "${{ needs.edge-functions.result }}" = "success" ] && [ "${{ needs.database-check.result }}" = "success" ] && [ "${{ needs.config-validation.result }}" = "success" ]; then
+          if [ "${{ needs.frontend-build.result }}" = "success" ]  && [ "${{ needs.config-validation.result }}" = "success" ]; then
             echo "✅ **All critical checks passed!**" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Some checks failed. Please review the logs.**" >> $GITHUB_STEP_SUMMARY

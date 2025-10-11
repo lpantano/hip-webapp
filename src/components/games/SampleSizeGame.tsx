@@ -39,7 +39,7 @@ export const SampleSizeGame = () => {
   // Generate samples based on current sample size and seed
   const { groupA, groupB, stats } = useMemo(() => {
     const rng = (seed: number) => {
-      let x = Math.sin(seed) * 10000;
+      const x = Math.sin(seed) * 10000;
       return x - Math.floor(x);
     };
 
