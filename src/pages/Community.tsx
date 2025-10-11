@@ -23,7 +23,7 @@ interface CommunityMember {
   display_name?: string;
   profile_avatar_url?: string;
   bio?: string;
-  social_media_links: any;
+  social_media_links: Array<{ platform: string; url: string }> | unknown;
   total_contributions?: number;
   publication_reviews?: number;
   new_claims?: number;
@@ -187,7 +187,7 @@ const Community = () => {
             </Badge>
           </div>
           <div className="flex gap-1 mt-2">
-            {(member.social_media_links || []).map((link: { platform: string; url: string }) => {
+            {(Array.isArray(member.social_media_links) ? member.social_media_links : []).map((link: { platform: string; url: string }) => {
               if (!link.platform || !link.url) return null;
               const Icon = getSocialIcon(link.platform);
               return (
@@ -353,11 +353,11 @@ const Community = () => {
                 <Separator />
 
                 {/* Social Links */}
-                {(selectedMember.social_media_links.length > 0 || selectedMember.website) && (
+                {((Array.isArray(selectedMember.social_media_links) && selectedMember.social_media_links.length > 0) || selectedMember.website) && (
                   <div>
                     <h4 className="font-semibold mb-3">Connect</h4>
                     <div className="flex flex-wrap gap-2">
-                      {selectedMember.social_media_links.map((link: { platform: string; url: string }) => {
+                      {(Array.isArray(selectedMember.social_media_links) ? selectedMember.social_media_links : []).map((link: { platform: string; url: string }) => {
                         if (!link.platform || !link.url) return null;
                         const Icon = getSocialIcon(link.platform);
                         const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);

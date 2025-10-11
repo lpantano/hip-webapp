@@ -50,7 +50,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
 
   const fetchFromDOI = async () => {
     if (!formData.doi.trim()) {
-      setError('Please enter a DOI first');
+      setError('Please enter a DOI or PubMed link first');
       return;
     }
 
@@ -73,10 +73,10 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
         setFetchSuccess(true);
         toast.success('Paper information fetched successfully!');
       } else {
-        setError('Could not fetch paper information from DOI. Please fill in the details manually.');
+        setError('Could not fetch paper information from the provided link. Please fill in the details manually.');
       }
     } catch (err) {
-      console.error('Error fetching DOI data:', err);
+      console.error('Error fetching publication data:', err);
       setError('Failed to fetch paper information. Please fill in the details manually.');
     } finally {
       setFetchingDOI(false);
@@ -84,7 +84,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
   };
 
   const validateForm = (): string | null => {
-    if (!formData.doi.trim()) return 'DOI is required';
+    if (!formData.doi.trim()) return 'DOI or PubMed link is required';
     if (!formData.title.trim()) return 'Paper title is required';
     if (!formData.journal.trim()) return 'Journal name is required';
     
@@ -172,7 +172,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
             <div className="flex-1">
               <CardTitle className="text-xl mb-2">Submit Supporting Paper</CardTitle>
               <CardDescription className="text-sm">
-                Enter the DOI to automatically fetch paper details for: <strong>"{claimTitle}"</strong>
+                Enter a DOI or PubMed link to automatically fetch paper details for: <strong>"{claimTitle}"</strong>
               </CardDescription>
             </div>
           </div>
@@ -199,11 +199,11 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
           {/* DOI Input Section */}
           <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
             <div className="space-y-2">
-              <Label htmlFor="doi">DOI (Digital Object Identifier) *</Label>
+              <Label htmlFor="doi">DOI or PubMed Link *</Label>
               <div className="flex gap-2">
                 <Input
                   id="doi"
-                  placeholder="e.g., 10.1038/nature12373 or https://doi.org/10.1038/nature12373"
+                  placeholder="e.g., 10.1038/nature12373 or https://pubmed.ncbi.nlm.nih.gov/12345678/"
                   value={formData.doi}
                   onChange={(e) => handleInputChange('doi', e.target.value)}
                   disabled={loading || fetchingDOI}
@@ -224,7 +224,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Enter the DOI and click "Fetch" to automatically populate the paper details below.
+                Enter a DOI, PubMed URL, or PMID and click "Fetch" to automatically populate the paper details below.
               </p>
             </div>
           </div>

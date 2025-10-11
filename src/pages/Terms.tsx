@@ -12,7 +12,7 @@ const Terms = () => {
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Platform Purpose</h2>
               <p className="mb-4">
-                TekaHealth is an educational platform that provides research-backed affirmations 
+                ClaimWell is an educational platform that provides research-backed affirmations 
                 and insights specifically focused on women's experiences, health, and empowerment. Our mission is to 
                 bridge the gap between scientific research and practical self-empowerment tools.
               </p>
@@ -90,8 +90,8 @@ const Terms = () => {
               <h2 className="text-2xl font-semibold text-white mb-4">Contact</h2>
               <p>
                 For questions about these terms or our data usage policies, contact us at{" "}
-                <a href="mailto:terms@tekahealth.com" className="text-accent hover:underline">
-                  terms@tekahealth.com
+                <a href="mailto:terms@claimwell.com" className="text-accent hover:underline">
+                  terms@claimwell.com
                 </a>
               </p>
             </section>

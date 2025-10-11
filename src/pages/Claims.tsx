@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronUp, ExternalLink, Users, Info, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, Shield, CheckCircle } from 'lucide-react';
+
+import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -15,6 +15,8 @@ import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
+import { getClassificationReasons } from '@/types/review';
+import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -41,6 +43,7 @@ interface PublicationRow {
   doi?: string | null;
   url?: string | null;
   authors?: string | null;
+  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
   created_at: string;
 }
 
@@ -63,6 +66,7 @@ interface PublicationScoreRow {
       biasAddressed?: 'PASS' | 'NO' | 'NA' | null;
       statistics?: 'PASS' | 'NO' | 'NA' | null;
     };
+    womenNotIncluded?: boolean;
   } | null;
   comments?: string | null;
   created_at: string;
@@ -77,12 +81,7 @@ interface ReactionRow {
   created_at: string;
 }
 
-interface VoteRow {
-  id: string;
-  claim_id: string;
-  user_id: string;
-  created_at: string;
-}
+
 
 interface ClaimCommentRow {
   id: string;
@@ -106,12 +105,6 @@ interface ClaimUI {
     journal: string;
     year: number;
     url: string;
-    scores: {
-      sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
-      populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
-      consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
-      evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
-    };
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];
@@ -119,21 +112,17 @@ interface ClaimUI {
   status: 'pending' | 'under_review' | 'approved';
 }
 
-interface ExpertDistribution {
-  category: string;
-  categoryLabel: string;
-  totalExperts: number;
-  distribution: {
-    low: number;
-    medium: number;
-    high: number;
-  };
-}
+
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
 
+const CLAIMS_PER_PAGE = 20;
+
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalClaims, setTotalClaims] = useState(0);
+  const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
@@ -142,11 +131,9 @@ const Claims = () => {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
-  const [expertDistributions, setExpertDistributions] = useState<Record<string, ExpertDistribution[]>>({});
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
-  const [claimComments, setClaimComments] = useState<Record<string, ClaimCommentRow[]>>({});
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
@@ -184,100 +171,58 @@ const Claims = () => {
     checkExpertStatus();
   }, [user, sb]);
 
-  const mapScoreIntToLabel = useCallback((n: number): 'low' | 'medium' | 'high' => {
-    // New schema uses 1..3 where 1=low,2=medium,3=high
-    if (n >= 3) return 'high';
-    if (n === 2) return 'medium';
-    return 'low';
-  }, []);
 
-  const mapEvidenceRowToScores = useCallback((rows: PublicationScoreRow[] = []) => {
-    const scoresTemplate: {
-      sampleSize: { score: 'low' | 'medium' | 'high'; explanation: string };
-      populationRepresentation: { score: 'low' | 'medium' | 'high'; explanation: string };
-      consensus: { score: 'low' | 'medium' | 'high'; explanation: string };
-      evidence: { score: 'low' | 'medium' | 'high'; explanation: string };
-    } = {
-      sampleSize: { score: 'low', explanation: '' },
-      populationRepresentation: { score: 'low', explanation: '' },
-      consensus: { score: 'low', explanation: '' },
-      evidence: { score: 'low', explanation: '' }
-    };
 
-    if (!rows || rows.length === 0) return scoresTemplate;
-
-    // Get the most recent review
-    const latestRow = rows.reduce((a, b) => {
-      const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return bTime >= aTime ? b : a;
-    }, rows[0]);
-
-    if (latestRow?.review_data) {
-      const reviewData = latestRow.review_data;
-      const qualityChecks = reviewData.qualityChecks;
-      const comments = latestRow.comments || '';
-      
-      // Map quality checks to score levels
-      const mapQualityToScore = (quality?: string): 'low' | 'medium' | 'high' => {
-        switch (quality) {
-          case 'PASS': return 'high';
-          case 'NO': return 'low';
-          case 'NA': return 'medium';
-          default: return 'low';
-        }
-      };
-
-      // Map the quality checks to our score categories
-      if (qualityChecks?.studyDesign) {
-        scoresTemplate.evidence = { score: mapQualityToScore(qualityChecks.studyDesign), explanation: comments };
-      }
-      if (qualityChecks?.representation) {
-        scoresTemplate.populationRepresentation = { score: mapQualityToScore(qualityChecks.representation), explanation: comments };
-      }
-      if (qualityChecks?.statistics) {
-        scoresTemplate.consensus = { score: mapQualityToScore(qualityChecks.statistics), explanation: comments };
-      }
-      if (qualityChecks?.controlGroup || qualityChecks?.biasAddressed) {
-        // Combine control group and bias for sample size score
-        const controlScore = mapQualityToScore(qualityChecks.controlGroup);
-        const biasScore = mapQualityToScore(qualityChecks.biasAddressed);
-        const avgScore = controlScore === 'high' && biasScore === 'high' ? 'high' : 
-                        (controlScore === 'low' || biasScore === 'low') ? 'low' : 'medium';
-        scoresTemplate.sampleSize = { score: avgScore, explanation: comments };
-      }
-    }
-
-    return scoresTemplate;
-  }, []);
-
-  const fetchClaimsData = useCallback(async () => {
+  const fetchClaimsData = useCallback(async (page: number = 0) => {
     try {
-      // Fetch claims directly instead of using the problematic view
-      const { data: claimsData, error: claimsError } = await sb.from('claims').select('*');
+      // Build the claims query with pagination, filtering, and sorting
+      let claimsQuery = sb
+        .from('claims')
+        .select('*', { count: 'exact' })
+        .range(page * CLAIMS_PER_PAGE, (page + 1) * CLAIMS_PER_PAGE - 1);
+
+      // Apply category filter
+      if (filterByCategory !== 'all') {
+        claimsQuery = claimsQuery.eq('category', filterByCategory);
+      }
+
+      // Apply sorting
+      if (sortBy === 'votes') {
+        claimsQuery = claimsQuery.order('vote_count', { ascending: false });
+      } else {
+        claimsQuery = claimsQuery.order('created_at', { ascending: false });
+      }
+
+      // Batch the first set of queries in parallel for better performance
+      const [
+        { data: claimsData, error: claimsError, count },
+        { data: userVotesData, error: votesError }
+      ] = await Promise.all([
+        claimsQuery,
+        user ? sb.from('claim_votes').select('claim_id').eq('user_id', user.id) : Promise.resolve({ data: null, error: null })
+      ]);
+
       if (claimsError) throw claimsError;
 
-      // Fetch all publications for these claims
+      // Update pagination state
+      setTotalClaims(count || 0);
+      const totalPages = Math.ceil((count || 0) / CLAIMS_PER_PAGE);
+      setHasMoreClaims(page < totalPages - 1);
+
+      // Batch the claim-dependent queries in parallel
       const claimIds = claimsData?.map(c => c.id) || [];
-      const { data: publicationsData, error: publicationsError } = await sb
-        .from('publications')
-        .select('*')
-        .in('claim_id', claimIds);
+      const [
+        { data: publicationsData, error: publicationsError },
+        { data: reactionsData, error: reactionsError },
+        { data: commentsData, error: commentsError }
+      ] = await Promise.all([
+        sb.from('publications').select('*').in('claim_id', claimIds),
+        sb.from('claim_reactions').select('*').in('claim_id', claimIds),
+        sb.from('claim_comments').select('*').in('claim_id', claimIds).order('created_at', { ascending: true })
+      ]);
+
       if (publicationsError) throw publicationsError;
-
-      // Fetch all reactions for these claims
-      const { data: reactionsData, error: reactionsError } = await sb
-        .from('claim_reactions')
-        .select('*')
-        .in('claim_id', claimIds);
       if (reactionsError) throw reactionsError;
-
-      // Fetch claim comments
-      const { data: commentsData, error: commentsError } = await sb
-        .from('claim_comments')
-        .select('*')
-        .order('created_at', { ascending: true });
-
       if (commentsError) throw commentsError;
 
       // Build reaction counts from the fetched reactions data
@@ -330,13 +275,6 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
-            scores: {
-              sampleSize: { score: 'low' as const, explanation: '' },
-              populationRepresentation: { score: 'low' as const, explanation: '' },
-              consensus: { score: 'low' as const, explanation: '' },
-              evidence: { score: 'low' as const, explanation: '' }
-            },
-            // Will be populated later with actual scores
             rawScores: []
           };
         });
@@ -363,26 +301,19 @@ const Claims = () => {
       setClaims(mappedClaims);
       setReactions(reactionsByClaim);
       setUserReactions(userReactionsByClaim);
-      setClaimComments(commentsByClaim);
 
-      // Fetch user's votes
-      if (user) {
-        const { data: userVotesData, error: votesError } = await sb
-          .from('claim_votes')
-          .select('claim_id')
-          .eq('user_id', user.id);
-
-        if (!votesError && userVotesData) {
-          setUserVotes(new Set(userVotesData.map(v => v.claim_id)));
-        }
+      // Set user votes from the batched query above
+      if (!votesError && userVotesData) {
+        setUserVotes(new Set(userVotesData.map(v => v.claim_id)));
       } else {
         setUserVotes(new Set());
       }
 
-      // Fetch publication scores and attach to publications
+      // Batch the final queries for publication scores and expert profiles
       try {
         const pubIds = mappedClaims.flatMap(c => c.publications.map(p => p.id));
         if (pubIds.length > 0) {
+          // Fetch scores first to determine which experts we need
           const { data: scoreRows, error: scoreErr } = await sb
             .from('publication_scores')
             .select('*')
@@ -391,51 +322,52 @@ const Claims = () => {
           if (!scoreErr && scoreRows) {
             const scoreRowsTyped = scoreRows as PublicationScoreRow[];
             const scoreMap: Record<string, PublicationScoreRow[]> = {};
+            const expertIdsSet = new Set<string>();
+            
+            // Build score map and collect expert IDs in one pass
             scoreRowsTyped.forEach((r) => {
               if (!scoreMap[r.publication_id]) scoreMap[r.publication_id] = [];
               scoreMap[r.publication_id].push(r);
+              if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
             });
 
+            // Fetch expert profiles in parallel with updating claims
+            const expertIds = Array.from(expertIdsSet);
+            const expertProfilesPromise = expertIds.length > 0 
+              ? sb.from('expert_stats').select('user_id, display_name, avatar_url').in('user_id', expertIds as string[])
+              : Promise.resolve({ data: null, error: null });
+
+            const [{ data: statsRows, error: statsErr }] = await Promise.all([
+              expertProfilesPromise
+            ]);
+
+            // Update claims with scores
             const updatedClaims = mappedClaims.map((cl) => ({
               ...cl,
               publications: cl.publications.map((pub) => {
                 const rows = scoreMap[pub.id] || pub.rawScores || [];
                 return {
                   ...pub,
-                  rawScores: rows,
-                  scores: mapEvidenceRowToScores(rows)
+                  rawScores: rows
                 };
               })
             }));
 
             setClaims(updatedClaims);
 
-            // fetch expert profiles for score authors
-            const expertIdsSet = new Set<string>();
-            scoreRowsTyped.forEach((r) => {
-              if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
-            });
-
-            const expertIds = Array.from(expertIdsSet);
-            if (expertIds.length > 0) {
-              const { data: statsRows, error: statsErr } = await sb
-                .from('expert_stats')
-                .select('user_id, display_name, avatar_url')
-                .in('user_id', expertIds as string[]);
-
-              if (!statsErr && statsRows) {
-                const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-                (statsRows as unknown[]).forEach((r) => {
-                  if (!r || typeof r !== 'object') return;
-                  const rec = r as Record<string, unknown>;
-                  const key = typeof rec.user_id === 'string' ? rec.user_id : null;
-                  if (!key) return;
-                  const display = typeof rec.display_name === 'string' ? rec.display_name : null;
-                  const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-                  statsMap[key] = { display_name: display, avatar_url: avatar };
-                });
-                setExpertProfiles(prev => ({ ...prev, ...statsMap }));
-              }
+            // Set expert profiles
+            if (!statsErr && statsRows) {
+              const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
+              (statsRows as unknown[]).forEach((r) => {
+                if (!r || typeof r !== 'object') return;
+                const rec = r as Record<string, unknown>;
+                const key = typeof rec.user_id === 'string' ? rec.user_id : null;
+                if (!key) return;
+                const display = typeof rec.display_name === 'string' ? rec.display_name : null;
+                const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
+                statsMap[key] = { display_name: display, avatar_url: avatar };
+              });
+              setExpertProfiles(prev => ({ ...prev, ...statsMap }));
             }
           }
         }
@@ -445,17 +377,15 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, mapEvidenceRowToScores, user]);
+  }, [sb, user, filterByCategory, sortBy]);
 
   // Move fetchData outside useEffect so it can be called from form submission
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page: number = 0) => {
     setLoading(true);
     try {
-      // Fetch claims data
-      await Promise.all([
-        fetchClaimsData(),
-        // fetchExpertDistributions()
-      ]);
+      // Fetch claims data for the specified page
+      await fetchClaimsData(page);
+      setCurrentPage(page);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -463,10 +393,17 @@ const Claims = () => {
     }
   }, [fetchClaimsData]);
 
-  // Ensure data is loaded on mount
+  // Load data when filters, sorting, or page changes
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(currentPage);
+  }, [currentPage, fetchData]);
+
+  // Reset to first page when filters or sorting change
+  useEffect(() => {
+    if (currentPage !== 0) {
+      setCurrentPage(0);
+    }
+  }, [filterByCategory, sortBy, currentPage]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -622,12 +559,12 @@ const Claims = () => {
     // Only map colors for DB-backed categories. Any unknown category falls back to neutral styling.
     const colors: Record<string, string> = {
       nutrition: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      fitness: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      mental_health: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      pregnancy: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-      menopause: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      general_health: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      perimenopause: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+      fitness: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      mental_health: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      pregnancy: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      menopause: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      general_health: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      perimenopause: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
     };
 
     return colors[category] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
@@ -642,46 +579,13 @@ const Claims = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const getScoreColor = (score: 'low' | 'medium' | 'high', hasScore: boolean = true) => {
-    if (!hasScore) {
-      return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-    }
-    const colors = {
-      low: 'bg-blue-50 text-blue-500 border border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
-      medium: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
-      high: 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white'
-    };
-    return colors[score];
-  };
+
 
   const toggleClaimExpansion = (claimId: string) => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      'study_size': 'Sample Size',
-      'population': 'Population', 
-      'consensus': 'Consensus'
-      // 'interpretation' (Evidence Quality) intentionally omitted from publication score labels
-    };
-    return labels[category] || category;
-  };
 
-  const getEvidenceClassificationColor = (classification: string) => {
-    // Color map for evidence classifications (all lowercase, no extra spaces)
-    const classificationColors: Record<string, string> = {
-      'unreliable': 'bg-gray-200 text-gray-700 border border-gray-300',
-      'not tested in humans': 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-      'limited tested in humans': 'bg-blue-100 text-blue-800 border border-blue-300',
-      'tested in humans': 'bg-green-100 text-green-800 border border-green-300',
-      'tested in human': 'bg-green-100 text-green-800 border border-green-300', // Handle singular form
-      'widely tested in humans': 'bg-green-300 text-green-900 border border-green-400',
-    };
-    // Normalize label for color matching: lowercase and single spaces
-    const key = classification.trim().toLowerCase().replace(/\s+/g, ' ');
-    return classificationColors[key] || 'bg-gray-100 text-gray-800 border border-gray-200';
-  };
 
   // Individual expert review cards
   type ExpertReviewCard = {
@@ -711,6 +615,9 @@ const Claims = () => {
         ethnicityLabels?: string[];
         ageRanges?: string[];
       } | null;
+      womenNotIncluded?: boolean;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      reviewData?: any;
     };
   };
 
@@ -729,7 +636,7 @@ const Claims = () => {
           role="list"
           aria-label="Expert reviews"
         >
-          {reviewCards.map((reviewCard, index) => {
+          {reviewCards.map((reviewCard) => {
             // Extract tags from the reviewCard (if present)
             // The tags are not currently passed in the reviewCard, so we need to get them from classification or add them to the reviewCard in the parent if possible.
             // For now, try to get them from the expert.classification if it is an object (future-proofing), else skip.
@@ -767,6 +674,30 @@ const Claims = () => {
                         <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
                           {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                         </Badge>
+                        {/* Show reasons for negative classifications */}
+                        {reviewCard.expert.reviewData && 
+                         (reviewCard.expert.classification === 'Invalid' || 
+                          reviewCard.expert.classification === 'Unreliable' || 
+                          reviewCard.expert.classification === 'Fallacy') && (
+                          <div className="mt-2">
+                            {(() => {
+                              const reasons = getClassificationReasons(reviewCard.expert.reviewData);
+                              if (reasons.length > 0) {
+                                return (
+                                  <div className="text-xs text-muted-foreground">
+                                    <div className="font-medium mb-1">Reason{reasons.length > 1 ? 's' : ''}:</div>
+                                    <ul className="list-disc list-inside space-y-1">
+                                      {reasons.map((reason, i) => (
+                                        <li key={i}>{reason}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        )}
                       </div>
                     )}
                     {/* Show tags if present */}
@@ -788,6 +719,14 @@ const Claims = () => {
                             ))}
                           </span>
                         )}
+                      </div>
+                    )}
+                    {/* Show Women Not Included label if flagged */}
+                    {reviewCard.expert.womenNotIncluded && (
+                      <div className="mt-2">
+                        <Badge className="text-xs bg-red-100 text-red-800">
+                          ♀ Women Not Included
+                        </Badge>
                       </div>
                     )}
                   </div>
@@ -823,7 +762,7 @@ const Claims = () => {
                               biasAddressed: 'Bias Addressed',
                               statistics: 'Statistics'
                             };
-                            const label = humanLabels[scoreItem.category] || getCategoryLabel(scoreItem.category);
+                            const label = humanLabels[scoreItem.category] || scoreItem.category;
                             const explanation = explanations[scoreItem.category] || '';
                             return explanation ? (
                               <Popover>
@@ -882,14 +821,8 @@ const Claims = () => {
     { value: 'general_health', label: 'General Health' }
   ];
 
-  const filteredAndSortedClaims = [...claims]
-    .filter(claim => filterByCategory === 'all' || claim.category === filterByCategory)
-    .sort((a, b) => {
-      if (sortBy === 'votes') {
-        return b.votes - a.votes;
-      }
-      return 0; // For 'recent' we'd sort by date when we have real data
-    });
+  // Claims are now filtered and sorted by the database query
+  const filteredAndSortedClaims = claims;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
@@ -936,7 +869,7 @@ const Claims = () => {
                         onSuccess={() => {
                           setShowSubmissionForm(false);
                           // Refresh the claims data by re-running the fetch
-                          fetchData();
+                          fetchData(currentPage);
                         }}
                         onCancel={() => setShowSubmissionForm(false)}
                       />
@@ -975,6 +908,15 @@ const Claims = () => {
                   </Button>
                 </div>
               </div>
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center px-4 py-2 text-sm text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                    Loading claims...
+                  </div>
+                </div>
+              )}
+              
               {filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>No claims found for the selected category.</p>
@@ -1042,26 +984,97 @@ const Claims = () => {
                     {(() => {
                       // Aggregate all review_data.category labels for this claim
                       const labelCounts: Record<string, number> = {};
+                      let womenNotIncludedCount = 0;
+
                       claim.publications.forEach(pub => {
                         (pub.rawScores || []).forEach(score => {
                           const label = score.review_data?.category;
                           if (label) {
                             labelCounts[label] = (labelCounts[label] || 0) + 1;
                           }
+                          // Check for womenNotIncluded flag
+                          if (score.review_data?.womenNotIncluded) {
+                            womenNotIncludedCount++;
+                          }
                         });
                       });
-                      return Object.entries(labelCounts).map(([label, count]) => {
+                      
+                      const labels = Object.entries(labelCounts).map(([label, count]) => {
                         const color = getEvidenceClassificationColor(label);
-                        return (
+                        
+                        // Get aggregated reasons for negative classifications
+                        let aggregatedReasons: string[] = [];
+                        if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
+                          const allReasons: string[] = [];
+                          claim.publications.forEach(pub => {
+                            (pub.rawScores || []).forEach(score => {
+                              if (score.review_data?.category === label) {
+                                const reasons = getClassificationReasons(score.review_data);
+                                allReasons.push(...reasons);
+                              }
+                            });
+                          });
+                          // Get unique reasons and their counts
+                          const reasonCounts: Record<string, number> = {};
+                          allReasons.forEach(reason => {
+                            reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+                          });
+                          aggregatedReasons = Object.entries(reasonCounts)
+                            .sort(([,a], [,b]) => b - a) // Sort by count descending
+                            .map(([reason, reasonCount]) => 
+                              reasonCount > 1 ? `${reason} (${reasonCount})` : reason
+                            );
+                        }
+                        
+                        const labelElement = (
                           <span
                             key={label}
-                            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${color} !border-2`}
-                            style={{ borderWidth: 2 }}
+                            className={`inline-flex items-center rounded-xl px-3 py-1 text-m font-semibold ${color} `}
+                            style={{ borderWidth: 0 }}
                           >
-                            {label} <span className="ml-1">({count})</span>
+                            {label} <span className="ml-2">({count})</span>
                           </span>
                         );
+                        
+                        // If there are reasons, wrap in a popover
+                        if (aggregatedReasons.length > 0) {
+                          return (
+                            <Popover key={label}>
+                              <PopoverTrigger asChild>
+                                <div className="cursor-help">
+                                  {labelElement}
+                                </div>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80">
+                                <div className="space-y-2">
+                                  <h4 className="font-medium">Reasons for {label} classification:</h4>
+                                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                    {aggregatedReasons.map((reason, i) => (
+                                      <li key={i}>{reason}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          );
+                        }
+                        
+                        return labelElement;
                       });
+                      
+                      // Add women not included label if any reviews marked it
+                      if (womenNotIncludedCount > 0) {
+                        labels.push(
+                          <span
+                            key="women-included"
+                            className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold bg-red-100 text-red-800"
+                          >
+                            ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
+                          </span>
+                        );
+                      }
+                      
+                      return labels;
                     })()}
                   </div>
                 </CardHeader>
@@ -1166,6 +1179,46 @@ const Claims = () => {
                 {/* The full review reel is available via the 'See Full Review' button which opens the dialog. */}
               </Card>
             ))}
+            
+            {/* Pagination Controls */}
+            {totalClaims > 0 && (
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
+                <div className="text-sm text-muted-foreground">
+                  Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    disabled={currentPage === 0 || loading}
+                    className="min-w-[80px]"
+                  >
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    ) : (
+                      'Previous'
+                    )}
+                  </Button>
+                  <div className="px-3 py-1 text-sm bg-background rounded border min-w-[100px] text-center">
+                    Page {currentPage + 1} of {Math.ceil(totalClaims / CLAIMS_PER_PAGE)}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={!hasMoreClaims || loading}
+                    className="min-w-[80px]"
+                  >
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    ) : (
+                      'Next'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
             </TabsContent>
 
             <TabsContent value="trusted-resources" className="space-y-6">
@@ -1185,7 +1238,7 @@ const Claims = () => {
                       claimTitle={claim.claim}
                       onSuccess={() => {
                         setShowPaperForm(null);
-                        fetchData();
+                        fetchData(currentPage);
                       }}
                       onCancel={() => setShowPaperForm(null)}
                     />
@@ -1261,7 +1314,9 @@ const Claims = () => {
                         scores: expertScores,
                         comments: mergedComments,
                         classification: latestRow?.review_data?.category ?? null,
-                        tags: latestRow?.review_data?.tags ?? null
+                        tags: latestRow?.review_data?.tags ?? null,
+                        womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
+                        reviewData: latestRow?.review_data ?? null
                       }
                     });
                   });
@@ -1284,7 +1339,7 @@ const Claims = () => {
             onClose={() => setReviewPublication(null)}
             onReviewSubmitted={() => {
               // refresh claims and expert distributions after an expert submits/updates a review
-              fetchData();
+              fetchData(currentPage);
             }}
           />
         </div>
