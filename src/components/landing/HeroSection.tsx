@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import MailingListSignup from "./MailingListSignup";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 const HeroSection = () => {
   return (
@@ -17,6 +18,11 @@ const HeroSection = () => {
             Building trust through transparency. Learn how to evaluate and trust health products
             with confidence through expert-backed scientific insights and community wisdom.
           </p>
+          
+          {/* PWA Install Button */}
+          <div className="mb-6">
+            <PWAInstallPrompt size="lg" className="shadow-xl" />
+          </div>
         </div>
         <div className="flex flex-col lg:flex-row items-center justify-center gap-5 mt-8">
           <div className="flex-shrink-0 order-2 lg:order-1 relative">
