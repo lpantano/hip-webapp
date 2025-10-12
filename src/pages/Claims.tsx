@@ -940,49 +940,37 @@ const Claims = () => {
               {filteredAndSortedClaims.map((claim) => (
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
-                      <div className="flex flex-wrap gap-2 mb-1">
-                        <Badge className={getCategoryColor(claim.category)}>
-                          {humanize(claim.category)}
-                        </Badge>
-                        <Badge className={getStatusColor(claim.status)}>
-                          {claim.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
-                        {claim.claim}
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {expandedClaim === claim.id ? '▼' : '▶'}
-                        </span>
-                      </CardTitle>
+                  {/* First row: Category/Status badges and vote button */}
+                  <div className="flex items-center justify-between gap-4 mb-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className={getCategoryColor(claim.category)}>
+                        {humanize(claim.category)}
+                      </Badge>
+                      <Badge className={getStatusColor(claim.status)}>
+                        {claim.status.replace('_', ' ')}
+                      </Badge>
                     </div>
+                    
+                    <Button
+                      variant={userVotes.has(claim.id) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleVote(claim.id)}
+                      className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7"
+                      disabled={!user}
+                    >
+                      <ChevronUp className="w-3 h-3" />
+                      {claim.votes}
+                    </Button>
+                  </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <Button
-                        variant={userVotes.has(claim.id) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleVote(claim.id)}
-                        className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground"
-                        disabled={!user}
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                        {claim.votes}
-                      </Button>
-
-                      {/* Add Paper button: moved from bottom to top right under vote button */}
-                      {user && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowPaperForm(claim.id)}
-                          className="flex items-center gap-2 text-xs mt-1"
-                        >
-                          <FileText className="w-4 h-4" />
-                          Add Paper
-                        </Button>
-                      )}
-                    </div>
+                  {/* Second row: Claim title */}
+                  <div className="cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
+                    <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                      {claim.claim}
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        {expandedClaim === claim.id ? '▼' : '▶'}
+                      </span>
+                    </CardTitle>
                   </div>                  
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="mt-2 space-y-2">
@@ -1135,8 +1123,8 @@ const Claims = () => {
                       <div className="space-y-4">
                         {claim.publications.map((pub, pubIndex) => (
                           <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div className="flex items-start gap-2 flex-1">
+                            <div className="mb-3">
+                              <div className="flex items-start gap-2 mb-3">
                                 {getStanceIcon(pub.stance)}
                                 <div className="flex-1">
                                   <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
@@ -1145,7 +1133,9 @@ const Claims = () => {
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              
+                              {/* Buttons moved below the paper text */}
+                              <div className="flex items-center gap-2 mt-3">
                                 {isExpert && (() => {
                                   const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
                                   const reviewButtonText = existingReview ? 'Update' : 'Review';
@@ -1162,14 +1152,14 @@ const Claims = () => {
                                         url: pub.url,
                                         existingReview
                                       })}
-                                      className="shrink-0 text-xs"
+                                      className="text-xs"
                                     >
                                       <FileText className="w-3 h-3 mr-1" />
                                       {reviewButtonText}
                                     </Button>
                                   );
                                 })()}
-                                <Button
+                                {/* <Button
                                   variant="ghost"
                                   size="sm"
                                   asChild
@@ -1182,14 +1172,10 @@ const Claims = () => {
                                     className="flex items-center gap-1"
                                   >
                                     <ExternalLink className="w-3 h-3" />
-                                    
                                   </a>
-                                </Button>
+                                </Button> */}
                               </div>
                             </div>
-
-                            {/* Reviewer details moved to the Expert Reviews Reel below to avoid duplication. */}
-                            {/* <div className="text-xs text-muted-foreground">Reviewer scores and comments are available in the "Expert Reviews Reel" below.</div> */}
                           </div>
                         ))}
                       </div>
@@ -1197,20 +1183,31 @@ const Claims = () => {
                   </CardContent>
                 )}
 
-                {/* Bottom section with See Full Review button and reactions */}
+                {/* Bottom section with Review Reel, Add Paper buttons and reactions */}
                 <CardContent className="pt-2">
                   {user && (
                     <div className="border-t border-border pt-3 flex flex-wrap items-center justify-between gap-3">
-                      {/* SEE FULL REVIEW first and highlighted */}
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setShowReelClaim(claim.id)}
-                        className="flex items-center gap-2 shadow-md"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Review Reel
-                      </Button>
+                      {/* Action buttons grouped together */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setShowReelClaim(claim.id)}
+                          className="flex items-center gap-2 shadow-md"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Review Reel
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPaperForm(claim.id)}
+                          className="flex items-center gap-2"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Add Paper
+                        </Button>
+                      </div>
 
                       {/* Reaction buttons: moved to bottom right */}
                       <div className="flex items-center gap-2">
