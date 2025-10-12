@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertCircle, FileText, Loader2, Search, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +26,7 @@ interface FormData {
   doi: string;
   url: string;
   abstract: string;
+  stance: 'supporting' | 'contradicting' | null;
 }
 
 export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }: PaperSubmissionFormProps) => {
@@ -39,11 +41,18 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
     publicationYear: '',
     doi: '',
     url: '',
-    abstract: ''
+    abstract: '',
+    stance: null
   });
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError(null);
+    if (fetchSuccess) setFetchSuccess(false);
+  };
+
+  const handleStanceChange = (value: 'supporting' | 'contradicting') => {
+    setFormData(prev => ({ ...prev, stance: value }));
     if (error) setError(null);
     if (fetchSuccess) setFetchSuccess(false);
   };
@@ -87,6 +96,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
     if (!formData.doi.trim()) return 'DOI or PubMed link is required';
     if (!formData.title.trim()) return 'Paper title is required';
     if (!formData.journal.trim()) return 'Journal name is required';
+    if (!formData.stance) return 'Please select whether this paper supports or contradicts the claim';
     
     const year = parseInt(formData.publicationYear);
     if (!formData.publicationYear || isNaN(year) || year < 1900 || year > new Date().getFullYear()) {
@@ -129,6 +139,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
         doi: formData.doi.trim() || null,
         url: formData.url.trim() || null,
         abstract: formData.abstract.trim() || null,
+        stance: formData.stance,
         submitted_by: user.id,
         status: 'pending'
       };
@@ -170,9 +181,11 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
           <div className="flex items-start gap-3">
             <FileText className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
             <div className="flex-1">
-              <CardTitle className="text-xl mb-2">Submit Supporting Paper</CardTitle>
+              <CardTitle className="text-xl mb-2">Submit Paper</CardTitle>
               <CardDescription className="text-sm">
                 Enter a DOI or PubMed link to automatically fetch paper details for: <strong>"{claimTitle}"</strong>
+                <br />
+                <strong>Important:</strong> Please indicate whether this paper supports or contradicts the claim.
               </CardDescription>
             </div>
           </div>
@@ -247,6 +260,30 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
               />
             </div>
 
+            <div className="space-y-3">
+              <Label>Paper Stance Towards Claim *</Label>
+              <RadioGroup
+                value={formData.stance || ''}
+                onValueChange={(value) => handleStanceChange(value as 'supporting' | 'contradicting')}
+                disabled={loading}
+                className="flex flex-row gap-3"
+              >
+                <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value="supporting" id="supporting" />
+                  <Label htmlFor="supporting" className="cursor-pointer flex-1">
+                    <div className="font-medium text-blue-700 dark:text-blue-400">Supporting</div>
+                    <div className="text-sm text-muted-foreground">This paper provides evidence that supports the claim</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value="contradicting" id="contradicting" />
+                  <Label htmlFor="contradicting" className="cursor-pointer flex-1">
+                    <div className="font-medium text-orange-700 dark:text-orange-400">Contradicting</div>
+                    <div className="text-sm text-muted-foreground">This paper provides evidence that contradicts the claim</div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

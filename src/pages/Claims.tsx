@@ -955,28 +955,18 @@ const Claims = () => {
                         {claim.votes}
                       </Button>
 
-                      {/* Reaction buttons: moved to the right and rendered horizontally under the vote button */}
-                      <div className="flex items-center gap-2 mt-1">
-                        {reactionButtons.map((reaction) => {
-                          const count = getReactionCount(claim.id, reaction.type);
-                          const hasReacted = hasUserReacted(claim.id, reaction.type);
-                          const Icon = reaction.icon;
-                          return (
-                            <Button
-                              key={reaction.type}
-                              variant="ghost"
-                              size="sm"
-                              className={`h-7 px-2 text-xs flex items-center gap-1 ${hasReacted ? 'bg-muted' : ''}`}
-                              onClick={() => handleReaction(claim.id, reaction.type)}
-                              title={reaction.label}
-                              disabled={!user}
-                            >
-                              <Icon className={`w-4 h-4 ${hasReacted ? reaction.color : 'text-muted-foreground'} ${hasReacted ? 'fill-current' : ''}`} />
-                              <span className="text-xs font-medium">{count}</span>
-                            </Button>
-                          );
-                        })}
-                      </div>
+                      {/* Add Paper button: moved from bottom to top right under vote button */}
+                      {user && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPaperForm(claim.id)}
+                          className="flex items-center gap-2 text-xs mt-1"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Add Paper
+                        </Button>
+                      )}
                     </div>
                   </div>                  
                   {/* Aggregated Category Labels from all expert reviews, color-coded */}
@@ -1098,7 +1088,7 @@ const Claims = () => {
                               <div className="flex items-center gap-2">
                                 {isExpert && (() => {
                                   const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
-                                  const reviewButtonText = existingReview ? 'Update Review' : 'Review';
+                                  const reviewButtonText = existingReview ? 'Update' : 'Review';
                                   return (
                                     <Button
                                       variant="outline"
@@ -1132,14 +1122,14 @@ const Claims = () => {
                                     className="flex items-center gap-1"
                                   >
                                     <ExternalLink className="w-3 h-3" />
-                                    View
+                                    
                                   </a>
                                 </Button>
                               </div>
                             </div>
 
                             {/* Reviewer details moved to the Expert Reviews Reel below to avoid duplication. */}
-                            <div className="text-xs text-muted-foreground">Reviewer scores and comments are available in the "Expert Reviews Reel" below.</div>
+                            {/* <div className="text-xs text-muted-foreground">Reviewer scores and comments are available in the "Expert Reviews Reel" below.</div> */}
                           </div>
                         ))}
                       </div>
@@ -1147,10 +1137,10 @@ const Claims = () => {
                   </CardContent>
                 )}
 
-                {/* Add Paper Button - Always visible */}
+                {/* Bottom section with See Full Review button and reactions */}
                 <CardContent className="pt-2">
                   {user && (
-                    <div className="border-t border-border pt-3 flex flex-wrap items-center gap-3">
+                    <div className="border-t border-border pt-3 flex flex-wrap items-center justify-between gap-3">
                       {/* SEE FULL REVIEW first and highlighted */}
                       <Button
                         variant="default"
@@ -1159,18 +1149,31 @@ const Claims = () => {
                         className="flex items-center gap-2 shadow-md"
                       >
                         <Eye className="w-4 h-4" />
-                        See Full Review
+                        Review Reel
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowPaperForm(claim.id)}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Add Supporting Paper
-                      </Button>
+                      {/* Reaction buttons: moved to bottom right */}
+                      <div className="flex items-center gap-2">
+                        {reactionButtons.map((reaction) => {
+                          const count = getReactionCount(claim.id, reaction.type);
+                          const hasReacted = hasUserReacted(claim.id, reaction.type);
+                          const Icon = reaction.icon;
+                          return (
+                            <Button
+                              key={reaction.type}
+                              variant="ghost"
+                              size="sm"
+                              className={`h-7 px-2 text-xs flex items-center gap-1 ${hasReacted ? 'bg-muted' : ''}`}
+                              onClick={() => handleReaction(claim.id, reaction.type)}
+                              title={reaction.label}
+                              disabled={!user}
+                            >
+                              <Icon className={`w-4 h-4 ${hasReacted ? reaction.color : 'text-muted-foreground'} ${hasReacted ? 'fill-current' : ''}`} />
+                              <span className="text-xs font-medium">{count}</span>
+                            </Button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </CardContent>

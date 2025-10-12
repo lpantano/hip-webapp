@@ -429,6 +429,7 @@ export type Database = {
           id: string
           journal: string
           publication_year: number
+          stance: Database["public"]["Enums"]["publication_stance"]
           status: string
           submitted_by: string | null
           title: string
@@ -442,6 +443,7 @@ export type Database = {
           id?: string
           journal: string
           publication_year: number
+          stance?: Database["public"]["Enums"]["publication_stance"]
           status?: string
           submitted_by?: string | null
           title: string
@@ -455,6 +457,7 @@ export type Database = {
           id?: string
           journal?: string
           publication_year?: number
+          stance?: Database["public"]["Enums"]["publication_stance"]
           status?: string
           submitted_by?: string | null
           title?: string
@@ -768,6 +771,7 @@ export type Database = {
         | "consensus"
         | "interpretation"
       expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
+      publication_stance: "supporting" | "contradicting" | "neutral" | "mixed"
       source_type:
         | "webpage"
         | "instagram"
