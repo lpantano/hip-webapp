@@ -2,9 +2,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/auth/UserMenu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu, FileText, Users } from 'lucide-react';
+import { useState } from 'react';
 
 const Header = () => {
   const { user, loading } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-sm border-b border-white/10">
@@ -21,6 +25,25 @@ const Header = () => {
             </div>
           </Link>
           
+          {/* Mobile Navigation - Show only Claims and Community with icons */}
+          <nav className="flex md:hidden items-center gap-4">
+            <Link 
+              to="/claims" 
+              className="text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+              title="Claims"
+            >
+              <FileText className="w-7 h-7" />
+            </Link>
+            <Link 
+              to="/community" 
+              className="text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+              title="Community"
+            >
+              <Users className="w-7 h-7" />
+            </Link>
+          </nav>
+
+          {/* Desktop Navigation - Show all items */}
           <nav className="hidden md:flex items-center gap-6">
             <Link to="/" className="text-white/80 hover:text-white transition-colors">
               Home
@@ -46,6 +69,48 @@ const Header = () => {
           </nav>
           
           <div className="flex items-center gap-4">
+            {/* Mobile Hamburger Menu */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <div className="md:hidden w-14 h-14 flex items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
+                  <Menu className="h-8 w-8" />
+                </div>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-32 bg-background/95 backdrop-blur-sm">
+                <div className="flex flex-col gap-4 mt-8">
+                  <Link 
+                    to="/" 
+                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    to="/about" 
+                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    About
+                  </Link>
+                  <Link 
+                    to="/features" 
+                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Features
+                  </Link>
+                  <Link 
+                    to="/legal" 
+                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Legal
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* User Menu / Auth Button */}
             {loading ? (
               <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse" />
             ) : user ? (

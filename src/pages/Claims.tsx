@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -105,6 +105,7 @@ interface ClaimUI {
     journal: string;
     year: number;
     url: string;
+    stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];
@@ -275,6 +276,7 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
+            stance: p.stance,
             rawScores: []
           };
         });
@@ -579,7 +581,20 @@ const Claims = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-
+  const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined) => {
+    switch (stance) {
+      case 'supporting':
+        return <div title="Supporting evidence"><CheckCircle className="w-4 h-4 text-green-600" /></div>;
+      case 'contradicting':
+        return <div title="Contradicting evidence"><XCircle className="w-4 h-4 text-red-600" /></div>;
+      case 'neutral':
+        return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
+      case 'mixed':
+        return <div className="w-4 h-4 rounded-full bg-orange-400" title="Mixed evidence" />;
+      default:
+        return null;
+    }
+  };
 
   const toggleClaimExpansion = (claimId: string) => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
@@ -969,102 +984,144 @@ const Claims = () => {
                       )}
                     </div>
                   </div>                  
-                  {/* Aggregated Category Labels from all expert reviews, color-coded */}
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  {/* Aggregated Category Labels from all expert reviews, separated by stance */}
+                  <div className="mt-2 space-y-2">
                     {(() => {
-                      // Aggregate all review_data.category labels for this claim
-                      const labelCounts: Record<string, number> = {};
-                      let womenNotIncludedCount = 0;
+                      // Separate publications by stance and aggregate their reviews
+                      const supportingLabelCounts: Record<string, number> = {};
+                      const contradictingLabelCounts: Record<string, number> = {};
+                      let supportingWomenNotIncluded = 0;
+                      let contradictingWomenNotIncluded = 0;
 
                       claim.publications.forEach(pub => {
                         (pub.rawScores || []).forEach(score => {
                           const label = score.review_data?.category;
                           if (label) {
-                            labelCounts[label] = (labelCounts[label] || 0) + 1;
+                            if (pub.stance === 'supporting') {
+                              supportingLabelCounts[label] = (supportingLabelCounts[label] || 0) + 1;
+                            } else if (pub.stance === 'contradicting') {
+                              contradictingLabelCounts[label] = (contradictingLabelCounts[label] || 0) + 1;
+                            }
                           }
                           // Check for womenNotIncluded flag
                           if (score.review_data?.womenNotIncluded) {
-                            womenNotIncludedCount++;
+                            if (pub.stance === 'supporting') {
+                              supportingWomenNotIncluded++;
+                            } else if (pub.stance === 'contradicting') {
+                              contradictingWomenNotIncluded++;
+                            }
                           }
                         });
                       });
-                      
-                      const labels = Object.entries(labelCounts).map(([label, count]) => {
-                        const color = getEvidenceClassificationColor(label);
-                        
-                        // Get aggregated reasons for negative classifications
-                        let aggregatedReasons: string[] = [];
-                        if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
-                          const allReasons: string[] = [];
-                          claim.publications.forEach(pub => {
-                            (pub.rawScores || []).forEach(score => {
-                              if (score.review_data?.category === label) {
-                                const reasons = getClassificationReasons(score.review_data);
-                                allReasons.push(...reasons);
+
+                      const createLabelsForStance = (labelCounts: Record<string, number>, womenNotIncludedCount: number, stance: 'supporting' | 'contradicting') => {
+                        const labels = Object.entries(labelCounts).map(([label, count]) => {
+                          const color = getEvidenceClassificationColor(label);
+                          
+                          // Get aggregated reasons for negative classifications
+                          let aggregatedReasons: string[] = [];
+                          if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
+                            const allReasons: string[] = [];
+                            claim.publications.forEach(pub => {
+                              if (pub.stance === stance) {
+                                (pub.rawScores || []).forEach(score => {
+                                  if (score.review_data?.category === label) {
+                                    const reasons = getClassificationReasons(score.review_data);
+                                    allReasons.push(...reasons);
+                                  }
+                                });
                               }
                             });
-                          });
-                          // Get unique reasons and their counts
-                          const reasonCounts: Record<string, number> = {};
-                          allReasons.forEach(reason => {
-                            reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
-                          });
-                          aggregatedReasons = Object.entries(reasonCounts)
-                            .sort(([,a], [,b]) => b - a) // Sort by count descending
-                            .map(([reason, reasonCount]) => 
-                              reasonCount > 1 ? `${reason} (${reasonCount})` : reason
+                            // Get unique reasons and their counts
+                            const reasonCounts: Record<string, number> = {};
+                            allReasons.forEach(reason => {
+                              reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+                            });
+                            aggregatedReasons = Object.entries(reasonCounts)
+                              .sort(([,a], [,b]) => b - a) // Sort by count descending
+                              .map(([reason, reasonCount]) => 
+                                reasonCount > 1 ? `${reason} (${reasonCount})` : reason
+                              );
+                          }
+                          
+                          const labelElement = (
+                            <span
+                              key={`${stance}-${label}`}
+                              className={`inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold ${color}`}
+                              style={{ borderWidth: 0 }}
+                            >
+                              {label} <span className="ml-2">({count})</span>
+                            </span>
+                          );
+                          
+                          // If there are reasons, wrap in a popover
+                          if (aggregatedReasons.length > 0) {
+                            return (
+                              <Popover key={`${stance}-${label}`}>
+                                <PopoverTrigger asChild>
+                                  <div className="cursor-help">
+                                    {labelElement}
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium">Reasons for {label} classification:</h4>
+                                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                      {aggregatedReasons.map((reason, i) => (
+                                        <li key={i}>{reason}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             );
-                        }
+                          }
+                          
+                          return labelElement;
+                        });
                         
-                        const labelElement = (
-                          <span
-                            key={label}
-                            className={`inline-flex items-center rounded-xl px-3 py-1 text-m font-semibold ${color} `}
-                            style={{ borderWidth: 0 }}
-                          >
-                            {label} <span className="ml-2">({count})</span>
-                          </span>
-                        );
-                        
-                        // If there are reasons, wrap in a popover
-                        if (aggregatedReasons.length > 0) {
-                          return (
-                            <Popover key={label}>
-                              <PopoverTrigger asChild>
-                                <div className="cursor-help">
-                                  {labelElement}
-                                </div>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium">Reasons for {label} classification:</h4>
-                                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                                    {aggregatedReasons.map((reason, i) => (
-                                      <li key={i}>{reason}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
+                        // Add women not included label if any reviews marked it
+                        if (womenNotIncludedCount > 0) {
+                          labels.push(
+                            <span
+                              key={`${stance}-women-included`}
+                              className="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800"
+                            >
+                              ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
+                            </span>
                           );
                         }
                         
-                        return labelElement;
-                      });
-                      
-                      // Add women not included label if any reviews marked it
-                      if (womenNotIncludedCount > 0) {
-                        labels.push(
-                          <span
-                            key="women-included"
-                            className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold bg-red-100 text-red-800"
-                          >
-                            ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
-                          </span>
-                        );
-                      }
-                      
-                      return labels;
+                        return labels;
+                      };
+
+                      const supportingLabels = createLabelsForStance(supportingLabelCounts, supportingWomenNotIncluded, 'supporting');
+                      const contradictingLabels = createLabelsForStance(contradictingLabelCounts, contradictingWomenNotIncluded, 'contradicting');
+
+                      return (
+                        <>
+                          {supportingLabels.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div title="Supporting evidence">
+                                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {supportingLabels}
+                              </div>
+                            </div>
+                          )}
+                          {contradictingLabels.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div title="Contradicting evidence">
+                                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {contradictingLabels}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
                     })()}
                   </div>
                 </CardHeader>
@@ -1079,11 +1136,14 @@ const Claims = () => {
                         {claim.publications.map((pub, pubIndex) => (
                           <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
                             <div className="flex items-start justify-between gap-3 mb-3">
-                              <div className="flex-1">
-                                <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
-                                <p className="text-xs text-muted-foreground">
-                                  {pub.authors} • {pub.journal} ({pub.year})
-                                </p>
+                              <div className="flex items-start gap-2 flex-1">
+                                {getStanceIcon(pub.stance)}
+                                <div className="flex-1">
+                                  <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
+                                  <p className="text-xs text-muted-foreground">
+                                    {pub.authors} • {pub.journal} ({pub.year})
+                                  </p>
+                                </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 {isExpert && (() => {
