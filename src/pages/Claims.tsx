@@ -584,9 +584,9 @@ const Claims = () => {
   const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined) => {
     switch (stance) {
       case 'supporting':
-        return <div title="Supporting evidence"><Link2 className="w-4 h-4 text-green-600" /></div>;
+        return <div title="Supporting evidence"><Link2 className="w-4 h-4 text-grey-600" /></div>;
       case 'contradicting':
-        return <div title="Contradicting evidence"><Unlink2 className="w-4 h-4 text-red-600" /></div>;
+        return <div title="Contradicting evidence"><Unlink2 className="w-4 h-4 text-grey-600" /></div>;
       case 'neutral':
         return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
       case 'mixed':
