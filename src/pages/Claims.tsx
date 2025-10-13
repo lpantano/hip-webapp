@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -867,16 +867,16 @@ const Claims = () => {
             <TabsContent value="claims" className="space-y-6">
               {/* Claims Controls */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="w-4 h-4" />
                   <span>All Claims must be linked to scientific publications</span>
-                </div>
+                </div> */}
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="gap-2" disabled={!user}>
                         <Plus className="w-4 h-4" />
-                        {user ? 'Submit New Claim' : 'Sign in to Submit Claim'}
+                        {user ? 'New Claim' : 'Sign in to Submit Claim'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -931,13 +931,38 @@ const Claims = () => {
                   </div>
                 </div>
               )}
+
+              {!user && !loading && (
+                <div className="text-center py-16">
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-card/60 backdrop-blur-sm rounded-lg p-8 border border-border shadow-lg">
+                      <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Login Required</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Please sign in to view community-reviewed health claims and expert insights.
+                      </p>
+                      <div className="space-y-3">
+                        <Button asChild className="w-full">
+                          <a href="/auth" className="flex items-center gap-2">
+                            <LogIn className="w-4 h-4" />
+                            Sign In
+                          </a>
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Join our community of health enthusiasts and experts
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              {filteredAndSortedClaims.length === 0 && !loading && (
+              {user && filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>No claims found for the selected category.</p>
                 </div>
               )}
-              {filteredAndSortedClaims.map((claim) => (
+              {user && filteredAndSortedClaims.map((claim) => (
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   {/* First row: Category/Status badges and vote button */}
@@ -1241,7 +1266,7 @@ const Claims = () => {
             ))}
             
             {/* Pagination Controls */}
-            {totalClaims > 0 && (
+            {user && totalClaims > 0 && (
               <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
                 <div className="text-sm text-muted-foreground">
                   Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
@@ -1287,7 +1312,7 @@ const Claims = () => {
           </Tabs>
 
           {/* Paper Submission Dialog */}
-          {showPaperForm && (
+          {user && showPaperForm && (
             <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 {(() => {
@@ -1309,99 +1334,103 @@ const Claims = () => {
           )}
 
           {/* Expert Reviews Reel Dialog */}
-          <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-              {(() => {
-                const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
-                if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-                
-                // Create individual cards for each expert review on each publication
-                const reviewCards: ExpertReviewCard[] = [];
-                
-                claim.publications.forEach(pub => {
-                  // Group scores by expert
-                  const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
-                  (pub.rawScores || []).forEach(score => {
-                    if (!scoresByExpert[score.expert_user_id]) {
-                      scoresByExpert[score.expert_user_id] = [];
-                    }
-                    scoresByExpert[score.expert_user_id].push(score);
-                  });
-
-                  // Get comments for this claim
-                  const claimCommentsForClaim = claim.comments || [];
-
-                  // Create individual cards for each expert who reviewed this publication
-                  Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
-                    const expertProfile = expertProfiles[expertUserId];
-                    const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
-                    
-                    // For consolidated schema, pick the latest row for this expert (there should be one)
-                    const latestRow = (scores || []).reduce((a, b) => {
-                      const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
-                      const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
-                      return bTime >= aTime ? b : a;
-                    }, scores[0]);
-
-                    // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
-                    const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
-                      { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
-                      { category: 'representation', score: latestRow?.review_data?.qualityChecks?.representation ?? null },
-                      { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
-                      { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
-                      { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
-                    ];
-
-                    // Merge comments: claim-level expert comments + the review's comments (if present)
-                    const mergedComments = [
-                      ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
-                    ];
-                    if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
-                    // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
-
-                    reviewCards.push({
-                      publication: {
-                        id: pub.id,
-                        title: pub.title,
-                        journal: pub.journal,
-                        year: pub.year,
-                        authors: pub.authors
-                      },
-                      expert: {
-                        expert_user_id: expertUserId,
-                        display_name: expertProfile?.display_name,
-                        avatar_url: expertProfile?.avatar_url,
-                        scores: expertScores,
-                        comments: mergedComments,
-                        classification: latestRow?.review_data?.category ?? null,
-                        tags: latestRow?.review_data?.tags ?? null,
-                        womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
-                        reviewData: latestRow?.review_data ?? null
+          {user && (
+            <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                {(() => {
+                  const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
+                  if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
+                  
+                  // Create individual cards for each expert review on each publication
+                  const reviewCards: ExpertReviewCard[] = [];
+                  
+                  claim.publications.forEach(pub => {
+                    // Group scores by expert
+                    const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
+                    (pub.rawScores || []).forEach(score => {
+                      if (!scoresByExpert[score.expert_user_id]) {
+                        scoresByExpert[score.expert_user_id] = [];
                       }
+                      scoresByExpert[score.expert_user_id].push(score);
+                    });
+
+                    // Get comments for this claim
+                    const claimCommentsForClaim = claim.comments || [];
+
+                    // Create individual cards for each expert who reviewed this publication
+                    Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
+                      const expertProfile = expertProfiles[expertUserId];
+                      const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
+                      
+                      // For consolidated schema, pick the latest row for this expert (there should be one)
+                      const latestRow = (scores || []).reduce((a, b) => {
+                        const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
+                        const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
+                        return bTime >= aTime ? b : a;
+                      }, scores[0]);
+
+                      // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
+                      const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
+                        { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
+                        { category: 'representation', score: latestRow?.review_data?.qualityChecks?.representation ?? null },
+                        { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
+                        { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
+                        { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
+                      ];
+
+                      // Merge comments: claim-level expert comments + the review's comments (if present)
+                      const mergedComments = [
+                        ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
+                      ];
+                      if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
+                      // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
+
+                      reviewCards.push({
+                        publication: {
+                          id: pub.id,
+                          title: pub.title,
+                          journal: pub.journal,
+                          year: pub.year,
+                          authors: pub.authors
+                        },
+                        expert: {
+                          expert_user_id: expertUserId,
+                          display_name: expertProfile?.display_name,
+                          avatar_url: expertProfile?.avatar_url,
+                          scores: expertScores,
+                          comments: mergedComments,
+                          classification: latestRow?.review_data?.category ?? null,
+                          tags: latestRow?.review_data?.tags ?? null,
+                          womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
+                          reviewData: latestRow?.review_data ?? null
+                        }
+                      });
                     });
                   });
-                });
 
-                return (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
-                    <ExpertReviewsReel reviewCards={reviewCards} />
-                  </div>
-                );
-              })()}
-            </DialogContent>
-          </Dialog>
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
+                      <ExpertReviewsReel reviewCards={reviewCards} />
+                    </div>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
+          )}
           
           {/* Publication Review Dialog */}
-          <PublicationReviewForm
-            publication={reviewPublication}
-            isOpen={!!reviewPublication}
-            onClose={() => setReviewPublication(null)}
-            onReviewSubmitted={() => {
-              // refresh claims and expert distributions after an expert submits/updates a review
-              fetchData(currentPage);
-            }}
-          />
+          {user && (
+            <PublicationReviewForm
+              publication={reviewPublication}
+              isOpen={!!reviewPublication}
+              onClose={() => setReviewPublication(null)}
+              onReviewSubmitted={() => {
+                // refresh claims and expert distributions after an expert submits/updates a review
+                fetchData(currentPage);
+              }}
+            />
+          )}
         </div>
       </main>
     </div>
