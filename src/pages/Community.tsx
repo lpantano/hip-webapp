@@ -34,8 +34,7 @@ interface CommunityMember {
 
 const Community = () => {
   const [selectedMember, setSelectedMember] = useState<CommunityMember | null>(null);
-  const [experts, setExperts] = useState<CommunityMember[]>([]);
-  const [researchers, setResearchers] = useState<CommunityMember[]>([]);
+  const [allMembers, setAllMembers] = useState<CommunityMember[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,26 +44,30 @@ const Community = () => {
   const fetchCommunityMembers = async () => {
     try {
       // Fetch from expert_stats view (now includes member_type)
-      const { data: expertsData, error: expertsError } = await supabase
+      const { data: membersData, error: membersError } = await supabase
         .from('expert_stats')
         .select('*')
       
-      if (expertsError) throw expertsError;
+      if (membersError) throw membersError;
       
-      const allMembers = expertsData || [];
+      const members = membersData || [];
       
-      // Separate members by their member_type (with type safety for migration period)
-      const expertMembers = allMembers.filter(member => {
-        const memberType = (member as CommunityMember).member_type;
-        return memberType === 'expert' || !memberType; // fallback for existing data
+      // Sort members to show experts first, then researchers
+      const sortedMembers = members.sort((a, b) => {
+        const aMemberType = (a as CommunityMember).member_type;
+        const bMemberType = (b as CommunityMember).member_type;
+        
+        // Experts first (including fallback for existing data without member_type)
+        if ((aMemberType === 'expert' || !aMemberType) && bMemberType === 'researcher') return -1;
+        if (aMemberType === 'researcher' && (bMemberType === 'expert' || !bMemberType)) return 1;
+        
+        // Within same type, sort by display name or expertise area
+        const aName = (a as CommunityMember).display_name || (a as CommunityMember).expertise_area;
+        const bName = (b as CommunityMember).display_name || (b as CommunityMember).expertise_area;
+        return aName.localeCompare(bName);
       });
-      const researcherMembers = allMembers.filter(member => {
-        const memberType = (member as CommunityMember).member_type;
-        return memberType === 'researcher';
-      });
       
-      setExperts(expertMembers);
-      setResearchers(researcherMembers);
+      setAllMembers(sortedMembers);
       
     } catch (error) {
       console.error('Error fetching community members:', error);
@@ -234,44 +237,24 @@ const Community = () => {
             </p>
           </div>
 
-          {/* Current Experts Section */}
+          {/* Community Members Section */}
           <section className="mb-20">
             <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
               <Users className="h-8 w-8 text-primary" />
-              Experts
+              Community Members
             </h2>
             
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading experts...</p>
+                <p className="text-muted-foreground">Loading community members...</p>
               </div>
-            ) : experts.length === 0 ? (
+            ) : allMembers.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No experts have been approved yet. Check back soon!</p>
+                <p className="text-muted-foreground">No community members have been approved yet. Check back soon!</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {experts.map((member) => (
-                  <MemberCard key={member.id} member={member} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Researchers Section */}
-          <section className="mb-20">
-            <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              Researchers
-            </h2>
-            
-            {researchers.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No researchers have been approved yet. Check back soon!</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {researchers.map((member) => (
+                {allMembers.map((member) => (
                   <MemberCard key={member.id} member={member} />
                 ))}
               </div>

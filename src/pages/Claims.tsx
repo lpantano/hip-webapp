@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -105,6 +105,7 @@ interface ClaimUI {
     journal: string;
     year: number;
     url: string;
+    stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];
@@ -275,6 +276,7 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
+            stance: p.stance,
             rawScores: []
           };
         });
@@ -579,7 +581,20 @@ const Claims = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-
+  const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined) => {
+    switch (stance) {
+      case 'supporting':
+        return <div title="Supporting evidence"><CheckCircle className="w-4 h-4 text-green-600" /></div>;
+      case 'contradicting':
+        return <div title="Contradicting evidence"><XCircle className="w-4 h-4 text-red-600" /></div>;
+      case 'neutral':
+        return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
+      case 'mixed':
+        return <div className="w-4 h-4 rounded-full bg-orange-400" title="Mixed evidence" />;
+      default:
+        return null;
+    }
+  };
 
   const toggleClaimExpansion = (claimId: string) => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
@@ -852,16 +867,16 @@ const Claims = () => {
             <TabsContent value="claims" className="space-y-6">
               {/* Claims Controls */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="w-4 h-4" />
                   <span>All Claims must be linked to scientific publications</span>
-                </div>
+                </div> */}
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="gap-2" disabled={!user}>
                         <Plus className="w-4 h-4" />
-                        {user ? 'Submit New Claim' : 'Sign in to Submit Claim'}
+                        {user ? 'New Claim' : 'Sign in to Submit Claim'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -916,47 +931,311 @@ const Claims = () => {
                   </div>
                 </div>
               )}
+
+              {!user && !loading && (
+                <div className="text-center py-16">
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-card/60 backdrop-blur-sm rounded-lg p-8 border border-border shadow-lg">
+                      <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Login Required</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Please sign in to view community-reviewed health claims and expert insights.
+                      </p>
+                      <div className="space-y-3">
+                        <Button asChild className="w-full">
+                          <a href="/auth" className="flex items-center gap-2">
+                            <LogIn className="w-4 h-4" />
+                            Sign In
+                          </a>
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Join our community of health enthusiasts and experts
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              {filteredAndSortedClaims.length === 0 && !loading && (
+              {user && filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>No claims found for the selected category.</p>
                 </div>
               )}
-              {filteredAndSortedClaims.map((claim) => (
+              {user && filteredAndSortedClaims.map((claim) => (
               <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
-                      <div className="flex flex-wrap gap-2 mb-1">
-                        <Badge className={getCategoryColor(claim.category)}>
-                          {humanize(claim.category)}
-                        </Badge>
-                        <Badge className={getStatusColor(claim.status)}>
-                          {claim.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
-                        {claim.claim}
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {expandedClaim === claim.id ? '▼' : '▶'}
-                        </span>
-                      </CardTitle>
+                  {/* First row: Category/Status badges and vote button */}
+                  <div className="flex items-center justify-between gap-4 mb-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className={getCategoryColor(claim.category)}>
+                        {humanize(claim.category)}
+                      </Badge>
+                      <Badge className={getStatusColor(claim.status)}>
+                        {claim.status.replace('_', ' ')}
+                      </Badge>
                     </div>
+                    
+                    <Button
+                      variant={userVotes.has(claim.id) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleVote(claim.id)}
+                      className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7"
+                      disabled={!user}
+                    >
+                      <ChevronUp className="w-3 h-3" />
+                      {claim.votes}
+                    </Button>
+                  </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <Button
-                        variant={userVotes.has(claim.id) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleVote(claim.id)}
-                        className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground"
-                        disabled={!user}
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                        {claim.votes}
-                      </Button>
+                  {/* Second row: Claim title */}
+                  <div className="cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
+                    <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                      {claim.claim}
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        {expandedClaim === claim.id ? '▼' : '▶'}
+                      </span>
+                    </CardTitle>
+                  </div>                  
+                  {/* Aggregated Category Labels from all expert reviews, separated by stance */}
+                  <div className="mt-2 space-y-2">
+                    {(() => {
+                      // Separate publications by stance and aggregate their reviews
+                      const supportingLabelCounts: Record<string, number> = {};
+                      const contradictingLabelCounts: Record<string, number> = {};
+                      let supportingWomenNotIncluded = 0;
+                      let contradictingWomenNotIncluded = 0;
 
-                      {/* Reaction buttons: moved to the right and rendered horizontally under the vote button */}
-                      <div className="flex items-center gap-2 mt-1">
+                      claim.publications.forEach(pub => {
+                        (pub.rawScores || []).forEach(score => {
+                          const label = score.review_data?.category;
+                          if (label) {
+                            if (pub.stance === 'supporting') {
+                              supportingLabelCounts[label] = (supportingLabelCounts[label] || 0) + 1;
+                            } else if (pub.stance === 'contradicting') {
+                              contradictingLabelCounts[label] = (contradictingLabelCounts[label] || 0) + 1;
+                            }
+                          }
+                          // Check for womenNotIncluded flag
+                          if (score.review_data?.womenNotIncluded) {
+                            if (pub.stance === 'supporting') {
+                              supportingWomenNotIncluded++;
+                            } else if (pub.stance === 'contradicting') {
+                              contradictingWomenNotIncluded++;
+                            }
+                          }
+                        });
+                      });
+
+                      const createLabelsForStance = (labelCounts: Record<string, number>, womenNotIncludedCount: number, stance: 'supporting' | 'contradicting') => {
+                        const labels = Object.entries(labelCounts).map(([label, count]) => {
+                          const color = getEvidenceClassificationColor(label);
+                          
+                          // Get aggregated reasons for negative classifications
+                          let aggregatedReasons: string[] = [];
+                          if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
+                            const allReasons: string[] = [];
+                            claim.publications.forEach(pub => {
+                              if (pub.stance === stance) {
+                                (pub.rawScores || []).forEach(score => {
+                                  if (score.review_data?.category === label) {
+                                    const reasons = getClassificationReasons(score.review_data);
+                                    allReasons.push(...reasons);
+                                  }
+                                });
+                              }
+                            });
+                            // Get unique reasons and their counts
+                            const reasonCounts: Record<string, number> = {};
+                            allReasons.forEach(reason => {
+                              reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+                            });
+                            aggregatedReasons = Object.entries(reasonCounts)
+                              .sort(([,a], [,b]) => b - a) // Sort by count descending
+                              .map(([reason, reasonCount]) => 
+                                reasonCount > 1 ? `${reason} (${reasonCount})` : reason
+                              );
+                          }
+                          
+                          const labelElement = (
+                            <span
+                              key={`${stance}-${label}`}
+                              className={`inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold ${color}`}
+                              style={{ borderWidth: 0 }}
+                            >
+                              {label} <span className="ml-2">({count})</span>
+                            </span>
+                          );
+                          
+                          // If there are reasons, wrap in a popover
+                          if (aggregatedReasons.length > 0) {
+                            return (
+                              <Popover key={`${stance}-${label}`}>
+                                <PopoverTrigger asChild>
+                                  <div className="cursor-help">
+                                    {labelElement}
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium">Reasons for {label} classification:</h4>
+                                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                      {aggregatedReasons.map((reason, i) => (
+                                        <li key={i}>{reason}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            );
+                          }
+                          
+                          return labelElement;
+                        });
+                        
+                        // Add women not included label if any reviews marked it
+                        if (womenNotIncludedCount > 0) {
+                          labels.push(
+                            <span
+                              key={`${stance}-women-included`}
+                              className="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800"
+                            >
+                              ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
+                            </span>
+                          );
+                        }
+                        
+                        return labels;
+                      };
+
+                      const supportingLabels = createLabelsForStance(supportingLabelCounts, supportingWomenNotIncluded, 'supporting');
+                      const contradictingLabels = createLabelsForStance(contradictingLabelCounts, contradictingWomenNotIncluded, 'contradicting');
+
+                      return (
+                        <>
+                          {supportingLabels.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div title="Supporting evidence">
+                                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {supportingLabels}
+                              </div>
+                            </div>
+                          )}
+                          {contradictingLabels.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div title="Contradicting evidence">
+                                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {contradictingLabels}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </CardHeader>
+                {/* Expanded view with individual reviews */}
+                {expandedClaim === claim.id && (
+                  <CardContent className="pt-0">
+                    <div className="border-t border-border pt-4">
+                      <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                        Individual Expert Reviews
+                      </h4>
+                      <div className="space-y-4">
+                        {claim.publications.map((pub, pubIndex) => (
+                          <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
+                            <div className="mb-3">
+                              <div className="flex items-start gap-2 mb-3">
+                                {getStanceIcon(pub.stance)}
+                                <div className="flex-1">
+                                  <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
+                                  <p className="text-xs text-muted-foreground">
+                                    {pub.authors} • {pub.journal} ({pub.year})
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Buttons moved below the paper text */}
+                              <div className="flex items-center gap-2 mt-3">
+                                {isExpert && (() => {
+                                  const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
+                                  const reviewButtonText = existingReview ? 'Update' : 'Review';
+                                  return (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setReviewPublication({
+                                        id: pub.id || '',
+                                        title: pub.title,
+                                        journal: pub.journal,
+                                        publication_year: pub.year,
+                                        authors: pub.authors,
+                                        url: pub.url,
+                                        existingReview
+                                      })}
+                                      className="text-xs"
+                                    >
+                                      <FileText className="w-3 h-3 mr-1" />
+                                      {reviewButtonText}
+                                    </Button>
+                                  );
+                                })()}
+                                {/* <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  asChild
+                                  className="shrink-0"
+                                >
+                                  <a 
+                                    href={pub.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </Button> */}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
+
+                {/* Bottom section with Review Reel, Add Paper buttons and reactions */}
+                <CardContent className="pt-2">
+                  {user && (
+                    <div className="border-t border-border pt-3 flex flex-wrap items-center justify-between gap-3">
+                      {/* Action buttons grouped together */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setShowReelClaim(claim.id)}
+                          className="flex items-center gap-2 shadow-md"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Review Reel
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPaperForm(claim.id)}
+                          className="flex items-center gap-2"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Add Paper
+                        </Button>
+                      </div>
+
+                      {/* Reaction buttons: moved to bottom right */}
+                      <div className="flex items-center gap-2">
                         {reactionButtons.map((reaction) => {
                           const count = getReactionCount(claim.id, reaction.type);
                           const hasReacted = hasUserReacted(claim.id, reaction.type);
@@ -978,200 +1257,6 @@ const Claims = () => {
                         })}
                       </div>
                     </div>
-                  </div>                  
-                  {/* Aggregated Category Labels from all expert reviews, color-coded */}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {(() => {
-                      // Aggregate all review_data.category labels for this claim
-                      const labelCounts: Record<string, number> = {};
-                      let womenNotIncludedCount = 0;
-
-                      claim.publications.forEach(pub => {
-                        (pub.rawScores || []).forEach(score => {
-                          const label = score.review_data?.category;
-                          if (label) {
-                            labelCounts[label] = (labelCounts[label] || 0) + 1;
-                          }
-                          // Check for womenNotIncluded flag
-                          if (score.review_data?.womenNotIncluded) {
-                            womenNotIncludedCount++;
-                          }
-                        });
-                      });
-                      
-                      const labels = Object.entries(labelCounts).map(([label, count]) => {
-                        const color = getEvidenceClassificationColor(label);
-                        
-                        // Get aggregated reasons for negative classifications
-                        let aggregatedReasons: string[] = [];
-                        if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
-                          const allReasons: string[] = [];
-                          claim.publications.forEach(pub => {
-                            (pub.rawScores || []).forEach(score => {
-                              if (score.review_data?.category === label) {
-                                const reasons = getClassificationReasons(score.review_data);
-                                allReasons.push(...reasons);
-                              }
-                            });
-                          });
-                          // Get unique reasons and their counts
-                          const reasonCounts: Record<string, number> = {};
-                          allReasons.forEach(reason => {
-                            reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
-                          });
-                          aggregatedReasons = Object.entries(reasonCounts)
-                            .sort(([,a], [,b]) => b - a) // Sort by count descending
-                            .map(([reason, reasonCount]) => 
-                              reasonCount > 1 ? `${reason} (${reasonCount})` : reason
-                            );
-                        }
-                        
-                        const labelElement = (
-                          <span
-                            key={label}
-                            className={`inline-flex items-center rounded-xl px-3 py-1 text-m font-semibold ${color} `}
-                            style={{ borderWidth: 0 }}
-                          >
-                            {label} <span className="ml-2">({count})</span>
-                          </span>
-                        );
-                        
-                        // If there are reasons, wrap in a popover
-                        if (aggregatedReasons.length > 0) {
-                          return (
-                            <Popover key={label}>
-                              <PopoverTrigger asChild>
-                                <div className="cursor-help">
-                                  {labelElement}
-                                </div>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium">Reasons for {label} classification:</h4>
-                                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                                    {aggregatedReasons.map((reason, i) => (
-                                      <li key={i}>{reason}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          );
-                        }
-                        
-                        return labelElement;
-                      });
-                      
-                      // Add women not included label if any reviews marked it
-                      if (womenNotIncludedCount > 0) {
-                        labels.push(
-                          <span
-                            key="women-included"
-                            className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-semibold bg-red-100 text-red-800"
-                          >
-                            ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
-                          </span>
-                        );
-                      }
-                      
-                      return labels;
-                    })()}
-                  </div>
-                </CardHeader>
-                {/* Expanded view with individual reviews */}
-                {expandedClaim === claim.id && (
-                  <CardContent className="pt-0">
-                    <div className="border-t border-border pt-4">
-                      <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
-                        Individual Expert Reviews
-                      </h4>
-                      <div className="space-y-4">
-                        {claim.publications.map((pub, pubIndex) => (
-                          <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div className="flex-1">
-                                <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
-                                <p className="text-xs text-muted-foreground">
-                                  {pub.authors} • {pub.journal} ({pub.year})
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {isExpert && (() => {
-                                  const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
-                                  const reviewButtonText = existingReview ? 'Update Review' : 'Review';
-                                  return (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setReviewPublication({
-                                        id: pub.id || '',
-                                        title: pub.title,
-                                        journal: pub.journal,
-                                        publication_year: pub.year,
-                                        authors: pub.authors,
-                                        url: pub.url,
-                                        existingReview
-                                      })}
-                                      className="shrink-0 text-xs"
-                                    >
-                                      <FileText className="w-3 h-3 mr-1" />
-                                      {reviewButtonText}
-                                    </Button>
-                                  );
-                                })()}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  asChild
-                                  className="shrink-0"
-                                >
-                                  <a 
-                                    href={pub.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1"
-                                  >
-                                    <ExternalLink className="w-3 h-3" />
-                                    View
-                                  </a>
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Reviewer details moved to the Expert Reviews Reel below to avoid duplication. */}
-                            <div className="text-xs text-muted-foreground">Reviewer scores and comments are available in the "Expert Reviews Reel" below.</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                )}
-
-                {/* Add Paper Button - Always visible */}
-                <CardContent className="pt-2">
-                  {user && (
-                    <div className="border-t border-border pt-3 flex flex-wrap items-center gap-3">
-                      {/* SEE FULL REVIEW first and highlighted */}
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setShowReelClaim(claim.id)}
-                        className="flex items-center gap-2 shadow-md"
-                      >
-                        <Eye className="w-4 h-4" />
-                        See Full Review
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowPaperForm(claim.id)}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Add Supporting Paper
-                      </Button>
-                    </div>
                   )}
                 </CardContent>
 
@@ -1181,7 +1266,7 @@ const Claims = () => {
             ))}
             
             {/* Pagination Controls */}
-            {totalClaims > 0 && (
+            {user && totalClaims > 0 && (
               <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
                 <div className="text-sm text-muted-foreground">
                   Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
@@ -1227,7 +1312,7 @@ const Claims = () => {
           </Tabs>
 
           {/* Paper Submission Dialog */}
-          {showPaperForm && (
+          {user && showPaperForm && (
             <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 {(() => {
@@ -1249,99 +1334,103 @@ const Claims = () => {
           )}
 
           {/* Expert Reviews Reel Dialog */}
-          <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-              {(() => {
-                const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
-                if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-                
-                // Create individual cards for each expert review on each publication
-                const reviewCards: ExpertReviewCard[] = [];
-                
-                claim.publications.forEach(pub => {
-                  // Group scores by expert
-                  const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
-                  (pub.rawScores || []).forEach(score => {
-                    if (!scoresByExpert[score.expert_user_id]) {
-                      scoresByExpert[score.expert_user_id] = [];
-                    }
-                    scoresByExpert[score.expert_user_id].push(score);
-                  });
-
-                  // Get comments for this claim
-                  const claimCommentsForClaim = claim.comments || [];
-
-                  // Create individual cards for each expert who reviewed this publication
-                  Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
-                    const expertProfile = expertProfiles[expertUserId];
-                    const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
-                    
-                    // For consolidated schema, pick the latest row for this expert (there should be one)
-                    const latestRow = (scores || []).reduce((a, b) => {
-                      const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
-                      const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
-                      return bTime >= aTime ? b : a;
-                    }, scores[0]);
-
-                    // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
-                    const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
-                      { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
-                      { category: 'representation', score: latestRow?.review_data?.qualityChecks?.representation ?? null },
-                      { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
-                      { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
-                      { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
-                    ];
-
-                    // Merge comments: claim-level expert comments + the review's comments (if present)
-                    const mergedComments = [
-                      ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
-                    ];
-                    if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
-                    // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
-
-                    reviewCards.push({
-                      publication: {
-                        id: pub.id,
-                        title: pub.title,
-                        journal: pub.journal,
-                        year: pub.year,
-                        authors: pub.authors
-                      },
-                      expert: {
-                        expert_user_id: expertUserId,
-                        display_name: expertProfile?.display_name,
-                        avatar_url: expertProfile?.avatar_url,
-                        scores: expertScores,
-                        comments: mergedComments,
-                        classification: latestRow?.review_data?.category ?? null,
-                        tags: latestRow?.review_data?.tags ?? null,
-                        womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
-                        reviewData: latestRow?.review_data ?? null
+          {user && (
+            <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                {(() => {
+                  const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
+                  if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
+                  
+                  // Create individual cards for each expert review on each publication
+                  const reviewCards: ExpertReviewCard[] = [];
+                  
+                  claim.publications.forEach(pub => {
+                    // Group scores by expert
+                    const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
+                    (pub.rawScores || []).forEach(score => {
+                      if (!scoresByExpert[score.expert_user_id]) {
+                        scoresByExpert[score.expert_user_id] = [];
                       }
+                      scoresByExpert[score.expert_user_id].push(score);
+                    });
+
+                    // Get comments for this claim
+                    const claimCommentsForClaim = claim.comments || [];
+
+                    // Create individual cards for each expert who reviewed this publication
+                    Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
+                      const expertProfile = expertProfiles[expertUserId];
+                      const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
+                      
+                      // For consolidated schema, pick the latest row for this expert (there should be one)
+                      const latestRow = (scores || []).reduce((a, b) => {
+                        const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
+                        const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
+                        return bTime >= aTime ? b : a;
+                      }, scores[0]);
+
+                      // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
+                      const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
+                        { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
+                        { category: 'representation', score: latestRow?.review_data?.qualityChecks?.representation ?? null },
+                        { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
+                        { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
+                        { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
+                      ];
+
+                      // Merge comments: claim-level expert comments + the review's comments (if present)
+                      const mergedComments = [
+                        ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
+                      ];
+                      if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
+                      // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
+
+                      reviewCards.push({
+                        publication: {
+                          id: pub.id,
+                          title: pub.title,
+                          journal: pub.journal,
+                          year: pub.year,
+                          authors: pub.authors
+                        },
+                        expert: {
+                          expert_user_id: expertUserId,
+                          display_name: expertProfile?.display_name,
+                          avatar_url: expertProfile?.avatar_url,
+                          scores: expertScores,
+                          comments: mergedComments,
+                          classification: latestRow?.review_data?.category ?? null,
+                          tags: latestRow?.review_data?.tags ?? null,
+                          womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
+                          reviewData: latestRow?.review_data ?? null
+                        }
+                      });
                     });
                   });
-                });
 
-                return (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
-                    <ExpertReviewsReel reviewCards={reviewCards} />
-                  </div>
-                );
-              })()}
-            </DialogContent>
-          </Dialog>
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
+                      <ExpertReviewsReel reviewCards={reviewCards} />
+                    </div>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
+          )}
           
           {/* Publication Review Dialog */}
-          <PublicationReviewForm
-            publication={reviewPublication}
-            isOpen={!!reviewPublication}
-            onClose={() => setReviewPublication(null)}
-            onReviewSubmitted={() => {
-              // refresh claims and expert distributions after an expert submits/updates a review
-              fetchData(currentPage);
-            }}
-          />
+          {user && (
+            <PublicationReviewForm
+              publication={reviewPublication}
+              isOpen={!!reviewPublication}
+              onClose={() => setReviewPublication(null)}
+              onReviewSubmitted={() => {
+                // refresh claims and expert distributions after an expert submits/updates a review
+                fetchData(currentPage);
+              }}
+            />
+          )}
         </div>
       </main>
     </div>

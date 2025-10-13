@@ -169,7 +169,9 @@ const Profile = () => {
         title: "Profile updated",
         description: "Your profile information has been updated successfully.",
       });
+      // Invalidate both profile queries and user-profile queries
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error: unknown) => {
       console.error('Profile update error', error);
