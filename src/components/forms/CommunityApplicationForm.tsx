@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -52,7 +52,13 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     watch,
     reset,
   } = useForm<CommunityApplicationForm>({
-    resolver: zodResolver(communityApplicationSchema),
+    resolver: zodResolver(communityApplicationSchema, {}, {
+      mode: "sync",
+      rawValues: true
+    }),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+    criteriaMode: "all",
     defaultValues: {
       role: memberType,
       memberType: memberType,
@@ -61,6 +67,13 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
   const watchedExpertiseArea = watch("expertiseArea");
   const watchedRole = watch("role");
+
+  // Debug: Log errors when they change
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Form validation errors:", errors);
+    }
+  }, [errors]);
 
   const addSocialLink = () => {
     setSocialLinks([...socialLinks, { platform: "", url: "" }]);
@@ -71,11 +84,11 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
   };
 
   const updateSocialLink = (index: number, field: "platform" | "url", value: string) => {
-    const updated = socialLinks.map((link, i) => 
+    const updated = socialLinks.map((link, i) =>
       i === index ? { ...link, [field]: value } : link
     );
     setSocialLinks(updated);
-    setValue("socialLinks", updated);
+    setValue("socialLinks", updated, { shouldDirty: true, shouldTouch: true });
   };
 
   const onSubmit = async (data: CommunityApplicationForm) => {
@@ -174,11 +187,17 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit, (errors) => {
+              console.log("Form validation failed:", errors);
+              // Errors should already be in the errors object from formState
+            })} className="space-y-6">
               {/* Role Selection */}
               <div className="space-y-4">
                 <Label htmlFor="role">I am applying as a: *</Label>
-                <Select onValueChange={(value) => setValue("role", value as "expert" | "researcher")}>
+                <Select
+                  defaultValue={memberType}
+                  onValueChange={(value) => setValue("role", value as "expert" | "researcher", { shouldDirty: true, shouldTouch: true })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
@@ -188,7 +207,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   </SelectContent>
                 </Select>
                 {errors.role && (
-                  <p className="text-sm text-destructive">{errors.role.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.role.message}</p>
                 )}
                 
                 {/* Role Explanations */}
@@ -213,7 +232,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
               {/* Expertise Area */}
               <div className="space-y-2">
                 <Label htmlFor="expertiseArea">Area of Expertise *</Label>
-                <Select onValueChange={(value) => setValue("expertiseArea", value as "nutrition" | "fitness" | "mental_health" | "pregnancy" | "menopause" | "general_health" | "perimenopause")}>
+                <Select onValueChange={(value) => setValue("expertiseArea", value as "nutrition" | "fitness" | "mental_health" | "pregnancy" | "menopause" | "general_health" | "perimenopause", { shouldDirty: true, shouldTouch: true })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your primary expertise area" />
                   </SelectTrigger>
@@ -228,7 +247,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   </SelectContent>
                 </Select>
                 {errors.expertiseArea && (
-                  <p className="text-sm text-destructive">{errors.expertiseArea.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.expertiseArea.message}</p>
                 )}
               </div>
 
@@ -242,9 +261,10 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   max="50"
                   {...register("yearsOfExperience", { valueAsNumber: true })}
                   placeholder="e.g., 5"
+                  className={errors.yearsOfExperience ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 {errors.yearsOfExperience && (
-                  <p className="text-sm text-destructive">{errors.yearsOfExperience.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.yearsOfExperience.message}</p>
                 )}
               </div>
 
@@ -256,9 +276,10 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   {...register("education")}
                   placeholder="PhD in Nutrition Science, University of California, San Diego. Board-certified nutritionist with 10+ years of clinical experience..."
                   rows={4}
+                  className={errors.education ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 {errors.education && (
-                  <p className="text-sm text-destructive">{errors.education.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.education.message}</p>
                 )}
               </div>
 
@@ -270,9 +291,10 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   {...register("motivation")}
                   placeholder="I'm passionate about improving women's health outcomes through evidence-based research reviews. My experience would contribute to..."
                   rows={4}
+                  className={errors.motivation ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 {errors.motivation && (
-                  <p className="text-sm text-destructive">{errors.motivation.message}</p>
+                  <p className="text-sm text-destructive font-medium">{errors.motivation.message}</p>
                 )}
               </div>
 
@@ -346,6 +368,24 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   </div>
                 ))}
               </div>
+
+              {/* Form Errors Summary */}
+              {Object.keys(errors).length > 0 && (
+                <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                  <p className="text-sm font-semibold text-destructive mb-2">
+                    Please fix the following errors:
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-destructive space-y-1">
+                    {errors.role && <li>Role selection is required</li>}
+                    {errors.expertiseArea && <li>Expertise area is required</li>}
+                    {errors.yearsOfExperience && <li>{errors.yearsOfExperience.message}</li>}
+                    {errors.education && <li>{errors.education.message}</li>}
+                    {errors.motivation && <li>{errors.motivation.message}</li>}
+                    {errors.website && <li>{errors.website.message}</li>}
+                    {errors.location && <li>{errors.location.message}</li>}
+                  </ul>
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="flex gap-4 pt-4">
