@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Eye, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -73,16 +73,6 @@ interface PublicationScoreRow {
   updated_at: string;
 }
 
-interface ReactionRow {
-  id: string;
-  claim_id: string;
-  user_id: string;
-  reaction_type: string; // helpful | insightful | wantmore | moneysaver
-  created_at: string;
-}
-
-
-
 interface ClaimCommentRow {
   id: string;
   claim_id: string;
@@ -126,8 +116,6 @@ const Claims = () => {
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
-  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
-  const [userReactions, setUserReactions] = useState<Record<string, Set<string>>>({});
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
@@ -214,38 +202,14 @@ const Claims = () => {
       const claimIds = claimsData?.map(c => c.id) || [];
       const [
         { data: publicationsData, error: publicationsError },
-        { data: reactionsData, error: reactionsError },
         { data: commentsData, error: commentsError }
       ] = await Promise.all([
         sb.from('publications').select('*').in('claim_id', claimIds),
-        sb.from('claim_reactions').select('*').in('claim_id', claimIds),
         sb.from('claim_comments').select('*').in('claim_id', claimIds).order('created_at', { ascending: true })
       ]);
 
       if (publicationsError) throw publicationsError;
-      if (reactionsError) throw reactionsError;
       if (commentsError) throw commentsError;
-
-      // Build reaction counts from the fetched reactions data
-      const reactionsByClaim: Record<string, Record<string, number>> = {};
-      (reactionsData || []).forEach((reaction: ReactionRow) => {
-        if (!reactionsByClaim[reaction.claim_id]) {
-          reactionsByClaim[reaction.claim_id] = {};
-        }
-        reactionsByClaim[reaction.claim_id][reaction.reaction_type] = (reactionsByClaim[reaction.claim_id][reaction.reaction_type] || 0) + 1;
-      });
-
-      // Fetch user's own reactions using the same data we already fetched
-      const userReactionsByClaim: Record<string, Set<string>> = {};
-      if (user) {
-        const userReactionsForClaims = (reactionsData || []).filter(r => r.user_id === user.id);
-        userReactionsForClaims.forEach((reaction) => {
-          if (!userReactionsByClaim[reaction.claim_id]) {
-            userReactionsByClaim[reaction.claim_id] = new Set();
-          }
-          userReactionsByClaim[reaction.claim_id].add(reaction.reaction_type);
-        });
-      }
 
       // Group publications by claim_id
       const publicationsByClaim: Record<string, PublicationRow[]> = {};
@@ -301,8 +265,6 @@ const Claims = () => {
       });
 
       setClaims(mappedClaims);
-      setReactions(reactionsByClaim);
-      setUserReactions(userReactionsByClaim);
 
       // Set user votes from the batched query above
       if (!votesError && userVotesData) {
@@ -458,102 +420,6 @@ const Claims = () => {
       }
     }
   };
-
-  const handleReaction = async (claimId: string, reactionType: string) => {
-    // ensure reaction type matches DB allowed list
-    const allowed = ['helpful', 'insightful', 'wantmore', 'moneysaver'];
-    if (!allowed.includes(reactionType)) reactionType = 'insightful';
-
-    const refreshCountsForClaim = async (cId: string) => {
-      try {
-        const { data: rows, error } = await sb.from('claim_reactions').select('reaction_type').eq('claim_id', cId);
-        if (error) throw error;
-        const counts: Record<string, number> = {};
-        (rows || []).forEach((r: { reaction_type: string }) => {
-          counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1;
-        });
-        setReactions(prev => ({ ...prev, [cId]: counts }));
-
-        // Also refresh user's own reactions for this claim
-        if (user) {
-          const { data: userRows, error: userError } = await sb
-            .from('claim_reactions')
-            .select('reaction_type')
-            .eq('claim_id', cId)
-            .eq('user_id', user.id);
-
-          if (!userError && userRows) {
-            const userReactionTypes = new Set(userRows.map(r => r.reaction_type));
-            setUserReactions(prev => ({ ...prev, [cId]: userReactionTypes }));
-          }
-        }
-      } catch (e) {
-        console.error('Failed to refresh reaction counts', e);
-      }
-    };
-
-    try {
-      const { data: userResp } = await supabase.auth.getUser();
-      const userId = (userResp as { user?: { id?: string } })?.user?.id;
-      if (!userId) {
-        console.warn('User not authenticated, cannot persist reaction');
-        return;
-      }
-
-      // Check for existing reaction by this user for this claim + type
-      const { data: existing, error: existingErr } = await sb
-        .from('claim_reactions')
-        .select('id')
-        .eq('claim_id', claimId)
-        .eq('user_id', userId)
-        .eq('reaction_type', reactionType)
-        .limit(1)
-        .maybeSingle();
-
-      if (existingErr) throw existingErr;
-
-      if (existing) {
-        // remove existing reaction
-        const { error: delErr } = await sb.from('claim_reactions').delete().eq('id', existing.id);
-        if (delErr) throw delErr;
-        await refreshCountsForClaim(claimId);
-      } else {
-        // insert reaction
-        const { error: insertErr } = await sb
-          .from('claim_reactions')
-          .insert({ claim_id: claimId, user_id: userId, reaction_type: reactionType });
-
-        if (insertErr) {
-          // unique-constraint race or similar - refresh counts to reflect actual state
-          if ((insertErr as unknown as { code?: string })?.code === '23505') {
-            await refreshCountsForClaim(claimId);
-            return;
-          }
-          throw insertErr;
-        }
-
-        // success - refresh counts to show accurate numbers
-        await refreshCountsForClaim(claimId);
-      }
-    } catch (err) {
-      console.error('Failed to persist reaction', err);
-    }
-  };
-
-  const getReactionCount = (claimId: string, reactionType: string) => {
-    return reactions[claimId]?.[reactionType] || 0;
-  };
-
-  const hasUserReacted = (claimId: string, reactionType: string) => {
-    return userReactions[claimId]?.has(reactionType) || false;
-  };
-
-  const reactionButtons = [
-    { type: 'helpful', icon: Heart, label: 'Helpful', color: 'text-pink-600' },
-    { type: 'insightful', icon: Eye, label: 'Eye-opening', color: 'text-blue-600' },
-    { type: 'wantmore', icon: BookOpen, label: 'Want more', color: 'text-green-600' },
-    { type: 'moneysaver', icon: DollarSign, label: 'Money saver', color: 'text-yellow-600' }
-  ];
 
   const humanize = (s?: string) => (s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
 
@@ -1208,11 +1074,11 @@ const Claims = () => {
                   </CardContent>
                 )}
 
-                {/* Bottom section with Review Reel, Add Paper buttons and reactions */}
+                {/* Bottom section with Review Reel and Add Paper buttons */}
                 <CardContent className="pt-2">
                   {user && (
-                    <div className="border-t border-border pt-3 flex flex-wrap items-center justify-between gap-3">
-                      {/* Action buttons grouped together */}
+                    <div className="border-t border-border pt-3">
+                      {/* Action buttons */}
                       <div className="flex flex-wrap items-center gap-2">
                         <Button
                           variant="default"
@@ -1232,29 +1098,6 @@ const Claims = () => {
                           <FileText className="w-4 h-4" />
                           Add Paper
                         </Button>
-                      </div>
-
-                      {/* Reaction buttons: moved to bottom right */}
-                      <div className="flex items-center gap-2">
-                        {reactionButtons.map((reaction) => {
-                          const count = getReactionCount(claim.id, reaction.type);
-                          const hasReacted = hasUserReacted(claim.id, reaction.type);
-                          const Icon = reaction.icon;
-                          return (
-                            <Button
-                              key={reaction.type}
-                              variant="ghost"
-                              size="sm"
-                              className={`h-7 px-2 text-xs flex items-center gap-1 ${hasReacted ? 'bg-muted' : ''}`}
-                              onClick={() => handleReaction(claim.id, reaction.type)}
-                              title={reaction.label}
-                              disabled={!user}
-                            >
-                              <Icon className={`w-4 h-4 ${hasReacted ? reaction.color : 'text-muted-foreground'} ${hasReacted ? 'fill-current' : ''}`} />
-                              <span className="text-xs font-medium">{count}</span>
-                            </Button>
-                          );
-                        })}
                       </div>
                     </div>
                   )}
