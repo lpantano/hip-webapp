@@ -52,10 +52,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     watch,
     reset,
   } = useForm<CommunityApplicationForm>({
-    resolver: zodResolver(communityApplicationSchema, {}, {
-      mode: "sync",
-      rawValues: true
-    }),
+    resolver: zodResolver(communityApplicationSchema),
     mode: "onSubmit",
     reValidateMode: "onChange",
     criteriaMode: "all",
