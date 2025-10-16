@@ -27,13 +27,13 @@ const FeaturesSection = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Endometriosis</h4>
-                    <p className="text-muted-foreground text-sm">Tissue growing outside the uterus, affecting up to 10% of reproductive-age women.</p>
+                    {/* <p className="text-muted-foreground text-sm">Tissue growing outside the uterus, affecting up to 10% of reproductive-age women.</p> */}
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="ml-2 flex-shrink-0">
+                      {/* <Button variant="ghost" size="sm" className="ml-2 flex-shrink-0">
                         <ArrowRight className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
@@ -66,13 +66,13 @@ const FeaturesSection = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Perimenopause</h4>
-                    <p className="text-muted-foreground text-sm">Transitional period with significant hormonal changes affecting quality of life.</p>
+                    {/* <p className="text-muted-foreground text-sm">Transitional period with significant hormonal changes affecting quality of life.</p> */}
                   </div>
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Hormone Treatment</h4>
-                    <p className="text-muted-foreground text-sm">Evidence-based hormonal therapies for various women's health conditions.</p>
+                    {/* <p className="text-muted-foreground text-sm">Evidence-based hormonal therapies for various women's health conditions.</p> */}
                   </div>
                 </div>
               </div>
@@ -89,13 +89,13 @@ const FeaturesSection = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Creatine</h4>
-                    <p className="text-muted-foreground text-sm">Well-researched supplement supporting muscle strength and cognitive function in women.</p>
+                    {/* <p className="text-muted-foreground text-sm">Well-researched supplement supporting muscle strength and cognitive function in women.</p> */}
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="ml-2 flex-shrink-0">
+                      {/* <Button variant="ghost" size="sm" className="ml-2 flex-shrink-0">
                         <ArrowRight className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
@@ -107,19 +107,19 @@ const FeaturesSection = () => {
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-semibold text-accent mb-2">Efficacy Studies</h4>
-                          <p className="text-sm text-muted-foreground">Analysis of randomized controlled trials measuring actual outcomes in women, not just general population studies adapted to women.</p>
+                          {/* <p className="text-sm text-muted-foreground">Analysis of randomized controlled trials measuring actual outcomes in women, not just general population studies adapted to women.</p> */}
                         </div>
                         <div>
                           <h4 className="font-semibold text-accent mb-2">Safety Profile</h4>
-                          <p className="text-sm text-muted-foreground">Comprehensive review of side effects, interactions, and long-term safety data specifically in female populations across different life stages.</p>
+                          {/* <p className="text-sm text-muted-foreground">Comprehensive review of side effects, interactions, and long-term safety data specifically in female populations across different life stages.</p> */}
                         </div>
                         <div>
                           <h4 className="font-semibold text-accent mb-2">Dosage Optimization</h4>
-                          <p className="text-sm text-muted-foreground">Evidence-based recommendations for optimal dosing protocols that account for women's unique physiological factors and hormonal variations.</p>
+                          {/* <p className="text-sm text-muted-foreground">Evidence-based recommendations for optimal dosing protocols that account for women's unique physiological factors and hormonal variations.</p> */}
                         </div>
                         <div>
                           <h4 className="font-semibold text-accent mb-2">Quality Standards</h4>
-                          <p className="text-sm text-muted-foreground">Assessment of product manufacturing standards, third-party testing, and regulatory compliance to ensure safety and potency.</p>
+                          {/* <p className="text-sm text-muted-foreground">Assessment of product manufacturing standards, third-party testing, and regulatory compliance to ensure safety and potency.</p> */}
                         </div>
                       </div>
                     </DialogContent>
@@ -128,7 +128,7 @@ const FeaturesSection = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Strength Training</h4>
-                    <p className="text-muted-foreground text-sm">Resistance exercise with proven benefits for bone health and metabolic function.</p>
+                    {/* <p className="text-muted-foreground text-sm">Resistance exercise with proven benefits for bone health and metabolic function.</p> */}
                   </div>
                 </div>
               </div>
@@ -145,13 +145,13 @@ const FeaturesSection = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">ADHD</h4>
-                    <p className="text-muted-foreground text-sm">Attention-deficit/hyperactivity disorder often underdiagnosed in women due to presentation differences.</p>
+                    {/* <p className="text-muted-foreground text-sm">Attention-deficit/hyperactivity disorder often underdiagnosed in women due to presentation differences.</p> */}
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="ml-2 flex-shrink-0">
+                      {/* <Button variant="ghost" size="sm" className="ml-2 flex-shrink-0">
                         <ArrowRight className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
@@ -184,13 +184,13 @@ const FeaturesSection = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Anxiety</h4>
-                    <p className="text-muted-foreground text-sm">Anxiety disorders affect women at twice the rate of men, with unique triggers and manifestations.</p>
+                    {/* <p className="text-muted-foreground text-sm">Anxiety disorders affect women at twice the rate of men, with unique triggers and manifestations.</p> */}
                   </div>
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg mb-2">Depression</h4>
-                    <p className="text-muted-foreground text-sm">Major depressive disorder with strong links to hormonal changes and reproductive health in women.</p>
+                    {/* <p className="text-muted-foreground text-sm">Major depressive disorder with strong links to hormonal changes and reproductive health in women.</p> */}
                   </div>
                 </div>
               </div>

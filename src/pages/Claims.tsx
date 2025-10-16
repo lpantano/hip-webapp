@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ExternalLink, Users, Eye, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn } from 'lucide-react';
+import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn, FileWarning, ThumbsDown, ThumbsUp, Link, Unlink2, Link2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -450,9 +450,9 @@ const Claims = () => {
   const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined) => {
     switch (stance) {
       case 'supporting':
-        return <div title="Supporting evidence"><CheckCircle className="w-4 h-4 text-green-600" /></div>;
+        return <div title="Supporting evidence"><Link2 className="w-4 h-4 text-green-600" /></div>;
       case 'contradicting':
-        return <div title="Contradicting evidence"><XCircle className="w-4 h-4 text-red-600" /></div>;
+        return <div title="Contradicting evidence"><Unlink2 className="w-4 h-4 text-red-600" /></div>;
       case 'neutral':
         return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
       case 'mixed':
@@ -982,7 +982,7 @@ const Claims = () => {
                           {supportingLabels.length > 0 && (
                             <div className="flex items-center gap-2">
                               <div title="Supporting evidence">
-                                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                {getStanceIcon('supporting')}
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {supportingLabels}
@@ -992,7 +992,7 @@ const Claims = () => {
                           {contradictingLabels.length > 0 && (
                             <div className="flex items-center gap-2">
                               <div title="Contradicting evidence">
-                                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                {getStanceIcon('contradicting')}
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {contradictingLabels}
@@ -1027,7 +1027,7 @@ const Claims = () => {
                               
                               {/* Buttons moved below the paper text */}
                               <div className="flex items-center gap-2 mt-3">
-                                {isExpert && (() => {
+                                {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (() => {
                                   const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
                                   const reviewButtonText = existingReview ? 'Update' : 'Review';
                                   return (

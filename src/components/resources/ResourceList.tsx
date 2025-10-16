@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ExternalLink, ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +28,10 @@ interface ResourceReview {
   comments: string | null;
   created_at: string;
   reviewer_user_id: string;
+  reviewer?: {
+    display_name: string | null;
+    cached_avatar_url: string | null;
+  };
 }
 
 interface ResourceListProps {
@@ -54,16 +59,44 @@ export const ResourceList = ({ status }: ResourceListProps) => {
       
       if (error) throw error;
       
-      // Fetch reviews for each resource
+      // Fetch reviews for each resource with reviewer information
       if (data) {
         const resourcesWithReviews = await Promise.all(
           data.map(async (resource) => {
+            // Fetch reviews
             const { data: reviews } = await supabase
               .from("resource_reviews")
               .select("*")
               .eq("resource_id", resource.id);
-            
-            return { ...resource, reviews: reviews || [] };
+
+            // For each review, fetch the reviewer's profile
+            const reviewsWithProfiles = await Promise.all(
+              (reviews || []).map(async (review) => {
+                const { data: profiles, error: profileError } = await supabase
+                  .from("profiles")
+                  .select("display_name, cached_avatar_url")
+                  .eq("user_id", review.reviewer_user_id);
+
+                if (profileError) {
+                  console.error("Error fetching profile for review:", review.id, profileError);
+                }
+
+                const profile = profiles && profiles.length > 0 ? profiles[0] : null;
+
+                // Use display_name if available, otherwise show a truncated user ID
+                const displayName = profile?.display_name || `User ${review.reviewer_user_id.slice(0, 8)}`;
+
+                return {
+                  ...review,
+                  reviewer: {
+                    display_name: displayName,
+                    cached_avatar_url: profile?.cached_avatar_url || null
+                  }
+                };
+              })
+            );
+
+            return { ...resource, reviews: reviewsWithProfiles };
           })
         );
         setResources(resourcesWithReviews);
@@ -287,26 +320,45 @@ export const ResourceList = ({ status }: ResourceListProps) => {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-4">
                       <div className="space-y-3">
-                        {resource.reviews.map((review) => (
-                          <div key={review.id} className="p-3 rounded-lg border">
-                            <div className="flex items-center gap-2 mb-2">
-                              {review.supports ? (
-                                <ThumbsUp className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <ThumbsDown className="h-4 w-4 text-red-600" />
-                              )}
-                              <span className="font-medium">
-                                {review.supports ? "Supports" : "Opposes"}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {new Date(review.created_at).toLocaleDateString()}
-                              </span>
+                        {resource.reviews.map((review) => {
+                          const reviewerName = review.reviewer?.display_name || 'Anonymous';
+                          const reviewerInitials = reviewerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+                          return (
+                            <div key={review.id} className="p-3 rounded-lg border">
+                              <div className="flex items-start gap-3">
+                                <Avatar className="h-8 w-8">
+                                  {review.reviewer?.cached_avatar_url && (
+                                    <AvatarImage src={review.reviewer.cached_avatar_url} alt={reviewerName} />
+                                  )}
+                                  <AvatarFallback>{reviewerInitials}</AvatarFallback>
+                                </Avatar>
+
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {review.supports ? (
+                                      <ThumbsUp className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <ThumbsDown className="h-4 w-4 text-red-600" />
+                                    )}
+                                    <span className="font-medium">
+                                      {review.supports ? "Supports" : "Opposes"}
+                                    </span>
+                                    <span className="text-sm text-muted-foreground">
+                                      {new Date(review.created_at).toLocaleDateString()}
+                                    </span>
+                                  </div>
+
+                                  <p className="text-sm font-medium mb-1">{reviewerName}</p>
+
+                                  {review.comments && (
+                                    <p className="text-sm text-muted-foreground">{review.comments}</p>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            {review.comments && (
-                              <p className="text-sm text-muted-foreground">{review.comments}</p>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
