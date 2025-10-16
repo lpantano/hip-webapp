@@ -30,17 +30,16 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
 
   const steps = [
     {
-      title: "Welcome to Our Expert Community",
+      title: "Welcome to the Expert Community",
       content: (
         <div className="space-y-6">
           <div className="text-center">
             <Users className="h-16 w-16 mx-auto text-primary mb-4" />
-            <h3 className="text-2xl font-bold mb-4">You're Part of the Company</h3>
+            <h3 className="text-2xl font-bold mb-4">Shape the Future of Evidence-Based Health</h3>
             <p className="text-muted-foreground text-lg">
-              As an expert, you become an integral part of our organization with real ownership and decision-making power.
+              As an expert, you’ll help ensure the quality and trustworthiness of health claims. Your reviews directly impact which claims are highlighted and how users understand the evidence.
             </p>
           </div>
-          
           <div className="grid md:grid-cols-2 gap-4">
             <Card className="border-primary/20">
               <CardHeader className="pb-3">
@@ -51,11 +50,10 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Vote on new features, research topics, and platform direction
+                  Participate in platform decisions, including feature prioritization and research focus.
                 </p>
               </CardContent>
             </Card>
-            
             <Card className="border-accent/20">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -65,7 +63,7 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Two annual meetings to shape business strategy and direction
+                  Join annual meetings to help guide our mission and standards.
                 </p>
               </CardContent>
             </Card>
@@ -74,32 +72,30 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
       )
     },
     {
-      title: "Contribution & Credit System",
+      title: "Earn Recognition for Your Expertise",
       content: (
         <div className="space-y-6">
           <div className="text-center">
             <Award className="h-16 w-16 mx-auto text-accent mb-4" />
-            <h3 className="text-2xl font-bold mb-4">Earn Credits for Your Work</h3>
+            <h3 className="text-2xl font-bold mb-4">Transparent Credit & Rewards</h3>
             <p className="text-muted-foreground text-lg">
-              Every contribution you make earns credits that can be redeemed for profit sharing.
+              Every review you submit earns you credits, which can be redeemed for profit sharing and public recognition.
             </p>
           </div>
-          
           <div className="space-y-4">
             <Card className="border-l-4 border-l-primary bg-primary/5">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
                   <Star className="h-6 w-6 text-primary mt-1" />
                   <div>
-                    <h4 className="font-semibold mb-2">First Contributions Count Double</h4>
+                    <h4 className="font-semibold mb-2">First Reviews Count Double</h4>
                     <p className="text-sm text-muted-foreground">
-                      Your first review of each claim and publication earns 2x credits, rewarding early engagement
+                      Your first review for each claim or publication earns double credits, rewarding early contributions.
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
             <Card className="border-l-4 border-l-accent bg-accent/5">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
@@ -107,21 +103,20 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
                   <div>
                     <h4 className="font-semibold mb-2">Profit Sharing</h4>
                     <p className="text-sm text-muted-foreground">
-                      When the company is profitable, credits can be redeemed for money proportional to total profits
+                      When the platform is profitable, credits can be exchanged for a share of profits.
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
             <Card className="border-l-4 border-l-muted-foreground bg-muted/5">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
                   <FileText className="h-6 w-6 text-muted-foreground mt-1" />
                   <div>
-                    <h4 className="font-semibold mb-2">Contract Details</h4>
+                    <h4 className="font-semibold mb-2">Clear Terms</h4>
                     <p className="text-sm text-muted-foreground">
-                      Full terms and conditions available in the contract at the end of the application process
+                      All details are available in the expert agreement at the end of this process.
                     </p>
                   </div>
                 </div>
@@ -132,105 +127,95 @@ const ExpertOnboardingDialog = ({ open, onOpenChange, onApply }: ExpertOnboardin
       )
     },
     {
-      title: "Review Criteria & Scoring",
+      title: "How to Review a Publication",
       content: (
         <div className="space-y-6">
           <div className="text-center">
             <Target className="h-16 w-16 mx-auto text-primary mb-4" />
-            <h3 className="text-2xl font-bold mb-4">4 Key Review Criteria</h3>
+            <h3 className="text-2xl font-bold mb-4">Standardized Criteria for Every Review</h3>
             <p className="text-muted-foreground text-lg">
-              Score each publication or claim across these standardized criteria.
+              For each publication, you’ll be asked to assess the following:
             </p>
           </div>
-          
           <div className="grid gap-4">
             <Card className="border-primary/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Users className="h-5 w-5 text-primary" />
-                    Study Size
+                    Publication Validity
                   </CardTitle>
-                  <Badge variant="outline">Score: 1-10</Badge>
+                  {/* Score badge removed */}
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Evaluate the sample size and whether it's adequate for drawing meaningful conclusions
+                  Is the publication from a reputable, peer-reviewed journal? Is it original research (not a review or meta-analysis)?
                 </p>
               </CardContent>
             </Card>
-            
             <Card className="border-accent/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Target className="h-5 w-5 text-accent" />
-                    Population Representation
+                    Quality Assessment
                   </CardTitle>
-                  <Badge variant="outline">Score: 1-10</Badge>
+                  {/* Score badge removed */}
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    How well does the study population represent the target demographic for the claim?
+                    Does the study have a sound design, appropriate population, control group, and statistical methods?
                   </p>
                   <div className="bg-accent/10 p-3 rounded-lg border-l-2 border-accent">
                     <p className="text-xs text-muted-foreground">
-                      <strong>Why this matters:</strong> Population bias can completely invalidate study results. 
-                      For example, a study on heart disease conducted only on men may not apply to women due to 
-                      biological differences. Similarly, studies on predominantly white populations may not 
-                      generalize to other ethnic groups due to genetic, cultural, or socioeconomic factors.
+                      Study Design, Population Representation, Control Group, Biases Addressed, and Statistical Methods.
                     </p>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    <strong>Consider:</strong> Age, gender, ethnicity, socioeconomic status, geographic location, 
-                    health status, and other relevant demographics
+                    <strong>Consider:</strong> Age, gender, ethnicity, socioeconomic status, geographic location, health status, and other relevant demographics.
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
             <Card className="border-muted-foreground/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Vote className="h-5 w-5 text-muted-foreground" />
-                    Research Consensus
+                    System Used
                   </CardTitle>
-                  <Badge variant="outline">Score: 1-10</Badge>
+                  {/* Score badge removed */}
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Level of agreement among multiple studies and researchers on this topic
+                  What type of system was studied? (e.g., cell, animal, or human)
                 </p>
               </CardContent>
             </Card>
-            
             <Card className="border-primary/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <CheckCircle className="h-5 w-5 text-primary" />
-                    Valid Conclusion
+                    Study Size
                   </CardTitle>
-                  <Badge variant="outline">Score: 1-10</Badge>
+                  {/* Score badge removed */}
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Whether the study's conclusions are logically supported by the data and methodology
+                  How large was the study? (Small: &lt;100, Medium: 100–100,000, Large: &gt;100,000)
                 </p>
               </CardContent>
             </Card>
           </div>
-          
           <div className="bg-muted p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Scoring Guide:</strong> 1-3 (Poor), 4-6 (Fair), 7-8 (Good), 9-10 (Excellent). 
-              Provide detailed notes explaining your scores to help the community understand your assessment.
+              <strong>Also consider:</strong> Demographic representation and any limitations or biases.
             </p>
           </div>
         </div>
