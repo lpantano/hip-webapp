@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      mailing_list_signups: {
+        Row: {
+          id: string;
+          email: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       claim_comments: {
         Row: {
           claim_id: string
