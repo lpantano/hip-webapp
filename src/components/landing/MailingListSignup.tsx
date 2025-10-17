@@ -1,16 +1,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const MailingListSignup = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
 
-  const handleMailingList = (e: React.FormEvent) => {
+  const handleMailingList = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: wire to real mailing list service
-    console.log("Mailing list signup:", email);
-    setEmail("");
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    const { error } = await supabase.from("mailing_list_signups").insert({ email });
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess(true);
+      setEmail("");
+    }
+    setLoading(false);
   };
 
   return (
@@ -23,11 +37,14 @@ const MailingListSignup = () => {
           onChange={(e) => setEmail(e.target.value)}
           className="w-full sm:w-64 bg-white/10 border-white/30 text-white placeholder:text-white/70"
           required
+          disabled={loading}
         />
-        <Button type="submit" className="bg-white text-primary hover:bg-white/90 px-6">
-          Subscribe
+        <Button type="submit" className="bg-white text-primary hover:bg-white/90 px-6" disabled={loading}>
+          {loading ? "Submitting..." : "Subscribe"}
         </Button>
       </form>
+      {success && <div className="text-white mt-2">Thank you for subscribing!</div>}
+      {error && <div className="text-red-400 mt-2">{error}</div>}
     </div>
   );
 };
