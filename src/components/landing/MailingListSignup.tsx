@@ -17,7 +17,16 @@ const MailingListSignup = () => {
     setLoading(true);
     setError(null);
     setSuccess(false);
-    const { error } = await supabase.from("mailing_list_signups").insert({ email });
+    // Basic client-side normalization and validation
+    const normalized = (email || "").trim().toLowerCase();
+    const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!EMAIL_RE.test(normalized) || normalized.length > 254) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from("mailing_list_signups").insert({ email: normalized });
     if (error) {
       setError(error.message);
     } else {

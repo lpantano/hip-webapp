@@ -27,9 +27,9 @@ const JoinSection = () => {
     <section className="pb-20 pt-8 bg-muted/30">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4 text-accent border-accent">
+          {/* <Badge variant="outline" className="mb-4 text-accent border-accent">
             Join the Movement
-          </Badge>
+          </Badge> */}
           <h2 className="text-4xl md:text-5xl font-bold mb-8">
             Ready to Make a 
             <span className="text-accent"> Difference?</span>

@@ -127,8 +127,8 @@ const EducationSection = () => {
                 ))}
               </div>
 
-              {/* details panel */}
-              <div className="w-full mt-4 p-4 bg-background/80 rounded">
+              {/* details panel - fixed height to prevent layout shifts when content changes */}
+              <div className="w-full mt-4 p-4 bg-background/80 rounded h-[140px] md:h-[180px] overflow-auto">
                 {PHASE_INFO[selectedStep] && (
                   <div>
                     <div className="font-semibold text-lg">
