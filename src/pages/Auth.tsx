@@ -53,7 +53,11 @@ const Auth = () => {
           <Link to="/" className="text-2xl font-bold text-primary hover:text-primary/80">
             ClaimWell
           </Link>
-          <p className="text-muted-foreground">Join our community of informed women</p>
+            <p className="text-muted-foreground">
+              We’re building something great — the platform is under active development and open by invitation only.
+              <br />
+              <Link to="/#mailing-list" className="underline ml-1">Join our mailing list</Link> to get updates and an invitation when spots open.
+            </p>        
         </div>
 
         <Card className="border-border/50 shadow-lg">
@@ -92,13 +96,21 @@ const Auth = () => {
                 <CardDescription>
                   Sign in to access your account and continue your journey
                 </CardDescription>
-                
-                <div className="space-y-4">
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    await handleEmailAuth(false);
+                  }}
+                  className="space-y-4"
+                >
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
                     <Input
                       id="signin-email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       placeholder="your.email@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -108,12 +120,24 @@ const Auth = () => {
                     <Label htmlFor="signin-password">Password</Label>
                     <Input
                       id="signin-password"
+                      name="password"
                       type="password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                </div>
+
+                  <div>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading || !email || !password}
+                    >
+                      {isLoading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </div>
+                </form>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4 mt-4">
@@ -121,13 +145,21 @@ const Auth = () => {
                 <CardDescription>
                   Join thousands of women making informed health decisions
                 </CardDescription>
-                
-                <div className="space-y-4">
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    await handleEmailAuth(true);
+                  }}
+                  className="space-y-4"
+                >
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       placeholder="your.email@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -137,37 +169,29 @@ const Auth = () => {
                     <Label htmlFor="signup-password">Password</Label>
                     <Input
                       id="signup-password"
+                      name="password"
                       type="password"
+                      autoComplete="new-password"
                       placeholder="Choose a strong password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                </div>
+
+                  <div>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading || !email || !password}
+                    >
+                      {isLoading ? 'Creating account...' : 'Create Account'}
+                    </Button>
+                  </div>
+                </form>
               </TabsContent>
             </CardContent>
 
-            <CardFooter>
-              <TabsContent value="signin" className="w-full">
-                <Button 
-                  className="w-full" 
-                  onClick={() => handleEmailAuth(false)}
-                  disabled={isLoading || !email || !password}
-                >
-                  {isLoading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </TabsContent>
-              
-              <TabsContent value="signup" className="w-full">
-                <Button 
-                  className="w-full" 
-                  onClick={() => handleEmailAuth(true)}
-                  disabled={isLoading || !email || !password}
-                >
-                  {isLoading ? 'Creating account...' : 'Create Account'}
-                </Button>
-              </TabsContent>
-            </CardFooter>
+            <CardFooter />
           </Tabs>
         </Card>
 
