@@ -13,7 +13,7 @@ const HeroSection = () => {
           <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
             <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight m-0 p-0">
               ClaimWell
-              <span style={{ color: "hsl(210, 50%, 43%)" }}> - Women Edition</span>
+              <span style={{ color: "hsl(210, 50%, 43%)" }}>  Women Edition</span>
             </h1>
             <PWAInstallPrompt size="sm" className="shadow-xl" />
           </div>
