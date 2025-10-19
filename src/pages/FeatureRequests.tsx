@@ -160,24 +160,14 @@ const FeatureRequests = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Feature Requests</h1>
+      
+        <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+              Feature Requests
+            </h1>            
             <p className="text-muted-foreground">
               Suggest and vote on new features for the platform. Only members can vote.
             </p>
-          </div>
-          <Dialog open={showNewRequest} onOpenChange={setShowNewRequest}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                New Request
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <FeatureRequestForm onSuccess={() => { setShowNewRequest(false); queryClient.invalidateQueries({ queryKey: ['feature-requests'] }); }} onCancel={() => setShowNewRequest(false)} />
-            </DialogContent>
-          </Dialog>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -187,7 +177,7 @@ const FeatureRequests = () => {
               size="sm"
               onClick={() => setSortBy("votes")}
             >
-              Most Votes
+              Most Voted
             </Button>
             <Button
               variant={sortBy === "recent" ? "default" : "outline"}
@@ -234,6 +224,18 @@ const FeatureRequests = () => {
             >
               Completed
             </Button>
+
+            <Dialog open={showNewRequest} onOpenChange={setShowNewRequest}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <FeatureRequestForm onSuccess={() => { setShowNewRequest(false); queryClient.invalidateQueries({ queryKey: ['feature-requests'] }); }} onCancel={() => setShowNewRequest(false)} />
+            </DialogContent>
+          </Dialog>
           </div>
         </div>
 
