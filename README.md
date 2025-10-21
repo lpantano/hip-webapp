@@ -62,7 +62,30 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/ce017a26-619d-424c-9f9d-57352e8d9493) and click on Share -> Publish.
+
+### Deploying to Netlify
+
+You can easily deploy this project to [Netlify](https://www.netlify.com/):
+
+1. **Push your code to GitHub, GitLab, or Bitbucket.**
+2. **Sign in to Netlify** and click "Add new site" > "Import an existing project".
+3. **Connect your repository** and follow the prompts.
+4. Set the following build settings:
+   - **Build command:** `npm run build`
+   - **Publish directory:** `dist`
+5. Click "Deploy site". Netlify will build and deploy your app automatically.
+
+For updates, just push changes to your repo—Netlify will redeploy automatically.
+
+You can also use the [Netlify CLI](https://docs.netlify.com/cli/get-started/) for local deployments:
+
+```sh
+npm run build
+npx netlify deploy --prod --dir=dist
+```
+
+---
+Alternatively, you can open [Lovable](https://lovable.dev/projects/ce017a26-619d-424c-9f9d-57352e8d9493) and click on Share -> Publish.
 
 ## Authentication Setup
 
@@ -79,12 +102,12 @@ This project includes a complete authentication system with Google OAuth and ema
    - `http://localhost:5173` (for local development)
    - Your production domain (e.g., `https://your-domain.com`)
 7. Add your authorized redirect URIs:
-   - `https://stbumtfkanunkgopitfd.supabase.co/auth/v1/callback`
+   - `https://projectid.supabase.co/auth/v1/callback`
 8. Copy the **Client ID** and **Client Secret**
 
 ### 2. Configure Supabase Authentication
 
-1. Open your [Supabase Dashboard](https://supabase.com/dashboard/project/stbumtfkanunkgopitfd)
+1. Open your [Supabase Dashboard](https://supabase.com/dashboard/project/projectid)
 2. Go to **Authentication > Providers**
 3. Enable **Google** provider and paste your Client ID and Client Secret
 4. Go to **Authentication > URL Configuration**
@@ -237,7 +260,7 @@ npx supabase@latest db push
 ```
 
 **Option B: Apply via Supabase Dashboard**
-- Go to [SQL Editor](https://supabase.com/dashboard/project/stbumtfkanunkgopitfd/sql) 
+- Go to [SQL Editor](https://supabase.com/dashboard/project/projectid/sql) 
 - Copy and paste migration content
 - Execute the SQL
 

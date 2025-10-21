@@ -12,34 +12,34 @@ const Header = () => {
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-sm border-b border-white/10">
-      <div className="container mx-auto px-6 py-4">
+      <div className="container mx-auto px-4 py-2 md:px-6 md:py-4">
         <div className="flex items-center justify-between">
           <Link 
             to="/" 
             className="flex items-center gap-3 hover:text-accent transition-colors"
             aria-label="ClaimWell home"
           >
-            <img src="/logo-only-transparent.png" alt="ClaimWell logo" className="w-9 h-9 object-contain -mt-2 -mb-2" />
-            <div className="leading-none">
+            <img src="/logo-only-transparent.png" alt="ClaimWell logo" className="w-7 h-7 md:w-9 md:h-9 object-contain" />
+            {/* <div className="leading-none">
               <span className="text-3xl md:text-4xl font-extrabold text-white/80 -mt-1">W</span>
-            </div>
+            </div> */}
           </Link>
           
           {/* Mobile Navigation - Show only Claims and Community with icons */}
-          <nav className="flex md:hidden items-center gap-4">
+          <nav className="flex md:hidden items-center gap-2">
             <Link 
               to="/claims" 
-              className="text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+              className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Claims"
             >
-              <FileText className="w-7 h-7" />
+              <FileText className="w-6 h-6" />
             </Link>
             <Link 
               to="/community" 
-              className="text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+              className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Community"
             >
-              <Users className="w-7 h-7" />
+              <Users className="w-6 h-6" />
             </Link>
           </nav>
 
@@ -71,9 +71,9 @@ const Header = () => {
           <div className="flex items-center gap-4">
             {/* Mobile Hamburger Menu */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <div className="md:hidden w-14 h-14 flex items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
-                  <Menu className="h-8 w-8" />
+                <SheetTrigger asChild>
+                <div className="md:hidden w-12 h-12 flex items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
+                  <Menu className="h-6 w-6" />
                 </div>
               </SheetTrigger>
               <SheetContent side="right" className="w-32 bg-background/95 backdrop-blur-sm">

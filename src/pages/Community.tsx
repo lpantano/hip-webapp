@@ -229,7 +229,7 @@ const Community = () => {
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
               Our Community
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
