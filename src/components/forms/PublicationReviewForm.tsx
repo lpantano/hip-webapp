@@ -32,6 +32,7 @@ import {
   ETHNICITY_OPTIONS
 } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import quality from '@/lib/quality-colors';
 
 interface Publication {
   id: string;
@@ -440,18 +441,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     });
   };
 
-  const getQualityColor = (value: ReviewAnswer) => {
-    switch (value) {
-      case 'PASS':
-        return 'text-green-700 bg-green-50 border-green-200';
-      case 'NO':
-        return 'text-white bg-yellow-700 border-yellow-800';
-      case 'NA':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
+  const getQualityColor = (value: ReviewAnswer) => quality.badge(value);
 
   if (!publication) return null;
 
@@ -605,11 +595,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateQualityCheck('studyDesign', option)}
                             className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.studyDesign === option
-                                ? option === 'PASS'
-                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
-                                  : option === 'NO'
-                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
-                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
@@ -630,11 +616,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateQualityCheck('representation', option)}
                             className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.representation === option
-                                ? option === 'PASS'
-                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
-                                  : option === 'NO'
-                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
-                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
@@ -655,11 +637,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateQualityCheck('controlGroup', option)}
                             className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.controlGroup === option
-                                ? option === 'PASS'
-                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
-                                  : option === 'NO'
-                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
-                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
@@ -680,11 +658,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateQualityCheck('biasAddressed', option)}
                             className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.biasAddressed === option
-                                ? option === 'PASS'
-                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
-                                  : option === 'NO'
-                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
-                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
@@ -705,11 +679,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateQualityCheck('statistics', option)}
                             className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.statistics === option
-                                ? option === 'PASS'
-                                  ? 'bg-green-100 text-green-800 border-green-400 shadow-sm'
-                                  : option === 'NO'
-                                  ? 'bg-red-100 text-red-800 border-red-400 shadow-sm'
-                                  : 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm'
+                                ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >

@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import quality from '@/lib/quality-colors';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -551,27 +552,24 @@ const Claims = () => {
                     <div className="font-semibold text-sm">{reviewCard.expert.display_name || 'Expert'}</div>
                     <div className="text-xs text-muted-foreground">Expert Review</div>
                     {reviewCard.expert.classification && (
-                      <div className="mt-1">
+                      <div className="mt-1 flex items-start gap-3">
                         <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
                           {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                         </Badge>
                         {/* Show reasons for negative classifications */}
                         {reviewCard.expert.reviewData && 
-                         (reviewCard.expert.classification === 'Invalid' || 
+                        (reviewCard.expert.classification === 'Invalid' || 
                           reviewCard.expert.classification === 'Unreliable' || 
                           reviewCard.expert.classification === 'Fallacy') && (
-                          <div className="mt-2">
+                          <div className="flex-1">
                             {(() => {
                               const reasons = getClassificationReasons(reviewCard.expert.reviewData);
                               if (reasons.length > 0) {
                                 return (
-                                  <div className="text-xs text-muted-foreground">
-                                    <div className="font-medium mb-1">Reason{reasons.length > 1 ? 's' : ''}:</div>
-                                    <ul className="list-disc list-inside space-y-1">
-                                      {reasons.map((reason, i) => (
-                                        <li key={i}>{reason}</li>
-                                      ))}
-                                    </ul>
+                                  <div className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                                    {reasons.map((reason, i) => (
+                                      <div key={i}>{reason}</div>
+                                    ))}
                                   </div>
                                 );
                               }
@@ -658,9 +656,9 @@ const Claims = () => {
                               <span className="text-sm text-muted-foreground">{label}:</span>
                             );
                           })()}
-                          <Badge className={`text-xs px-1 py-1 ${scoreItem.score === 'NO' ? 'bg-yellow-700 text-white hover:bg-yellow-800' : ''}`}>
-                            {scoreItem.score ?? 'No score'}
-                          </Badge>
+                            <Badge className={`text-xs px-1 py-1 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
+                              {scoreItem.score ?? 'No score'}
+                            </Badge>
                         </div>
                       ))}
                     </div>
@@ -1020,7 +1018,7 @@ const Claims = () => {
                                 <div className="flex-1">
                                   <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
                                   <p className="text-xs text-muted-foreground">
-                                    {pub.authors} • {pub.journal} ({pub.year})
+                                    {pub.authors} • {pub.journal} ({pub.year}) 
                                   </p>
                                 </div>
                               </div>
