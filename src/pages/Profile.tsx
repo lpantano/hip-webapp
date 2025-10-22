@@ -54,17 +54,26 @@ const Profile = () => {
     enabled: !!user
   });
 
-  // Check if user is expert
-  const { data: isExpert = false } = useQuery({
+  // Determine the user's role among 'expert' or 'researcher' (null if neither).
+  const { data: userRole = null } = useQuery({
     queryKey: ['user-expert-status', user?.id],
     queryFn: async () => {
-      if (!user) return false;
-      const { data } = await supabase
-        .rpc('has_role', { _user_id: user.id, _role: 'expert' });
-      return data || false;
+      if (!user) return null;
+      // Check for both 'expert' and 'researcher' roles in parallel.
+      const [{ data: isExpertRole }, { data: isResearcherRole }] = await Promise.all([
+        supabase.rpc('has_role', { _user_id: user.id, _role: 'expert' }),
+        supabase.rpc('has_role', { _user_id: user.id, _role: 'researcher' })
+      ]);
+
+      if (isExpertRole) return 'expert';
+      if (isResearcherRole) return 'researcher';
+      return null;
     },
     enabled: !!user
   });
+
+  // Convenience boolean for showing expert-related UI if they have either role
+  const isExpertOrResearcher = !!userRole;
 
   // Fetch expert data if user is expert
   const { data: expertData } = useQuery({
@@ -80,7 +89,7 @@ const Profile = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user && isExpert
+    enabled: !!user && isExpertOrResearcher
   });
 
   // Set form values when data loads
@@ -103,19 +112,19 @@ const Profile = () => {
     }
   }, [expertData]);
 
-  // Fetch existing social links for this expert
+  // Fetch existing social links for this expert (use experts.id, which references social_media_links.expert_id)
   const { data: socialLinksData } = useQuery({
-    queryKey: ['expert-social-links', expertData?.user_id],
+    queryKey: ['expert-social-links', expertData?.id],
     queryFn: async () => {
-      if (!expertData?.user_id) return [];
+      if (!expertData?.id) return [];
       const { data, error } = await supabase
         .from('social_media_links')
         .select('*')
-        .eq('expert_id', expertData.user_id);
+        .eq('expert_id', expertData.id);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!expertData?.user_id
+    enabled: !!expertData?.id
   });
 
   useEffect(() => {
@@ -291,10 +300,10 @@ const Profile = () => {
                       Personal Information
                     </CardTitle>
                     <CardDescription>Update your basic profile details and avatar</CardDescription>
-                    {isExpert && (
+                    {isExpertOrResearcher && (
                       <Badge variant="secondary" className="flex items-center gap-1 mt-2 w-fit">
                         <Shield className="w-3 h-3" />
-                        Expert
+                        {userRole === 'researcher' ? 'Researcher' : 'Expert'}
                       </Badge>
                     )}
                   </div>
@@ -344,7 +353,7 @@ const Profile = () => {
             </Card>
 
             {/* Expert Profile Card */}
-            {isExpert && (
+                    {isExpertOrResearcher && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
