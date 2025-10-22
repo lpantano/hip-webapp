@@ -516,9 +516,9 @@ const Claims = () => {
           ref={containerRef}
           className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-2"
           role="list"
-          aria-label="Expert reviews"
+          aria-label=""
         >
-          {reviewCards.map((reviewCard) => {
+            {reviewCards.map((reviewCard) => {
             // Extract tags from the reviewCard (if present)
             // The tags are not currently passed in the reviewCard, so we need to get them from classification or add them to the reviewCard in the parent if possible.
             // For now, try to get them from the expert.classification if it is an object (future-proofing), else skip.
@@ -526,38 +526,45 @@ const Claims = () => {
             const tags = reviewCard.expert.tags || null;
             return (
               <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-4 shadow-sm">
-                {/* Expert Header */}
-                <div className="flex items-center gap-3 mb-3">
-                  {reviewCard.expert.avatar_url ? (
-                    <img 
-                      src={reviewCard.expert.avatar_url} 
-                      alt={reviewCard.expert.display_name || 'Expert'} 
-                      className="w-10 h-10 rounded-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        if (target.nextElementSibling) {
-                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                        }
-                      }}
-                    />
-                  ) : null}
-                  <div 
-                    className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
-                    style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
-                  >
-                    {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                {/* Top row: Avatar + Publication info */}
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="flex flex-col items-center gap-2 w-24">
+                    {reviewCard.expert.avatar_url ? (
+                      <img
+                        src={reviewCard.expert.avatar_url}
+                        alt={reviewCard.expert.display_name || 'Expert'}
+                        className="w-12 h-12 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          if (target.nextElementSibling) {
+                            (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
+                      style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
+                    >
+                      {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
+                    </div>
+                    <div className="font-semibold text-sm text-center">{reviewCard.expert.display_name || 'Expert'}</div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-sm">{reviewCard.expert.display_name || 'Expert'}</div>
-                    <div className="text-xs text-muted-foreground">Expert Review</div>
+
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
+                    </p>
+                    <br></br>
                     {reviewCard.expert.classification && (
-                      <div className="mt-1 flex items-start gap-3">
-                        <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
-                          {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
-                        </Badge>
-                        {/* Show reasons for negative classifications */}
-                        {reviewCard.expert.reviewData && 
+                    <div className="flex items-start gap-3 mb-2">
+                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
+                        {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
+                      </Badge>
+
+                      {reviewCard.expert.reviewData && 
                         (reviewCard.expert.classification === 'Invalid' || 
                           reviewCard.expert.classification === 'Unreliable' || 
                           reviewCard.expert.classification === 'Fallacy') && (
@@ -577,110 +584,105 @@ const Claims = () => {
                             })()}
                           </div>
                         )}
-                      </div>
-                    )}
-                    {/* Show tags if present */}
-                    {tags && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && (
-                          <span className="text-xs flex items-center gap-1">
-                            <span className="font-medium">Ethnicities:</span>
-                            {tags.ethnicityLabels.map((eth: string, i: number) => (
-                              <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
-                            ))}
-                          </span>
-                        )}
-                        {Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && (
-                          <span className="text-xs flex items-center gap-1">
-                            <span className="font-medium">Ages:</span>
-                            {tags.ageRanges.map((age: string, i: number) => (
-                              <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
-                            ))}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {/* Show Women Not Included label if flagged */}
-                    {reviewCard.expert.womenNotIncluded && (
-                      <div className="mt-2">
-                        <Badge className="text-xs bg-red-100 text-red-800">
-                          ♀ Women Not Included
-                        </Badge>
-                      </div>
-                    )}
+                    </div>
+                  )}
+
+                  {tags && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && (
+                        <span className="text-xs flex items-center gap-1">
+                          <span className="font-medium">Ethnicities:</span>
+                          {tags.ethnicityLabels.map((eth: string, i: number) => (
+                            <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
+                          ))}
+                        </span>
+                      )}
+                      {Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && (
+                        <span className="text-xs flex items-center gap-1">
+                          <span className="font-medium">Ages:</span>
+                          {tags.ageRanges.map((age: string, i: number) => (
+                            <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
+                          ))}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {reviewCard.expert.womenNotIncluded && (
+                    <div className="mb-2">
+                      <Badge className="text-xs bg-red-100 text-red-800">
+                        ♀ Women Not Included
+                      </Badge>
+                    </div>
+                  )}
                   </div>
+                  
                 </div>
 
-                {/* Publication Info */}
-                <div className="mb-4 pb-3 border-b border-border">
-                  <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
-                  </p>
-                </div>
+                {/* Bottom row: Review content (classification, tags, scores, comments) */}
+                <div className="mt-2">
+                  
 
-                {/* Scores */}
-                {reviewCard.expert.scores.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-row flex-wrap gap-3 items-center">
-                      {reviewCard.expert.scores.map((scoreItem, idx) => (
-                        <div key={idx} className="flex items-center gap-1">
-                          {(() => {
-                            // Explanations and human labels for each score category
-                            const explanations: Record<string, string> = {
-                              studyDesign: 'Was the study designed to answer this claim?',
-                              representation: 'Do the people in the study represent the kinds of people the claim is about?',
-                              controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
-                              biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
-                              statistics: 'Were statistical tests appropriate for the study design and data type?'
-                            };
-                            const humanLabels: Record<string, string> = {
-                              studyDesign: 'Study Design',
-                              representation: 'Representation',
-                              controlGroup: 'Control Group',
-                              biasAddressed: 'Bias Addressed',
-                              statistics: 'Statistics'
-                            };
-                            const label = humanLabels[scoreItem.category] || scoreItem.category;
-                            const explanation = explanations[scoreItem.category] || '';
-                            return explanation ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
-                                </PopoverTrigger>
-                                <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                  {explanation}
-                                </PopoverContent>
-                              </Popover>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">{label}:</span>
-                            );
-                          })()}
+                  {reviewCard.expert.scores.length > 0 && (
+                    <div className="mb-2">
+                      <div className="flex flex-row flex-wrap gap-3 items-center">
+                        {reviewCard.expert.scores.map((scoreItem, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            {(() => {
+                              const explanations: Record<string, string> = {
+                                studyDesign: 'Was the study designed to answer this claim?',
+                                representation: 'Do the people in the study represent the kinds of people the claim is about?',
+                                controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
+                                biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
+                                statistics: 'Were statistical tests appropriate for the study design and data type?'
+                              };
+                              const humanLabels: Record<string, string> = {
+                                studyDesign: 'Study Design',
+                                representation: 'Representation',
+                                controlGroup: 'Control Group',
+                                biasAddressed: 'Bias Addressed',
+                                statistics: 'Statistics'
+                              };
+                              const label = humanLabels[scoreItem.category] || scoreItem.category;
+                              const explanation = explanations[scoreItem.category] || '';
+                              return explanation ? (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                    {explanation}
+                                  </PopoverContent>
+                                </Popover>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">{label}:</span>
+                              );
+                            })()}
                             <Badge className={`text-xs px-1 py-1 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
                               {scoreItem.score ?? 'No score'}
                             </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Comments */}
-                {reviewCard.expert.comments.length > 0 && (
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
-                    <div className="space-y-2">
-                      {reviewCard.expert.comments.map((comment, idx) => (
-                        <div key={idx} className="bg-muted/20 p-3 rounded-md">
-                          <div className="text-xs text-muted-foreground mb-1">
-                            {new Date(comment.created_at).toLocaleDateString()}
                           </div>
-                          <div className="text-sm">"{comment.content}"</div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {reviewCard.expert.comments.length > 0 && (
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
+                      <div className="space-y-2">
+                        {reviewCard.expert.comments.map((comment, idx) => (
+                          <div key={idx} className="bg-muted/20 p-3 rounded-md">
+                            <div className="text-xs text-muted-foreground mb-1">
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </div>
+                            <div className="text-sm">"{comment.content}"</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -1006,9 +1008,9 @@ const Claims = () => {
                 {expandedClaim === claim.id && (
                   <CardContent className="pt-0">
                     <div className="border-t border-border pt-4">
-                      <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                      {/* <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
                         Individual Expert Reviews
-                      </h4>
+                      </h4> */}
                       <div className="space-y-4">
                         {claim.publications.map((pub, pubIndex) => (
                           <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
