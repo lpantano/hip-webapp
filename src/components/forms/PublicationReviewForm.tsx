@@ -605,26 +605,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       </div>
                     </div>
                     
-                    {/* Representation */}
-                    <div className="bg-white border rounded-lg p-3">
-                      <Label className="text-xs font-medium block mb-3 text-gray-700">Representation</Label>
-                      <div className="flex gap-2 flex-wrap">
-                        {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => updateQualityCheck('representation', option)}
-                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
-                              reviewData.qualityChecks.representation === option
-                                ? quality.buttonActive(option)
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                            }`}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {/* Representation was removed from the schema — UI intentionally omitted for current reviews. */}
                     
                     {/* Control Group */}
                     <div className="bg-white border rounded-lg p-3">

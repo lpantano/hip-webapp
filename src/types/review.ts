@@ -19,7 +19,6 @@ export interface ReviewTags {
 
 export interface ReviewQualityChecks {
   studyDesign: ReviewAnswer; // Was the study designed to answer this claim?
-  representation: ReviewAnswer; // Do the people in the study represent the kinds of people the claim is about?
   controlGroup: ReviewAnswer; // Was there a proper control group?
   biasAddressed: ReviewAnswer; // Were confounding variables identified and tracked?
   statistics: ReviewAnswer; // Were statistical tests appropriate?
@@ -55,7 +54,6 @@ export const createEmptyReviewData = (): ReviewData => ({
   },
   qualityChecks: {
     studyDesign: 'NA',
-    representation: 'NA',
     controlGroup: 'NA',
     biasAddressed: 'NA',
     statistics: 'NA'
@@ -130,9 +128,6 @@ export const getClassificationReasons = (data: any): string[] => {
   // Check for Unreliable reasons (quality checks)
   if (data.qualityChecks?.studyDesign === 'NO') {
     reasons.push("Poor study design");
-  }
-  if (data.qualityChecks?.representation === 'NO') {
-    reasons.push("Poor representation");
   }
   if (data.qualityChecks?.controlGroup === 'NO') {
     reasons.push("No adequate control group");

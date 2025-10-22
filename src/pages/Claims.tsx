@@ -62,7 +62,6 @@ interface PublicationScoreRow {
     };
     qualityChecks?: {
       studyDesign?: 'PASS' | 'NO' | 'NA' | null;
-      representation?: 'PASS' | 'NO' | 'NA' | null;
       controlGroup?: 'PASS' | 'NO' | 'NA' | null;
       biasAddressed?: 'PASS' | 'NO' | 'NA' | null;
       statistics?: 'PASS' | 'NO' | 'NA' | null;
@@ -631,14 +630,13 @@ const Claims = () => {
                             {(() => {
                               const explanations: Record<string, string> = {
                                 studyDesign: 'Was the study designed to answer this claim?',
-                                representation: 'Do the people in the study represent the kinds of people the claim is about?',
+                                // representation removed from UI/labels — kept in DB for backward compatibility but not surfaced
                                 controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
                                 biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
                                 statistics: 'Were statistical tests appropriate for the study design and data type?'
                               };
                               const humanLabels: Record<string, string> = {
                                 studyDesign: 'Study Design',
-                                representation: 'Representation',
                                 controlGroup: 'Control Group',
                                 biasAddressed: 'Bias Addressed',
                                 statistics: 'Statistics'
@@ -1215,7 +1213,6 @@ const Claims = () => {
                       // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
                       const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
                         { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
-                        { category: 'representation', score: latestRow?.review_data?.qualityChecks?.representation ?? null },
                         { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
                         { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
                         { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }

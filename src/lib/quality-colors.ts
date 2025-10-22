@@ -1,18 +1,16 @@
-export type ReviewAnswer = 'PASS' | 'NO' | 'NA' | string;
+import type { ReviewAnswer } from '@/types/review';
 
 // Centralized class mappings for quality-answer UI styles.
 // Keep these in one place so buttons and badges stay consistent across the app.
-export const quality = {
+const quality = {
   // Classes used for small badge-like displays (e.g. in review reels)
-  badge: (value: ReviewAnswer) => {
+  badge: (value?: ReviewAnswer | null) => {
     switch (value) {
       case 'PASS':
         return 'text-green-700 bg-green-50 border-green-200';
       case 'NO':
-        // Use high-contrast styling for NO to stand out
-        return 'text-white bg-yellow-700 border-yellow-800';
+        return 'text-red-700 bg-red-50 border-red-200';
       case 'NA':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
@@ -26,7 +24,6 @@ export const quality = {
       case 'NO':
         return 'bg-red-100 text-red-800 border-red-400 shadow-sm';
       case 'NA':
-        return 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-400 shadow-sm';
     }
