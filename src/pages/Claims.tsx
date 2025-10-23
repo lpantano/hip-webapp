@@ -722,10 +722,10 @@ const Claims = () => {
 
           {/* Tabs Navigation */}
           <Tabs defaultValue="claims" className="max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="claims">Claims</TabsTrigger>
-              <TabsTrigger value="trusted-resources">Trusted Resources</TabsTrigger>
-            </TabsList>
+            {/* <TabsList className="grid w-full grid-cols-2 mb-8"> */}
+              {/* <TabsTrigger value="claims">Claims</TabsTrigger> */}
+              {/* <TabsTrigger value="trusted-resources">Trusted Resources</TabsTrigger> */}
+            {/* </TabsList> */}
 
             {/* Claims Tab */}
             <TabsContent value="claims" className="space-y-6">
@@ -1147,9 +1147,9 @@ const Claims = () => {
             )}
             </TabsContent>
 
-            <TabsContent value="trusted-resources" className="space-y-6">
+            {/* <TabsContent value="trusted-resources" className="space-y-6">
               <ResourcesSection />
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
 
           {/* Paper Submission Dialog */}

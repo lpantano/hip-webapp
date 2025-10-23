@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/auth/UserMenu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, FileText, Users } from 'lucide-react';
+import { Menu, FileText, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 
 const Header = () => {
@@ -32,14 +32,14 @@ const Header = () => {
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Claims"
             >
-              <FileText className="w-6 h-6" />
+              Claims
             </Link>
             <Link 
               to="/community" 
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Community"
             >
-              <Users className="w-6 h-6" />
+              Community
             </Link>
           </nav>
 
