@@ -87,6 +87,32 @@ npx netlify deploy --prod --dir=dist
 ---
 Alternatively, you can open [Lovable](https://lovable.dev/projects/ce017a26-619d-424c-9f9d-57352e8d9493) and click on Share -> Publish.
 
+### Single-page app (SPA) reloads / 404 on refresh
+
+When you deploy a client-side routed SPA (this project uses React Router's BrowserRouter), visiting a nested URL directly or hitting the browser "reload" button can return a 404 from static hosts that don't rewrite requests back to `index.html`.
+
+Why: The server receives a request for e.g. `/claims` and looks for a `/claims` file. Without a rewrite rule it returns 404 instead of serving `index.html` which lets the client router handle the path.
+
+How to fix:
+
+- Netlify: add a `public/_redirects` file with the single line:
+
+   /*    /index.html   200
+
+   (A `_redirects` file is already included in the `public/` folder in this repo.)
+
+- GitHub Pages: either switch to HashRouter (client-side paths like `/#/claims`) or add a fallback `404.html` that redirects to `/` (this repo includes a simple `public/404.html` that redirects to the root). See GitHub Pages docs for full options.
+
+- Other static hosts (Firebase Hosting, Surge, Azure Static Web Apps, S3+CloudFront, etc.): configure a rewrite rule from "/*" to `/index.html` so the SPA can handle routing client-side.
+
+Alternative: if you can't add server rewrites, switch to `HashRouter` in `src/App.tsx` (small code change) so routes are placed after a `#` and static hosts will serve `index.html` for every path.
+
+If you'd like, I can either:
+
+- Keep BrowserRouter and add server-specific rewrite docs for your target host (recommended), or
+- Replace `BrowserRouter` with `HashRouter` in `src/App.tsx` (fast, less-ideal for SEO/clean URLs).
+
+
 ## Authentication Setup
 
 This project includes a complete authentication system with Google OAuth and email/password login. To set it up properly:
