@@ -190,24 +190,38 @@ const Community = () => {
             </Badge>
           </div>
           <div className="flex gap-1 mt-2">
-            {(Array.isArray(member.social_media_links) ? member.social_media_links : []).map((link: { platform: string; url: string }) => {
-              if (!link.platform || !link.url) return null;
-              const Icon = getSocialIcon(link.platform);
-              return (
-                <Button 
-                  key={link.platform}
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 p-0" 
-                  onClick={(e) => e.stopPropagation()}
-                  asChild
-                >
-                  <a href={link.url} target="_blank" rel="noopener noreferrer">
-                    <Icon className="h-3 w-3" />
-                  </a>
-                </Button>
-              );
-            })}
+            {(() => {
+              const links = (Array.isArray(member.social_media_links) ? member.social_media_links : []) as { platform: string; url: string }[];
+              // Deduplicate by URL (trimmed) to avoid multiple identical icons
+              const seen = new Set<string>();
+              const uniqueLinks = links.filter(l => {
+                const url = (l.url || '').trim();
+                if (!url) return false;
+                if (seen.has(url)) return false;
+                seen.add(url);
+                return true;
+              });
+
+              return uniqueLinks.map((link) => {
+                if (!link.platform || !link.url) return null;
+                const Icon = getSocialIcon(link.platform);
+                // use url as key since it's unique after dedupe
+                return (
+                  <Button 
+                    key={link.url}
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 p-0" 
+                    onClick={(e) => e.stopPropagation()}
+                    asChild
+                  >
+                    <a href={link.url} target="_blank" rel="noopener noreferrer">
+                      <Icon className="h-3 w-3" />
+                    </a>
+                  </Button>
+                );
+              });
+            })()}
             {member.website && (
               <Button variant="ghost" size="icon" className="h-7 w-7 p-0" onClick={(e) => e.stopPropagation()} asChild>
                 <a href={member.website} target="_blank" rel="noopener noreferrer">
@@ -340,20 +354,32 @@ const Community = () => {
                   <div>
                     <h4 className="font-semibold mb-3">Connect</h4>
                     <div className="flex flex-wrap gap-2">
-                      {(Array.isArray(selectedMember.social_media_links) ? selectedMember.social_media_links : []).map((link: { platform: string; url: string }) => {
-                        if (!link.platform || !link.url) return null;
-                        const Icon = getSocialIcon(link.platform);
-                        const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);
-                        return (
-                          <Button key={link.platform} variant="outline" size="sm" asChild>
-                            <a href={link.url} target="_blank" rel="noopener noreferrer">
-                              <Icon className="h-4 w-4 mr-2" />
-                              {platformName}
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </a>
-                          </Button>
-                        );
-                      })}
+                      {(() => {
+                        const links = (Array.isArray(selectedMember.social_media_links) ? selectedMember.social_media_links : []) as { platform: string; url: string }[];
+                        const seen = new Set<string>();
+                        const uniqueLinks = links.filter(l => {
+                          const url = (l.url || '').trim();
+                          if (!url) return false;
+                          if (seen.has(url)) return false;
+                          seen.add(url);
+                          return true;
+                        });
+
+                        return uniqueLinks.map((link) => {
+                          if (!link.platform || !link.url) return null;
+                          const Icon = getSocialIcon(link.platform);
+                          const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);
+                          return (
+                            <Button key={link.url} variant="outline" size="sm" asChild>
+                              <a href={link.url} target="_blank" rel="noopener noreferrer">
+                                <Icon className="h-4 w-4 mr-2" />
+                                {platformName}
+                                <ExternalLink className="h-3 w-3 ml-1" />
+                              </a>
+                            </Button>
+                          );
+                        });
+                      })()}
                       {selectedMember.website && (
                         <Button variant="outline" size="sm" asChild>
                           <a href={selectedMember.website} target="_blank" rel="noopener noreferrer">
