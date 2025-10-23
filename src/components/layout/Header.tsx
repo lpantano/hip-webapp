@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/auth/UserMenu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, FileText, Users } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Menu, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 
 const Header = () => {
@@ -32,14 +32,14 @@ const Header = () => {
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Claims"
             >
-              <FileText className="w-6 h-6" />
+              Claims
             </Link>
             <Link 
               to="/community" 
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Community"
             >
-              <Users className="w-6 h-6" />
+              Community
             </Link>
           </nav>
 
@@ -70,45 +70,28 @@ const Header = () => {
           
           <div className="flex items-center gap-4">
             {/* Mobile Hamburger Menu */}
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetTrigger asChild>
-                <div className="md:hidden w-12 h-12 flex items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
                   <Menu className="h-6 w-6" />
-                </div>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-32 bg-background/95 backdrop-blur-sm">
-                <div className="flex flex-col gap-4 mt-8">
-                  <Link 
-                    to="/" 
-                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Home
-                  </Link>
-                  <Link 
-                    to="/about" 
-                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    About
-                  </Link>
-                  <Link 
-                    to="/features" 
-                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Features
-                  </Link>
-                  <Link 
-                    to="/legal" 
-                    className="text-foreground hover:text-primary transition-colors p-2 rounded-md hover:bg-accent"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Legal
-                  </Link>
-                </div>
-              </SheetContent>
-            </Sheet>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {/* <DropdownMenuItem asChild>
+                  <Link to="/" className="cursor-pointer">Home</Link>
+                </DropdownMenuItem> */}
+                <DropdownMenuItem asChild>
+                  <Link to="/about" className="cursor-pointer">About</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/features" className="cursor-pointer">Features</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/legal" className="cursor-pointer">Legal</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* User Menu / Auth Button */}
             {loading ? (
