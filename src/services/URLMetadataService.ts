@@ -70,6 +70,55 @@ export class URLMetadataService {
     }
   }
 
+  /**
+   * Lightweight helper that only fetches and returns the page title.
+   * Uses the same fetch + CORS-fallback strategy as fetchMetadata but
+   * stops early once the title is extracted to reduce work and data.
+   */
+  static async fetchTitle(url: string): Promise<string | null> {
+    if (!url) return null;
+
+    try {
+      const sourceType = this.determineSourceType(url);
+
+      let htmlContent = '';
+
+      try {
+        const directResponse = await fetch(url, { mode: 'cors' });
+        if (directResponse.ok) {
+          htmlContent = await directResponse.text();
+        }
+      } catch {
+        try {
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+          const proxyResponse = await fetch(proxyUrl);
+
+          if (proxyResponse.ok) {
+            const data = await proxyResponse.json();
+            htmlContent = data.contents;
+          }
+        } catch {
+          // If we can't fetch HTML, return either the URL or null
+          return url;
+        }
+      }
+
+      if (!htmlContent) return url;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      const title = this.extractTitle(doc, url);
+      return title;
+    } catch (error) {
+      console.error('Error fetching title:', error);
+      try {
+        return url;
+      } catch {
+        return null;
+      }
+    }
+  }
+
   private static extractTitle(doc: Document, url: string): string {
     // Try Open Graph title first
     const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content');
