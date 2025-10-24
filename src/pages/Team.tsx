@@ -65,14 +65,14 @@ const Team = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
               Meet Our Team
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -162,7 +162,7 @@ const Team = () => {
               <p className="text-muted-foreground mb-4">
                 Interested in joining our mission? We're always looking for passionate individuals.
               </p>
-              <Button size="lg" className="bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:opacity-90">
                 <Mail className="h-5 w-5 mr-2" />
                 Get In Touch
               </Button>
