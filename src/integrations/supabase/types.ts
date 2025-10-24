@@ -790,11 +790,11 @@ export type Database = {
         | "disputed"
         | "needs_more_evidence"
         | "under review"
-      evidence_score_category:
-        | "study_size"
-        | "population"
-        | "consensus"
-        | "interpretation"
+      // evidence_score_category:
+      //   | "study_size"
+      //   | "population"
+      //   | "consensus"
+      //   | "interpretation"
       expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
       publication_stance: "supporting" | "contradicting" | "neutral" | "mixed"
       source_type:
