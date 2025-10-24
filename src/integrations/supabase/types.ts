@@ -789,6 +789,7 @@ export type Database = {
         | "verified"
         | "disputed"
         | "needs_more_evidence"
+        | "under review"
       evidence_score_category:
         | "study_size"
         | "population"

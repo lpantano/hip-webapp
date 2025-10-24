@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { DOIService } from '@/services/DOIService';
-import { URLMetadataService } from '@/services/URLMetadataService';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
@@ -59,7 +58,6 @@ interface ClaimSubmissionFormProps {
 export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDOI, setLoadingDOI] = useState<number | null>(null);
-  const [loadingURL, setLoadingURL] = useState<number | null>(null);
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
@@ -114,33 +112,24 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     }
   };
 
-  const fetchURLMetadata = async (url: string, index: number) => {
+  // Save only the provided URL into the form's source object. Do not fetch any metadata.
+  const saveURLOnly = async (url: string, index: number) => {
     if (!url) return;
-    
-    setLoadingURL(index);
+
     try {
-      const metadata = await URLMetadataService.fetchMetadata(url);
-      if (metadata) {
-        if (metadata.title) form.setValue(`sources.${index}.source_title`, metadata.title);
-        if (metadata.description) form.setValue(`sources.${index}.source_description`, metadata.description);
-        if (metadata.author) form.setValue(`sources.${index}.author_name`, metadata.author);
-        if (metadata.publishedDate) form.setValue(`sources.${index}.published_date`, metadata.publishedDate);
-        if (metadata.sourceType) form.setValue(`sources.${index}.source_type`, metadata.sourceType);
-        
-        toast({
-          title: "Source Data Retrieved",
-          description: `Successfully fetched details for: ${metadata.title?.substring(0, 50)}...`,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching URL metadata:', error);
+      // Ensure the field is set (the input is already controlled, but this guarantees the form value)
+      form.setValue(`sources.${index}.source_url`, url);
       toast({
-        title: "URL Fetch Error",
-        description: "Could not retrieve source data. Please enter details manually.",
+        title: "URL Saved",
+        description: `Saved source URL.`,
+      });
+    } catch (error) {
+      console.error('Error saving URL:', error);
+      toast({
+        title: "Save Error",
+        description: "Could not save the URL. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoadingURL(null);
     }
   };
 
@@ -209,31 +198,29 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         }
       }
 
-      // Insert sources if any
+      // Insert source links into `claim_links` table if any
       if (data.sources && data.sources.length > 0) {
-        const sourcesToInsert = data.sources.map(source => ({
+        const linksToInsert = data.sources.map(source => ({
           claim_id: claimData.id,
-          user_id: user.id,
-          source_type: (source.source_type || 'webpage') as 'webpage' | 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'facebook' | 'reddit' | 'podcast' | 'book' | 'research_paper' | 'other',
-          source_url: source.source_url || null,
-          source_title: source.source_title || null,
-          source_description: source.source_description || null,
-          author_name: source.author_name || null,
-          published_date: source.published_date || null,
+          expert_user_id: user.id,
+          link_type: source.source_type || 'webpage',
+          url: source.source_url || null,
+          title: source.source_title || null,
+          description: source.source_description || null,
         }));
 
-        console.log('Inserting sources:', sourcesToInsert);
+        console.log('Inserting claim_links:', linksToInsert);
 
-        const { error: sourcesError } = await supabase
-          .from('sources')
-          .insert(sourcesToInsert);
+        const { error: linksError } = await supabase
+          .from('claim_links')
+          .insert(linksToInsert);
 
-        if (sourcesError) {
-          console.error('Sources insert error:', sourcesError);
-          throw sourcesError;
+        if (linksError) {
+          console.error('claim_links insert error:', linksError);
+          throw linksError;
         }
 
-        console.log('Sources inserted successfully');
+        console.log('claim_links inserted successfully');
       }
 
       toast({
@@ -384,22 +371,20 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                               <div className="flex gap-2">
                                 <FormControl>
                                   <Input 
+                                    type="url"
                                     placeholder="https://..." 
                                     {...field}
+                                    onBlur={() => form.trigger(`sources.${index}.source_url`)}
                                   />
                                 </FormControl>
                                 <Button
                                   type="button"
                                   variant="secondary"
                                   size="sm"
-                                  onClick={() => fetchURLMetadata(field.value, index)}
-                                  disabled={!field.value || loadingURL === index}
+                                  onClick={() => saveURLOnly(field.value, index)}
+                                  disabled={!field.value}
                                 >
-                                  {loadingURL === index ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    'Fetch'
-                                  )}
+                                  Save
                                 </Button>
                               </div>
                               <FormMessage />
@@ -423,26 +408,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                             <Badge variant="secondary" className="mb-2">Auto-filled</Badge>
                             <h4 className="font-medium text-sm">{source.source_title}</h4>
                           </div>
-                          {source.source_type && (
-                            <p className="text-xs text-muted-foreground">
-                              Type: {source.source_type.charAt(0).toUpperCase() + source.source_type.slice(1)}
-                            </p>
-                          )}
-                          {source.author_name && (
-                            <p className="text-xs text-muted-foreground">
-                              Author: {source.author_name}
-                            </p>
-                          )}
-                          {source.published_date && (
-                            <p className="text-xs text-muted-foreground">
-                              Published: {source.published_date}
-                            </p>
-                          )}
-                          {source.source_description && (
-                            <p className="text-xs text-muted-foreground line-clamp-3">
-                              {source.source_description}
-                            </p>
-                          )}
+                          
                         </div>
                       )}
                     </div>

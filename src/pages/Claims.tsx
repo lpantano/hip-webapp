@@ -5,12 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn, FileWarning, ThumbsDown, ThumbsUp, Link, Unlink2, Link2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +21,7 @@ import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import quality from '@/lib/quality-colors';
+import { getCategoryColor } from '@/lib/getCategoryColor';
 import type { Database } from '@/integrations/supabase/types';
 
 interface ClaimRow {
@@ -45,6 +49,17 @@ interface PublicationRow {
   url?: string | null;
   authors?: string | null;
   stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  created_at: string;
+}
+
+interface ClaimLinkRow {
+  id: string;
+  claim_id: string;
+  expert_user_id: string;
+  title: string;
+  url: string;
+  description?: string | null;
+  link_type?: string | null;
   created_at: string;
 }
 
@@ -85,6 +100,8 @@ interface ClaimCommentRow {
 interface ClaimUI {
   id: string;
   claim: string;
+  user_id?: string;
+  rawStatus?: string;
   // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
   category: Database['public']['Enums']['claim_category'];
   votes: number;
@@ -99,9 +116,19 @@ interface ClaimUI {
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];
+  links?: {
+    id: string;
+    title: string;
+    url: string;
+    description?: string | null;
+    link_type?: string | null;
+    expert_user_id?: string | null;
+  }[];
   comments?: ClaimCommentRow[];
-  status: 'pending' | 'under_review' | 'approved';
+  // DB-backed status values (exposed directly)
+  status: 'proposed' | 'pending' | 'verified' | 'disputed' | 'needs more evidence' | 'under review';
 }
+
 
 
 
@@ -119,12 +146,44 @@ const Claims = () => {
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
+  const [showSourceForm, setShowSourceForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+
+  // Source dialog form state
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceTitle, setSourceTitle] = useState('');
+  const [sourceDescription, setSourceDescription] = useState('');
+  const [sourceType, setSourceType] = useState('webpage');
+  const [sourceSubmitting, setSourceSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  // Confirmation dialog state for toggling claim status
+  const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
+  const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
+
+  // Normalize and validate URL client-side. Returns normalized URL string or null if invalid.
+  const normalizeUrl = (raw: string) => {
+    if (!raw) return null;
+    let s = raw.trim();
+    // If scheme is missing, default to https://
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) {
+      s = `https://${s}`;
+    }
+    try {
+      const parsed = new URL(s);
+      // Basic check: must have hostname
+      if (!parsed.hostname) return null;
+      return parsed.toString();
+    } catch (e) {
+      return null;
+    }
+  };
 
   // component-scoped Supabase client
   const sb = supabase;
@@ -202,10 +261,12 @@ const Claims = () => {
       const claimIds = claimsData?.map(c => c.id) || [];
       const [
         { data: publicationsData, error: publicationsError },
-        { data: commentsData, error: commentsError }
+        { data: commentsData, error: commentsError },
+        { data: linksData, error: linksError }
       ] = await Promise.all([
         sb.from('publications').select('*').in('claim_id', claimIds),
-        sb.from('claim_comments').select('*').in('claim_id', claimIds).order('created_at', { ascending: true })
+        sb.from('claim_comments').select('*').in('claim_id', claimIds).order('created_at', { ascending: true }),
+        sb.from('claim_links').select('*').in('claim_id', claimIds)
       ]);
 
       if (publicationsError) throw publicationsError;
@@ -229,6 +290,15 @@ const Claims = () => {
         commentsByClaim[comment.claim_id].push(comment);
       });
 
+      // Group claim_links by claim_id
+      const linksByClaim: Record<string, ClaimLinkRow[]> = {};
+      ((linksData || []) as ClaimLinkRow[]).forEach((link) => {
+        if (!linksByClaim[link.claim_id]) linksByClaim[link.claim_id] = [];
+        linksByClaim[link.claim_id].push(link);
+      });
+
+      
+
       const mappedClaims: ClaimUI[] = (claimsData || []).map((c: ClaimRow) => {
         // map publications for this claim
         const claimPublications = publicationsByClaim[c.id] || [];
@@ -245,22 +315,19 @@ const Claims = () => {
           };
         });
 
-        const statusMap: Record<string, ClaimUI['status']> = {
-          pending: 'pending',
-          proposed: 'under_review',
-          needs_more_evidence: 'under_review',
-          verified: 'approved',
-          disputed: 'under_review'
-        };
 
         return {
           id: c.id,
           claim: c.title || c.description || '',
+          user_id: c.user_id,
           category: c.category,
           votes: c.vote_count || 0,
           publications: pubs,
+          links: (linksByClaim[c.id] || []).map(l => ({ id: l.id, title: l.title, url: l.url, description: l.description, link_type: l.link_type, expert_user_id: l.expert_user_id })),
           comments: commentsByClaim[c.id] || [],
-          status: statusMap[c.status] || 'pending'
+          // preserve DB enum/status values directly as requested
+          rawStatus: c.status,
+          status: c.status as ClaimUI['status']
         };
       });
 
@@ -423,25 +490,12 @@ const Claims = () => {
 
   const humanize = (s?: string) => (s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
 
-  const getCategoryColor = (category: Database['public']['Enums']['claim_category'] | string) => {
-    // Only map colors for DB-backed categories. Any unknown category falls back to neutral styling.
-    const colors: Record<string, string> = {
-      nutrition: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      fitness: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      mental_health: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      pregnancy: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      menopause: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      general_health: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      perimenopause: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    };
-
-    return colors[category] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-  };
+  // moved getCategoryColor to src/lib/getCategoryColor.ts for reuse across the app
 
   const getStatusColor = (status: string) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      under_review: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      'under review': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
@@ -459,6 +513,43 @@ const Claims = () => {
         return <div className="w-4 h-4 rounded-full bg-orange-400" title="Mixed evidence" />;
       default:
         return null;
+    }
+  };
+
+  const toggleClaimStatus = async (claimId: string, rawStatus?: string) => {
+    if (!user) return;
+    // Only allow toggle between 'proposed' and 'pending' ('under review')
+    if (rawStatus !== 'proposed' && rawStatus !== 'under review') return;
+
+    const newStatus = rawStatus === 'proposed' ? 'under review' : 'proposed';
+    try {
+      setUpdatingStatus(claimId);
+      const { error } = await sb.from('claims').update({ status: newStatus }).eq('id', claimId);
+      if (error) throw error;
+      // Refresh data
+      await fetchData(currentPage);
+      toast({ title: 'Status updated', description: `Claim status set to ${newStatus}.` });
+    } catch (e: unknown) {
+      console.error('Failed to update claim status', e);
+      const msg = e instanceof Error ? e.message : 'Failed to update status';
+      toast({ title: 'Update failed', description: msg, variant: 'destructive' });
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+  
+  // Confirm + toggle flow: user clicks badge -> open dialog -> confirmAndToggle calls toggleClaimStatus
+  const confirmAndToggle = async () => {
+    if (!confirmToggleClaimId || !confirmToggleRawStatus) {
+      setConfirmToggleClaimId(null);
+      setConfirmToggleRawStatus(null);
+      return;
+    }
+    try {
+      await toggleClaimStatus(confirmToggleClaimId, confirmToggleRawStatus);
+    } finally {
+      setConfirmToggleClaimId(null);
+      setConfirmToggleRawStatus(null);
     }
   };
 
@@ -835,9 +926,29 @@ const Claims = () => {
                       <Badge className={getCategoryColor(claim.category)}>
                         {humanize(claim.category)}
                       </Badge>
-                      <Badge className={getStatusColor(claim.status)}>
-                        {claim.status.replace('_', ' ')}
-                      </Badge>
+                      {(
+                        // Allow experts/researchers to request a status toggle between proposed <-> under review
+                        isExpert && (claim.rawStatus === 'proposed' || claim.rawStatus === 'under review')
+                      ) ? (
+                        <button
+                          onClick={() => {
+                            // open confirmation dialog instead of toggling immediately
+                            setConfirmToggleClaimId(claim.id);
+                            setConfirmToggleRawStatus(claim.rawStatus || null);
+                          }}
+                          className="inline-flex items-center"
+                          aria-label={`Toggle status for claim ${claim.id}`}
+                          disabled={updatingStatus === claim.id}
+                        >
+                          <Badge className={getStatusColor(claim.status)}>
+                            {updatingStatus === claim.id ? 'Updating...' : claim.status.replace('_', ' ')}
+                          </Badge>
+                        </button>
+                      ) : (
+                        <Badge className={getStatusColor(claim.status)}>
+                          {claim.status.replace('_', ' ')}
+                        </Badge>
+                      )}
                     </div>
                     
                     <Button
@@ -861,6 +972,21 @@ const Claims = () => {
                       </span>
                     </CardTitle>
                   </div>                  
+                  {/* Show claim links (sources) below the title, above the separator */}
+                  {claim.links && claim.links.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {claim.links.map((link) => (
+                        <div key={link.id} className="text-sm">
+                          <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                            {link.title || link.url}
+                          </a>
+                          {link.description && (
+                            <div className="text-xs text-muted-foreground">{link.description}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="mt-2 space-y-2">
                     {(() => {
@@ -1096,6 +1222,28 @@ const Claims = () => {
                           <FileText className="w-4 h-4" />
                           Add Paper
                         </Button>
+                              {(
+                                // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
+                                // AND the underlying DB status is exactly 'proposed'. We expose rawStatus on the mapped claim.
+                                user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed'))
+                              ) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setShowSourceForm(claim.id);
+                                    // prefill some fields if desired
+                                    setSourceUrl('');
+                                    setSourceTitle('');
+                                    setSourceDescription('');
+                                    setSourceType('webpage');
+                                  }}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Link className="w-4 h-4" />
+                                  Add Source
+                                </Button>
+                              )}
                       </div>
                     </div>
                   )}
@@ -1170,6 +1318,98 @@ const Claims = () => {
                     />
                   ) : null;
                 })()}
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Source Submission Dialog */}
+          {user && showSourceForm && (
+            <Dialog open={!!showSourceForm} onOpenChange={() => setShowSourceForm(null)}>
+              <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+                {(() => {
+                  const claim = filteredAndSortedClaims.find(c => c.id === showSourceForm);
+                  if (!claim) return null;
+
+                  const submitSource = async () => {
+                    const normalized = normalizeUrl(sourceUrl);
+                    if (!normalized) {
+                      toast({ title: 'Invalid URL', description: 'Please enter a valid URL before saving.', variant: 'destructive' });
+                      return;
+                    }
+
+                    setSourceSubmitting(true);
+                    try {
+                      const payload = {
+                        claim_id: claim.id,
+                        expert_user_id: user.id,
+                        title: sourceTitle || null,
+                        url: normalized,
+                        description: sourceDescription || null,
+                        link_type: sourceType || 'webpage'
+                      };
+
+                      const { error } = await sb.from('claim_links').insert(payload);
+                      if (error) {
+                        throw error;
+                      }
+
+                      // Refresh claims list
+                      await fetchData(currentPage);
+                      setShowSourceForm(null);
+                      toast({ title: 'Source added', description: 'Your source was added successfully.' });
+                    } catch (e: unknown) {
+                      console.error('Error adding source link:', e);
+                      const message = e instanceof Error ? e.message : 'Failed to add source.';
+                      toast({ title: 'Add Source Failed', description: message, variant: 'destructive' });
+                    } finally {
+                      setSourceSubmitting(false);
+                    }
+                  };
+
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Add Source to claim</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">URL</label>
+                          <Input value={sourceUrl} onChange={(e) => setSourceUrl((e.target as HTMLInputElement).value)} placeholder="https://..." />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Title (optional)</label>
+                          <Input value={sourceTitle} onChange={(e) => setSourceTitle((e.target as HTMLInputElement).value)} placeholder="Optional title" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Description (optional)</label>
+                          <Textarea value={sourceDescription} onChange={(e) => setSourceDescription((e.target as HTMLTextAreaElement).value)} placeholder="Short description" />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" size="sm" onClick={() => setShowSourceForm(null)}>Cancel</Button>
+                          <Button size="sm" onClick={submitSource} disabled={!sourceUrl || sourceSubmitting}>
+                            {sourceSubmitting ? 'Saving...' : 'Save Source'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Confirmation Dialog for toggling claim status */}
+          {user && (
+            <Dialog open={!!confirmToggleClaimId} onOpenChange={(open) => { if (!open) { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); } }}>
+              <DialogContent className="max-w-md">
+                <h3 className="text-lg font-semibold mb-2">Confirm status change</h3>
+                <p className="text-sm text-muted-foreground">
+                  {`Are you sure you want to change the status from "${confirmToggleRawStatus ? confirmToggleRawStatus.replace('_', ' ') : ''}" to "${confirmToggleRawStatus === 'proposed' ? 'under review' : 'proposed'}"?`}
+                </p>
+                <div className="flex gap-2 justify-end mt-4">
+                  <Button variant="outline" size="sm" onClick={() => { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); }}>Cancel</Button>
+                  <Button size="sm" onClick={confirmAndToggle} disabled={updatingStatus === confirmToggleClaimId}>
+                    {updatingStatus === confirmToggleClaimId ? 'Updating...' : 'Confirm'}
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
           )}
