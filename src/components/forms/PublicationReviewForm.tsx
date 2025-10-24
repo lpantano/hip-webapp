@@ -189,32 +189,37 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     if (reviewData.validation.overstatesEvidence) {
       return errors; // Empty array - no validation errors for Fallacy
     }
-    
+
     // If publication has other validation issues (Invalid), no further validation needed
     if (!reviewData.validation.isValid) {
       return errors; // Empty array - no validation errors for Invalid
     }
-    
-    // For valid publications, check system selection
-    const hasSystemSelected = Object.values(reviewData.systemUsed).some(system => system);
-    if (!hasSystemSelected) {
-      errors.push('Please select one study system (cells, animals, or humans)');
+
+    // If any quality check is marked as "NO", system and study size are NOT required
+    const qualityChecks = Object.values(reviewData.qualityChecks);
+    const anyNo = qualityChecks.includes('NO');
+
+    if (!anyNo) {
+      // For valid publications, check system selection
+      const hasSystemSelected = Object.values(reviewData.systemUsed).some(system => system);
+      if (!hasSystemSelected) {
+        errors.push('Please select one study system (cells, animals, or humans)');
+      }
+
+      // If humans are selected, study size should be selected
+      if (reviewData.systemUsed.humans && !reviewData.studySize) {
+        errors.push('Please select the study size for human studies');
+      }
     }
-    
-    // If humans are selected, study size should be selected
-    if (reviewData.systemUsed.humans && !reviewData.studySize) {
-      errors.push('Please select the study size for human studies');
-    }
-    
+
     // If publication is valid and has human studies, quality checks are important
     if (reviewData.systemUsed.humans) {
-      const qualityChecks = Object.values(reviewData.qualityChecks);
       const allNA = qualityChecks.every(check => check === 'NA');
       if (allNA) {
         errors.push('Please answer at least one quality check question for human studies');
       }
     }
-    
+
     return errors;
   };
 
