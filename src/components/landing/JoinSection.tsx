@@ -128,9 +128,9 @@ const JoinSection = () => {
                   variant="outline" 
                   className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowOnboarding(true)}
-                  disabled={isExpertOrResearcher}
+                  
                 >
-                  {isExpertOrResearcher ? 'Already Member' : 'Learn How It Works'}
+                {isExpertOrResearcher ? 'How it works' : 'Learn How It Works'}
                 </Button>
                 <Button 
                   variant="outline" 

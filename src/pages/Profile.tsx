@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Constants } from '@/integrations/supabase/types';
 import { Separator } from '@/components/ui/separator';
 import { User, Shield, FileText, MapPin, Calendar } from 'lucide-react';
 import Header from '@/components/layout/Header';
@@ -18,6 +19,8 @@ import { AvatarUpload } from '@/components/ui/avatar-upload';
 import type { Database } from '@/integrations/supabase/types';
 
 const Profile = () => {
+  // Dynamically get claim_category options from types
+  const claimCategoryOptions = Constants.public.Enums.claim_category;
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -120,11 +123,11 @@ const Profile = () => {
       const { data, error } = await supabase
         .from('social_media_links')
         .select('*')
-        .eq('expert_id', expertData.id);
+        .eq('expert_id', expertData.user_id);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!expertData?.id
+    enabled: !!expertData?.user_id
   });
 
   useEffect(() => {
@@ -215,8 +218,8 @@ const Profile = () => {
 
       if (upsertError) throw upsertError;
 
-      // social_media_links.expert_id references experts.id, so use the expert record id
-      const expertId = expertRow?.id || expertData?.id;
+      // social_media_links.expert_id references experts.user_id, so use the expert record id
+      const expertId = expertRow?.user_id || expertData?.user_id;
 
       // Replace social links: delete existing then insert new ones if provided
       if (expertId) {
@@ -371,15 +374,11 @@ const Profile = () => {
                           <SelectValue placeholder="Select your expertise" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="reproductive_health">Reproductive Health</SelectItem>
-                          <SelectItem value="cardiovascular">Cardiovascular</SelectItem>
-                          <SelectItem value="nutrition">Nutrition</SelectItem>
-                          <SelectItem value="mental_health">Mental Health</SelectItem>
-                          <SelectItem value="immunology">Immunology</SelectItem>
-                          <SelectItem value="endocrinology">Endocrinology</SelectItem>
-                          <SelectItem value="oncology">Oncology</SelectItem>
-                          <SelectItem value="pediatrics">Pediatrics</SelectItem>
-                          <SelectItem value="geriatrics">Geriatrics</SelectItem>
+                          {claimCategoryOptions.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -449,6 +448,26 @@ const Profile = () => {
                     </Button>
                   </div>
 
+                  {/* Show current social media links if any exist */}
+                  {socialLinks.length > 0 && (
+                    <div className="mb-4">
+                      <Label className="text-xs text-muted-foreground mb-1">Current Links:</Label>
+                      <ul className="space-y-1">
+                        {socialLinks.map((link, idx) => (
+                          link.platform && link.platform !== 'none' && link.url ? (
+                            <li key={idx} className="flex items-center gap-2 text-sm">
+                              <span className="font-medium capitalize">{link.platform}</span>
+                              <a href={link.url.startsWith('http') ? link.url : getPlatformPrefix(link.platform) + link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">
+                                {link.url.startsWith('http') ? link.url : getPlatformPrefix(link.platform) + link.url}
+                              </a>
+                            </li>
+                          ) : null
+                        ))}
+                      </ul>
+                      <Separator className="my-2" />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     {socialLinks.map((link, index) => (
                       <div key={index} className="flex gap-2 items-center">
@@ -484,7 +503,6 @@ const Profile = () => {
                               onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
                             />
                           </div>
-                          {/* <p className="text-xs text-muted-foreground mt-1">Type only your username or handle — the URL prefix on the left will be used.</p> */}
                         </div>
                         <Button type="button" variant="outline" size="sm" onClick={() => removeSocialLink(index)} className="shrink-0">
                           Remove
