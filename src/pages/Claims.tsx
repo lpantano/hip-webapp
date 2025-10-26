@@ -20,7 +20,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
+import ClaimLabelsStack from '@/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -1006,119 +1008,20 @@ const Claims = () => {
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
                     {(() => {
-                      // Classification order for stacking
-                      const classificationOrder = [
-                        'Invalid',
-                        'Fallacy',
-                        'Unreliable',
-                        'Not Tested in Humans',
-                        'Limited Tested in Humans',
-                        'Tested in Humans',
-                        'Widely Tested in Humans'
-                      ];
-
-                      // Aggregate label counts by stance
-                      const supportingLabelCounts: Record<string, number> = {};
-                      const contradictingLabelCounts: Record<string, number> = {};
-                      let supportingWomenNotIncluded = 0;
-                      let contradictingWomenNotIncluded = 0;
-
-                      claim.publications.forEach(pub => {
-                        (pub.rawScores || []).forEach(score => {
-                          const label = score.review_data?.category;
-                          if (label) {
-                            if (pub.stance === 'supporting') {
-                              supportingLabelCounts[label] = (supportingLabelCounts[label] || 0) + 1;
-                            } else if (pub.stance === 'contradicting') {
-                              contradictingLabelCounts[label] = (contradictingLabelCounts[label] || 0) + 1;
-                            }
-                          }
-                          if (score.review_data?.womenNotIncluded) {
-                            if (pub.stance === 'supporting') {
-                              supportingWomenNotIncluded++;
-                            } else if (pub.stance === 'contradicting') {
-                              contradictingWomenNotIncluded++;
-                            }
-                          }
-                        });
-                      });
-
-                      // Helper to create stacked label elements by classification order
-                      const createStackedLabels = (labelCounts: Record<string, number>, womenNotIncludedCount: number, stance: 'supporting' | 'contradicting') => {
-                        const stack: JSX.Element[] = [];
-                        classificationOrder.forEach((label) => {
-                          if (labelCounts[label]) {
-                            const color = getEvidenceClassificationColor(label);
-                            let aggregatedReasons: string[] = [];
-                            if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
-                              const allReasons: string[] = [];
-                              claim.publications.forEach(pub => {
-                                if (pub.stance === stance) {
-                                  (pub.rawScores || []).forEach(score => {
-                                    if (score.review_data?.category === label) {
-                                      const reasons = getClassificationReasons(score.review_data);
-                                      allReasons.push(...reasons);
-                                    }
-                                  });
-                                }
-                              });
-                              const reasonCounts: Record<string, number> = {};
-                              allReasons.forEach(reason => {
-                                reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
-                              });
-                              aggregatedReasons = Object.entries(reasonCounts)
-                                .sort(([,a], [,b]) => b - a)
-                                .map(([reason, reasonCount]) => reasonCount > 1 ? `${reason} (${reasonCount})` : reason);
-                            }
-                            const labelElement = (
-                              <span
-                                key={`${stance}-${label}`}
-                                className={`inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold ${color} mb-2 w-auto max-w-auto`}
-                                style={{ borderWidth: 0, width: 'auto', minWidth: 0 }}
-                              >
-                                {label} <span className="ml-2">({labelCounts[label]})</span>
-                              </span>
-                            );
-                            if (aggregatedReasons.length > 0) {
-                              stack.push(
-                                <Popover key={`${stance}-${label}`}>
-                                  <PopoverTrigger asChild>
-                                    <div className="cursor-help">{labelElement}</div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-80">
-                                    <div className="space-y-2">
-                                      <h4 className="font-medium">Reasons for {label} classification:</h4>
-                                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                                        {aggregatedReasons.map((reason, i) => (
-                                          <li key={i}>{reason}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              );
-                            } else {
-                              stack.push(labelElement);
-                            }
-                          }
-                        });
-                        if (womenNotIncludedCount > 0) {
-                          stack.push(
-                            <span
-                              key={`${stance}-women-included`}
-                              className="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 mb-2 w-auto max-w-full"
-                              style={{ width: 'auto', minWidth: 0 }}
-                            >
-                              ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
-                            </span>
-                          );
-                        }
-                        return stack;
-                      };
+                      // Use the aggregation helper to compute counts and reasons
+                      const agg = aggregateLabelsForClaim(claim);
+                      const {
+                        classificationOrder,
+                        supportingLabelCounts,
+                        contradictingLabelCounts,
+                        supportingWomenNotIncluded,
+                        contradictingWomenNotIncluded,
+                        aggregatedReasons
+                      } = agg;
 
                       // Build two columns: left for contradicting, right for supporting
-                      const supportingStack = createStackedLabels(supportingLabelCounts, supportingWomenNotIncluded, 'supporting');
-                      const contradictingStack = createStackedLabels(contradictingLabelCounts, contradictingWomenNotIncluded, 'contradicting');
+                      const hasSupporting = Object.keys(supportingLabelCounts).length > 0 || supportingWomenNotIncluded > 0;
+                      const hasContradicting = Object.keys(contradictingLabelCounts).length > 0 || contradictingWomenNotIncluded > 0;
 
                       return (
                         <div className="grid grid-cols-2 gap-4 items-start">
@@ -1129,7 +1032,13 @@ const Claims = () => {
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
-                              {contradictingStack.length > 0 ? contradictingStack : <span className="text-xs text-muted-foreground">No contradicting reviews</span>}
+                              <ClaimLabelsStack
+                                classificationOrder={classificationOrder}
+                                labelCounts={contradictingLabelCounts}
+                                womenNotIncludedCount={contradictingWomenNotIncluded}
+                                stance="contradicting"
+                                aggregatedReasonsForStance={aggregatedReasons.contradicting}
+                              />
                             </div>
                           </div>
                           <div className="space-y-1">
@@ -1138,7 +1047,13 @@ const Claims = () => {
                               <span className="font-semibold text-xs">Supporting</span>
                             </div>
                             <div>
-                              {supportingStack.length > 0 ? supportingStack : <span className="text-xs text-muted-foreground">No supporting reviews</span>}
+                              <ClaimLabelsStack
+                                classificationOrder={classificationOrder}
+                                labelCounts={supportingLabelCounts}
+                                womenNotIncludedCount={supportingWomenNotIncluded}
+                                stance="supporting"
+                                aggregatedReasonsForStance={aggregatedReasons.supporting}
+                              />
                             </div>
                           </div>
                         </div>
