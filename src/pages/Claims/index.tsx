@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
 // Dialog and DialogTitle already imported above (with DialogTitle). Removed duplicate import.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -23,116 +24,12 @@ import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
-import ClaimLabelsStack from '@/components/ClaimLabelsStack';
+import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
+import ClaimLinksSection from './components/ClaimLinksSection';
+import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import type { Database } from '@/integrations/supabase/types';
-
-interface ClaimRow {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string | null;
-  product?: string | null;
-  category: Database['public']['Enums']['claim_category'];
-  condition?: string | null;
-  stage?: string | null;
-  vote_count: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PublicationRow {
-  id: string;
-  claim_id: string;
-  title: string;
-  journal?: string | null;
-  publication_year?: number | null;
-  doi?: string | null;
-  url?: string | null;
-  authors?: string | null;
-  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
-  created_at: string;
-}
-
-interface ClaimLinkRow {
-  id: string;
-  claim_id: string;
-  expert_user_id: string;
-  title: string;
-  url: string;
-  description?: string | null;
-  link_type?: string | null;
-  created_at: string;
-}
-
-interface PublicationScoreRow {
-  id: string;
-  publication_id: string;
-  expert_user_id: string;
-  // New JSON-based schema
-  review_data: {
-    category?: string;
-    tags?: {
-      testedInHuman?: boolean;
-      ethnicityLabels?: string[];
-      ageRanges?: string[];
-    };
-    qualityChecks?: {
-      studyDesign?: 'PASS' | 'NO' | 'NA' | null;
-      controlGroup?: 'PASS' | 'NO' | 'NA' | null;
-      biasAddressed?: 'PASS' | 'NO' | 'NA' | null;
-      statistics?: 'PASS' | 'NO' | 'NA' | null;
-    };
-    womenNotIncluded?: boolean;
-  } | null;
-  comments?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ClaimCommentRow {
-  id: string;
-  claim_id: string;
-  expert_user_id: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ClaimUI {
-  id: string;
-  claim: string;
-  user_id?: string;
-  rawStatus?: string;
-  // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
-  category: Database['public']['Enums']['claim_category'];
-  votes: number;
-  publications: {
-    id: string; // Add publication ID
-    title: string;
-    authors: string;
-    journal: string;
-    year: number;
-    url: string;
-    stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
-    // raw individual score rows so we can detect if current expert already reviewed
-    rawScores?: PublicationScoreRow[];
-  }[];
-  links?: {
-    id: string;
-    title: string;
-    url: string;
-    description?: string | null;
-    link_type?: string | null;
-    expert_user_id?: string | null;
-  }[];
-  comments?: ClaimCommentRow[];
-  // DB-backed status values (exposed directly)
-  status: 'proposed' | 'pending' | 'verified' | 'disputed' | 'needs more evidence' | 'under review';
-}
-
-
+import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
@@ -653,7 +550,7 @@ const Claims = () => {
                     <br></br>
                     {reviewCard.expert.classification && (
                     <div className="flex items-start gap-3 mb-2">
-                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
+                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))} pointer-events-none transition-none`}>
                         {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                       </Badge>
 
@@ -927,7 +824,7 @@ const Claims = () => {
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex flex-wrap gap-2">
-                      <Badge className={getCategoryColor(claim.category)}>
+                      <Badge className={`${getCategoryColor(claim.category)} pointer-events-none transition-none`}>
                         {humanize(claim.category)}
                       </Badge>
                       {(
@@ -944,7 +841,7 @@ const Claims = () => {
                           aria-label={`Toggle status for claim ${claim.id}`}
                           disabled={updatingStatus === claim.id}
                         >
-                          <Badge className={getStatusColor(claim.status)}>
+                          <Badge className={getStatusColor(claim.status)} >
                             {updatingStatus === claim.id ? 'Updating...' : claim.status.replace('_', ' ')}
                           </Badge>
                         </button>
@@ -976,38 +873,7 @@ const Claims = () => {
                       </span>
                     </CardTitle>
                   </div>                  
-                  {/* Show claim links (sources) below the title, above the separator */}
-                  {claim.links && claim.links.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {claim.links.map((link) => {
-                        // Helper to get domain from URL
-                        let displayUrl = link.url;
-                        try {
-                          const urlObj = new URL(link.url);
-                          displayUrl = urlObj.hostname.replace(/^www\./, '');
-                        } catch (e) {
-                          // fallback to original
-                        }
-                        return (
-                          <div key={link.id} className="text-sm">
-                            Source:{' '}
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary underline max-w-[140px] sm:max-w-none truncate inline-block align-bottom"
-                              title={link.url}
-                            >
-                              {link.title || displayUrl}
-                            </a>
-                            {link.description && (
-                              <div className="text-xs text-muted-foreground">{link.description}</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <ClaimLinksSection links={claim.links} />
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
                     {(() => {
@@ -1023,9 +889,7 @@ const Claims = () => {
                       } = agg;
 
                       // Build two columns: left for contradicting, right for supporting
-                      const hasSupporting = Object.keys(supportingLabelCounts).length > 0 || supportingWomenNotIncluded > 0;
-                      const hasContradicting = Object.keys(contradictingLabelCounts).length > 0 || contradictingWomenNotIncluded > 0;
-
+                      
                       return (
                         <div className="grid grid-cols-2 gap-4 items-start">
                           <div className="space-y-1">
@@ -1064,74 +928,15 @@ const Claims = () => {
                     })()}
                   </div>
                 </CardHeader>
-                {/* Expanded view with individual reviews */}
+                {/* Expanded view with individual reviews (moved to component) */}
                 {expandedClaim === claim.id && (
-                  <CardContent className="pt-0">
-                    <div className="border-t border-border pt-4">
-                      {/* <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
-                        Individual Expert Reviews
-                      </h4> */}
-                      <div className="space-y-4">
-                        {claim.publications.map((pub, pubIndex) => (
-                          <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
-                            <div className="mb-3">
-                              <div className="flex items-start gap-2 mb-3">
-                                {getStanceIcon(pub.stance)}
-                                <div className="flex-1">
-                                  <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
-                                  <p className="text-xs text-muted-foreground">
-                                    {pub.authors} • {pub.journal} ({pub.year}) 
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              {/* Buttons moved below the paper text */}
-                              <div className="flex items-center gap-2 mt-3">
-                                {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (() => {
-                                  const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
-                                  const reviewButtonText = existingReview ? 'Update' : 'Review';
-                                  return (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setReviewPublication({
-                                        id: pub.id || '',
-                                        title: pub.title,
-                                        journal: pub.journal,
-                                        publication_year: pub.year,
-                                        authors: pub.authors,
-                                        url: pub.url,
-                                        existingReview
-                                      })}
-                                      className="text-xs"
-                                    >
-                                      <FileText className="w-3 h-3 mr-1" />
-                                      {reviewButtonText}
-                                    </Button>
-                                  );
-                                })()}
-                                {/* <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  asChild
-                                  className="shrink-0"
-                                >
-                                  <a 
-                                    href={pub.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1"
-                                  >
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                </Button> */}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
+                  <ClaimPublicationsExpanded
+                    publications={claim.publications}
+                    isExpert={isExpert}
+                    user={user}
+                    setReviewPublication={setReviewPublication}
+                    getStanceIcon={getStanceIcon}
+                  />
                 )}
 
                 {/* Bottom section with Review Reel and Add Paper buttons */}

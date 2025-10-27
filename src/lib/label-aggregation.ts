@@ -13,6 +13,35 @@ export type LabelAggregation = {
   };
 };
 
+export type PublicationAggregation = {
+  classificationCounts: Record<string, number>;
+  womenNotIncludedCount: number;
+};
+
+/**
+ * Aggregate minimal review tags for a single publication: only classification
+ * counts and womenNotIncluded counts (keeps function small and fast).
+ */
+export function aggregatePublicationReviewData(
+  publication: { rawScores?: Array<{ review_data?: unknown | null }> }
+): PublicationAggregation {
+  const classificationCounts: Record<string, number> = {};
+  let womenNotIncludedCount = 0;
+
+  (publication.rawScores || []).forEach((row) => {
+    const rd = (row && (row as { review_data?: unknown }).review_data) as Record<string, unknown> | undefined | null;
+    if (!rd) return;
+
+  const rdObj = rd as Record<string, unknown>;
+  const maybeLabel = typeof rdObj['category'] === 'string' ? String(rdObj['category']) : undefined;
+  if (maybeLabel) classificationCounts[maybeLabel] = (classificationCounts[maybeLabel] || 0) + 1;
+
+  if (rdObj['womenNotIncluded'] === true) womenNotIncludedCount++;
+  });
+
+  return { classificationCounts, womenNotIncludedCount };
+}
+
 /**
  * Aggregate publication labels and classification reasons for a claim.
  *
