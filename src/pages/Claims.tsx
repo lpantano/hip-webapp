@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
+// Dialog and DialogTitle already imported above (with DialogTitle). Removed duplicate import.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -837,6 +838,7 @@ const Claims = () => {
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogTitle>Submit a new claim</DialogTitle>
                       <ClaimSubmissionForm 
                         onSuccess={() => {
                           setShowSubmissionForm(false);
@@ -988,6 +990,7 @@ const Claims = () => {
                         }
                         return (
                           <div key={link.id} className="text-sm">
+                            Source:{' '}
                             <a
                               href={link.url}
                               target="_blank"
@@ -1028,7 +1031,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Contradicting</span>
+                              <span className="font-semibold text-xs">Contradicting Papers</span>
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
@@ -1044,7 +1047,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Supporting</span>
+                              <span className="font-semibold text-xs">Supporting Papers</span>
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -1240,15 +1243,18 @@ const Claims = () => {
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
                   return claim ? (
-                    <PaperSubmissionForm
-                      claimId={claim.id}
-                      claimTitle={claim.claim}
-                      onSuccess={() => {
-                        setShowPaperForm(null);
-                        fetchData(currentPage);
-                      }}
-                      onCancel={() => setShowPaperForm(null)}
-                    />
+                    <div>
+                      <DialogTitle>Add paper</DialogTitle>
+                      <PaperSubmissionForm
+                        claimId={claim.id}
+                        claimTitle={claim.claim}
+                        onSuccess={() => {
+                          setShowPaperForm(null);
+                          fetchData(currentPage);
+                        }}
+                        onCancel={() => setShowPaperForm(null)}
+                      />
+                    </div>
                   ) : null;
                 })()}
               </DialogContent>
@@ -1301,7 +1307,7 @@ const Claims = () => {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Add Source to claim</h3>
+                      <DialogTitle>Add Source to claim</DialogTitle>
                       <div className="space-y-3">
                         <div>
                           <label className="text-sm font-medium mb-1 block">URL</label>
@@ -1333,7 +1339,7 @@ const Claims = () => {
           {user && (
             <Dialog open={!!confirmToggleClaimId} onOpenChange={(open) => { if (!open) { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); } }}>
               <DialogContent className="max-w-md">
-                <h3 className="text-lg font-semibold mb-2">Confirm status change</h3>
+                <DialogTitle>Confirm status change</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   {`Are you sure you want to change the status from "${confirmToggleRawStatus ? confirmToggleRawStatus.replace('_', ' ') : ''}" to "${confirmToggleRawStatus === 'proposed' ? 'under review' : 'proposed'}"?`}
                 </p>
@@ -1423,7 +1429,7 @@ const Claims = () => {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
+                      <DialogTitle>{claim.claim} — Individual Expert Reviews</DialogTitle>
                       <ExpertReviewsReel reviewCards={reviewCards} />
                     </div>
                   );
