@@ -76,9 +76,12 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
                 //         />
                 // );
                 return (
-                    <div key={`lvl-${lvl.level}`} className={`inline-flex items-center rounded-lg ${color} px-3 py-1 text-xs font-semibold`}> 
-                        <span className="truncate">{titleLabel}</span>
-                        <span className="ml-2">({totalCount})</span>
+                    <div
+                        key={`lvl-${lvl.level}`}
+                        className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-3 py-1 text-xs font-semibold overflow-hidden`}
+                    >
+                        <span className="break-words sm:truncate">{titleLabel}</span>
+                        <span className="ml-2 flex-shrink-0">({totalCount})</span>
                     </div>
                 );
     }
@@ -140,12 +143,13 @@ function LevelButton({
   // If any womenNotIncluded flag, append it at the bottom (after level 1)
     if (womenNotIncludedCount > 0) {
         stack.push(
-            <div key={`women-${stance}`} className="mt-1 w-auto">
+            <div key={`women-${stance}`} className="mt-1 w-full">
             <span
-                className="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 w-auto"
+                className="w-full sm:inline-flex sm:w-auto items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 overflow-hidden"
                 style={{ minWidth: 0 }}
             >
-                ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
+                <span className="break-words sm:truncate">♀ Women Not Included</span>
+                <span className="ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
             </span>
             </div>
         );
