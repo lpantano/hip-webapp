@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
+// Dialog and DialogTitle already imported above (with DialogTitle). Removed duplicate import.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,116 +22,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
+import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
+import ClaimLinksSection from './components/ClaimLinksSection';
+import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import type { Database } from '@/integrations/supabase/types';
-
-interface ClaimRow {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string | null;
-  product?: string | null;
-  category: Database['public']['Enums']['claim_category'];
-  condition?: string | null;
-  stage?: string | null;
-  vote_count: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PublicationRow {
-  id: string;
-  claim_id: string;
-  title: string;
-  journal?: string | null;
-  publication_year?: number | null;
-  doi?: string | null;
-  url?: string | null;
-  authors?: string | null;
-  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
-  created_at: string;
-}
-
-interface ClaimLinkRow {
-  id: string;
-  claim_id: string;
-  expert_user_id: string;
-  title: string;
-  url: string;
-  description?: string | null;
-  link_type?: string | null;
-  created_at: string;
-}
-
-interface PublicationScoreRow {
-  id: string;
-  publication_id: string;
-  expert_user_id: string;
-  // New JSON-based schema
-  review_data: {
-    category?: string;
-    tags?: {
-      testedInHuman?: boolean;
-      ethnicityLabels?: string[];
-      ageRanges?: string[];
-    };
-    qualityChecks?: {
-      studyDesign?: 'PASS' | 'NO' | 'NA' | null;
-      controlGroup?: 'PASS' | 'NO' | 'NA' | null;
-      biasAddressed?: 'PASS' | 'NO' | 'NA' | null;
-      statistics?: 'PASS' | 'NO' | 'NA' | null;
-    };
-    womenNotIncluded?: boolean;
-  } | null;
-  comments?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ClaimCommentRow {
-  id: string;
-  claim_id: string;
-  expert_user_id: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ClaimUI {
-  id: string;
-  claim: string;
-  user_id?: string;
-  rawStatus?: string;
-  // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
-  category: Database['public']['Enums']['claim_category'];
-  votes: number;
-  publications: {
-    id: string; // Add publication ID
-    title: string;
-    authors: string;
-    journal: string;
-    year: number;
-    url: string;
-    stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
-    // raw individual score rows so we can detect if current expert already reviewed
-    rawScores?: PublicationScoreRow[];
-  }[];
-  links?: {
-    id: string;
-    title: string;
-    url: string;
-    description?: string | null;
-    link_type?: string | null;
-    expert_user_id?: string | null;
-  }[];
-  comments?: ClaimCommentRow[];
-  // DB-backed status values (exposed directly)
-  status: 'proposed' | 'pending' | 'verified' | 'disputed' | 'needs more evidence' | 'under review';
-}
-
-
+import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
@@ -650,7 +550,7 @@ const Claims = () => {
                     <br></br>
                     {reviewCard.expert.classification && (
                     <div className="flex items-start gap-3 mb-2">
-                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))}`}>
+                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))} pointer-events-none transition-none`}>
                         {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                       </Badge>
 
@@ -803,7 +703,7 @@ const Claims = () => {
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
-              Community Reviewed Claims
+              Reviewed Claims
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
               Community-driven claims about products and services for women's health conditions. 
@@ -835,6 +735,7 @@ const Claims = () => {
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogTitle>Submit a new claim</DialogTitle>
                       <ClaimSubmissionForm 
                         onSuccess={() => {
                           setShowSubmissionForm(false);
@@ -923,7 +824,7 @@ const Claims = () => {
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex flex-wrap gap-2">
-                      <Badge className={getCategoryColor(claim.category)}>
+                      <Badge className={`${getCategoryColor(claim.category)} pointer-events-none transition-none`}>
                         {humanize(claim.category)}
                       </Badge>
                       {(
@@ -940,7 +841,7 @@ const Claims = () => {
                           aria-label={`Toggle status for claim ${claim.id}`}
                           disabled={updatingStatus === claim.id}
                         >
-                          <Badge className={getStatusColor(claim.status)}>
+                          <Badge className={getStatusColor(claim.status)} >
                             {updatingStatus === claim.id ? 'Updating...' : claim.status.replace('_', ' ')}
                           </Badge>
                         </button>
@@ -972,230 +873,70 @@ const Claims = () => {
                       </span>
                     </CardTitle>
                   </div>                  
-                  {/* Show claim links (sources) below the title, above the separator */}
-                  {claim.links && claim.links.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {claim.links.map((link) => (
-                        <div key={link.id} className="text-sm">
-                          <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                            {link.title || link.url}
-                          </a>
-                          {link.description && (
-                            <div className="text-xs text-muted-foreground">{link.description}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <ClaimLinksSection links={claim.links} />
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
-                  <div className="mt-2 space-y-2">
+                  <div className="flex-col mt-2">
                     {(() => {
-                      // Separate publications by stance and aggregate their reviews
-                      const supportingLabelCounts: Record<string, number> = {};
-                      const contradictingLabelCounts: Record<string, number> = {};
-                      let supportingWomenNotIncluded = 0;
-                      let contradictingWomenNotIncluded = 0;
+                      // Use the aggregation helper to compute counts and reasons
+                      const agg = aggregateLabelsForClaim(claim);
+                      const {
+                        classificationOrder,
+                        supportingLabelCounts,
+                        contradictingLabelCounts,
+                        supportingWomenNotIncluded,
+                        contradictingWomenNotIncluded,
+                        aggregatedReasons
+                      } = agg;
 
-                      claim.publications.forEach(pub => {
-                        (pub.rawScores || []).forEach(score => {
-                          const label = score.review_data?.category;
-                          if (label) {
-                            if (pub.stance === 'supporting') {
-                              supportingLabelCounts[label] = (supportingLabelCounts[label] || 0) + 1;
-                            } else if (pub.stance === 'contradicting') {
-                              contradictingLabelCounts[label] = (contradictingLabelCounts[label] || 0) + 1;
-                            }
-                          }
-                          // Check for womenNotIncluded flag
-                          if (score.review_data?.womenNotIncluded) {
-                            if (pub.stance === 'supporting') {
-                              supportingWomenNotIncluded++;
-                            } else if (pub.stance === 'contradicting') {
-                              contradictingWomenNotIncluded++;
-                            }
-                          }
-                        });
-                      });
-
-                      const createLabelsForStance = (labelCounts: Record<string, number>, womenNotIncludedCount: number, stance: 'supporting' | 'contradicting') => {
-                        const labels = Object.entries(labelCounts).map(([label, count]) => {
-                          const color = getEvidenceClassificationColor(label);
-                          
-                          // Get aggregated reasons for negative classifications
-                          let aggregatedReasons: string[] = [];
-                          if (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy') {
-                            const allReasons: string[] = [];
-                            claim.publications.forEach(pub => {
-                              if (pub.stance === stance) {
-                                (pub.rawScores || []).forEach(score => {
-                                  if (score.review_data?.category === label) {
-                                    const reasons = getClassificationReasons(score.review_data);
-                                    allReasons.push(...reasons);
-                                  }
-                                });
-                              }
-                            });
-                            // Get unique reasons and their counts
-                            const reasonCounts: Record<string, number> = {};
-                            allReasons.forEach(reason => {
-                              reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
-                            });
-                            aggregatedReasons = Object.entries(reasonCounts)
-                              .sort(([,a], [,b]) => b - a) // Sort by count descending
-                              .map(([reason, reasonCount]) => 
-                                reasonCount > 1 ? `${reason} (${reasonCount})` : reason
-                              );
-                          }
-                          
-                          const labelElement = (
-                            <span
-                              key={`${stance}-${label}`}
-                              className={`inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold ${color}`}
-                              style={{ borderWidth: 0 }}
-                            >
-                              {label} <span className="ml-2">({count})</span>
-                            </span>
-                          );
-                          
-                          // If there are reasons, wrap in a popover
-                          if (aggregatedReasons.length > 0) {
-                            return (
-                              <Popover key={`${stance}-${label}`}>
-                                <PopoverTrigger asChild>
-                                  <div className="cursor-help">
-                                    {labelElement}
-                                  </div>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                  <div className="space-y-2">
-                                    <h4 className="font-medium">Reasons for {label} classification:</h4>
-                                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                                      {aggregatedReasons.map((reason, i) => (
-                                        <li key={i}>{reason}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            );
-                          }
-                          
-                          return labelElement;
-                        });
-                        
-                        // Add women not included label if any reviews marked it
-                        if (womenNotIncludedCount > 0) {
-                          labels.push(
-                            <span
-                              key={`${stance}-women-included`}
-                              className="inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800"
-                            >
-                              ♀ Women Not Included <span className="ml-2">({womenNotIncludedCount})</span>
-                            </span>
-                          );
-                        }
-                        
-                        return labels;
-                      };
-
-                      const supportingLabels = createLabelsForStance(supportingLabelCounts, supportingWomenNotIncluded, 'supporting');
-                      const contradictingLabels = createLabelsForStance(contradictingLabelCounts, contradictingWomenNotIncluded, 'contradicting');
-
+                      // Build two columns: left for contradicting, right for supporting
+                      
                       return (
-                        <>
-                          {supportingLabels.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <div title="Supporting evidence">
-                                {getStanceIcon('supporting')}
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {supportingLabels}
-                              </div>
+                        <div className="grid grid-cols-2 gap-4 items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
+                              <span className="font-semibold text-xs">Contradicting Papers</span>
                             </div>
-                          )}
-                          {contradictingLabels.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <div title="Contradicting evidence">
-                                {getStanceIcon('contradicting')}
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {contradictingLabels}
-                              </div>
+                            {/* Use a normal div, not flex-col, so children do not stretch */}
+                            <div>
+                              <ClaimLabelsStack
+                                classificationOrder={classificationOrder}
+                                labelCounts={contradictingLabelCounts}
+                                womenNotIncludedCount={contradictingWomenNotIncluded}
+                                stance="contradicting"
+                                aggregatedReasonsForStance={aggregatedReasons.contradicting}
+                              />
                             </div>
-                          )}
-                        </>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
+                              <span className="font-semibold text-xs">Supporting Papers</span>
+                            </div>
+                            <div>
+                              <ClaimLabelsStack
+                                classificationOrder={classificationOrder}
+                                labelCounts={supportingLabelCounts}
+                                womenNotIncludedCount={supportingWomenNotIncluded}
+                                stance="supporting"
+                                aggregatedReasonsForStance={aggregatedReasons.supporting}
+                              />
+                            </div>
+                          </div>
+                        </div>
                       );
                     })()}
                   </div>
                 </CardHeader>
-                {/* Expanded view with individual reviews */}
+                {/* Expanded view with individual reviews (moved to component) */}
                 {expandedClaim === claim.id && (
-                  <CardContent className="pt-0">
-                    <div className="border-t border-border pt-4">
-                      {/* <h4 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
-                        Individual Expert Reviews
-                      </h4> */}
-                      <div className="space-y-4">
-                        {claim.publications.map((pub, pubIndex) => (
-                          <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
-                            <div className="mb-3">
-                              <div className="flex items-start gap-2 mb-3">
-                                {getStanceIcon(pub.stance)}
-                                <div className="flex-1">
-                                  <h5 className="font-medium text-sm mb-1">{pub.title}</h5>
-                                  <p className="text-xs text-muted-foreground">
-                                    {pub.authors} • {pub.journal} ({pub.year}) 
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              {/* Buttons moved below the paper text */}
-                              <div className="flex items-center gap-2 mt-3">
-                                {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (() => {
-                                  const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
-                                  const reviewButtonText = existingReview ? 'Update' : 'Review';
-                                  return (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setReviewPublication({
-                                        id: pub.id || '',
-                                        title: pub.title,
-                                        journal: pub.journal,
-                                        publication_year: pub.year,
-                                        authors: pub.authors,
-                                        url: pub.url,
-                                        existingReview
-                                      })}
-                                      className="text-xs"
-                                    >
-                                      <FileText className="w-3 h-3 mr-1" />
-                                      {reviewButtonText}
-                                    </Button>
-                                  );
-                                })()}
-                                {/* <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  asChild
-                                  className="shrink-0"
-                                >
-                                  <a 
-                                    href={pub.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1"
-                                  >
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                </Button> */}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
+                  <ClaimPublicationsExpanded
+                    publications={claim.publications}
+                    isExpert={isExpert}
+                    user={user}
+                    setReviewPublication={setReviewPublication}
+                    getStanceIcon={getStanceIcon}
+                  />
                 )}
 
                 {/* Bottom section with Review Reel and Add Paper buttons */}
@@ -1307,15 +1048,18 @@ const Claims = () => {
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
                   return claim ? (
-                    <PaperSubmissionForm
-                      claimId={claim.id}
-                      claimTitle={claim.claim}
-                      onSuccess={() => {
-                        setShowPaperForm(null);
-                        fetchData(currentPage);
-                      }}
-                      onCancel={() => setShowPaperForm(null)}
-                    />
+                    <div>
+                      <DialogTitle>Add paper</DialogTitle>
+                      <PaperSubmissionForm
+                        claimId={claim.id}
+                        claimTitle={claim.claim}
+                        onSuccess={() => {
+                          setShowPaperForm(null);
+                          fetchData(currentPage);
+                        }}
+                        onCancel={() => setShowPaperForm(null)}
+                      />
+                    </div>
                   ) : null;
                 })()}
               </DialogContent>
@@ -1368,7 +1112,7 @@ const Claims = () => {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Add Source to claim</h3>
+                      <DialogTitle>Add Source to claim</DialogTitle>
                       <div className="space-y-3">
                         <div>
                           <label className="text-sm font-medium mb-1 block">URL</label>
@@ -1400,7 +1144,7 @@ const Claims = () => {
           {user && (
             <Dialog open={!!confirmToggleClaimId} onOpenChange={(open) => { if (!open) { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); } }}>
               <DialogContent className="max-w-md">
-                <h3 className="text-lg font-semibold mb-2">Confirm status change</h3>
+                <DialogTitle>Confirm status change</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   {`Are you sure you want to change the status from "${confirmToggleRawStatus ? confirmToggleRawStatus.replace('_', ' ') : ''}" to "${confirmToggleRawStatus === 'proposed' ? 'under review' : 'proposed'}"?`}
                 </p>
@@ -1490,7 +1234,7 @@ const Claims = () => {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">{claim.claim} — Individual Expert Reviews</h3>
+                      <DialogTitle>{claim.claim} — Individual Expert Reviews</DialogTitle>
                       <ExpertReviewsReel reviewCards={reviewCards} />
                     </div>
                   );
