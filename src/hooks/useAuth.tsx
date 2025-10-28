@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    
+
     // Handles server-side errors returned via URL redirect (OAuth or password login)
     const handleAuthErrorRedirect = () => {
       try {
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         });
 
         // Debug logs to help you inspect in the browser console
-        console.info('[Auth] URL inspection for whitelist error', { href, rawSearch, rawHash, found });
+        // console.info('[Auth] URL inspection for whitelist error', { href, rawSearch, rawHash, found });
 
         if (found) {
           // Display the user-friendly message using module-level toast to avoid timing issues
@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Only stop loading here if no error was immediately handled
         if (!isErrorHandled) {
             setLoading(false);
@@ -171,7 +171,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -179,16 +179,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         emailRedirectTo: redirectUrl
       }
     });
-    
+
     if (error) {
       // 💡 NEW: Check for the custom whitelist error in the direct API response
-      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY) 
+      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
         ? CUSTOM_TOAST_MESSAGE
         : error.message;
 
       try {
         toast({
-          title: 'Sign Up Error', 
+          title: 'Sign Up Error',
           description: description,
           variant: 'destructive',
         });
@@ -212,7 +212,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         });
       }
     }
-    
+
     return { error };
   };
 
@@ -225,7 +225,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         redirectTo: `${window.location.origin}/`
       }
     });
-    
+
     if (error) {
       toast({
         title: "Google Sign In Error",
@@ -233,7 +233,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         variant: "destructive",
       });
     }
-    
+
     return { error };
   };
 

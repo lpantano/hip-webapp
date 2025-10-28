@@ -36,7 +36,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         setOptimizedSrc(src || null);
         return;
       }
-      console.log('Optimizing avatar for user:', src);
+      // console.log('Optimizing avatar for user:', src);
       // Only optimize Google avatars
       if (AvatarCacheService.isGoogleAvatarUrl(src)) {
         setIsLoading(true);
