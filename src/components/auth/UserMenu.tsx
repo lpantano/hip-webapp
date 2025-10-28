@@ -27,7 +27,12 @@ const UserMenu = () => {
         .rpc('has_role', { _user_id: user.id, _role: 'admin' });
       return data || false;
     },
-    enabled: !!user
+    enabled: !!user,
+    // Reduce noisy refetches that cause extra renders
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   // Fetch user profile data including uploaded avatar
@@ -40,18 +45,23 @@ const UserMenu = () => {
         .select('display_name, avatar_url')
         .eq('user_id', user.id)
         .single();
-      
+
       if (error) {
         console.error('Error fetching profile:', error);
         return null;
       }
       return data;
     },
-    enabled: !!user
+    enabled: !!user,
+    // Cache the profile briefly and avoid refetch on focus/mount to prevent extra renders
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
-  if (!user) return null;
-
+  if (!profile) return null;
+  // console.log('UserMenu render for user:',profile);
   // Prioritize profile data over OAuth metadata
   const displayName = profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email;
   const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url; // Profile avatar takes priority

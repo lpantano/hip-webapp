@@ -25,6 +25,19 @@ export class AvatarCacheService {
       const blob = await response.blob();
       const fileName = `google-cache/${userId}/${Date.now()}.jpg`;
 
+      // Ensure the current client session matches the userId to satisfy RLS/storage policies
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUserId = sessionData?.session?.user?.id ?? null;
+        if (!currentUserId || currentUserId !== userId) {
+          console.warn('Skipping avatar cache: no matching authenticated session for', userId);
+          return null;
+        }
+      } catch (e) {
+        console.warn('Could not verify auth session before uploading avatar cache', e);
+        return null;
+      }
+
       // Upload to Supabase storage
       const { data, error } = await supabase.storage
         .from(this.CACHE_BUCKET)
@@ -93,6 +106,14 @@ export class AvatarCacheService {
    */
   private static async storeCachedUrl(userId: string, cachedUrl: string): Promise<void> {
     try {
+      // Verify we have an authenticated session matching the user before attempting upsert
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentUserId = sessionData?.session?.user?.id ?? null;
+      if (!currentUserId || currentUserId !== userId) {
+        console.warn('Skipping storeCachedUrl: no matching authenticated session for', userId);
+        return;
+      }
+
       await supabase
         .from('profiles')
         .upsert({
@@ -144,7 +165,7 @@ export class AvatarCacheService {
 
       // If no cache, try to create one (async, don't wait)
       this.cacheGoogleAvatar(userId, originalUrl).catch(console.error);
-      
+
       // Return original URL for now (it might work)
       return originalUrl;
     }
