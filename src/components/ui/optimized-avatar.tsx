@@ -14,7 +14,7 @@ interface OptimizedAvatarProps {
 
 const sizeClasses = {
   sm: 'h-8 w-8',
-  md: 'h-10 w-10', 
+  md: 'h-10 w-10',
   lg: 'h-12 w-12',
   xl: 'h-16 w-16'
 };
@@ -36,7 +36,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         setOptimizedSrc(src || null);
         return;
       }
-
+      // console.log('Optimizing avatar for user:', src);
       // Only optimize Google avatars
       if (AvatarCacheService.isGoogleAvatarUrl(src)) {
         setIsLoading(true);
@@ -60,7 +60,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
   // Generate fallback initials from alt text or default
   const generateFallback = () => {
     if (fallback) return fallback;
-    
+
     if (alt) {
       const initials = alt
         .split(' ')
@@ -70,15 +70,15 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         .slice(0, 2);
       return initials || 'U';
     }
-    
+
     return 'U';
   };
 
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
       {optimizedSrc && !isLoading && (
-        <AvatarImage 
-          src={optimizedSrc} 
+        <AvatarImage
+          src={optimizedSrc}
           alt={alt}
           onError={() => {
             // If optimized image fails, fall back to original or remove
