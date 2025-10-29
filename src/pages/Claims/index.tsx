@@ -96,26 +96,26 @@ const Claims = () => {
         setIsExpert(false);
         return;
       }
-      
+
       try {
         // Check if user has expert or researcher role in user_roles table
-        const { data } = await sb.rpc('has_role', { 
-          _user_id: user.id, 
-          _role: 'expert' 
+        const { data } = await sb.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'expert'
         });
-        
-        const { data: researcherData } = await sb.rpc('has_role', { 
-          _user_id: user.id, 
-          _role: 'researcher' 
+
+        const { data: researcherData } = await sb.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'researcher'
         });
-        
+
         setIsExpert((data || false) || (researcherData || false));
       } catch (error) {
         console.error('Error checking expert/researcher status:', error);
         setIsExpert(false);
       }
     };
-    
+
     checkExpertStatus();
   }, [user, sb]);
 
@@ -197,7 +197,7 @@ const Claims = () => {
         linksByClaim[link.claim_id].push(link);
       });
 
-      
+
 
       const mappedClaims: ClaimUI[] = (claimsData || []).map((c: ClaimRow) => {
         // map publications for this claim
@@ -254,7 +254,7 @@ const Claims = () => {
             const scoreRowsTyped = scoreRows as PublicationScoreRow[];
             const scoreMap: Record<string, PublicationScoreRow[]> = {};
             const expertIdsSet = new Set<string>();
-            
+
             // Build score map and collect expert IDs in one pass
             scoreRowsTyped.forEach((r) => {
               if (!scoreMap[r.publication_id]) scoreMap[r.publication_id] = [];
@@ -264,7 +264,7 @@ const Claims = () => {
 
             // Fetch expert profiles in parallel with updating claims
             const expertIds = Array.from(expertIdsSet);
-            const expertProfilesPromise = expertIds.length > 0 
+            const expertProfilesPromise = expertIds.length > 0
               ? sb.from('expert_stats').select('user_id, display_name, avatar_url').in('user_id', expertIds as string[])
               : Promise.resolve({ data: null, error: null });
 
@@ -437,7 +437,7 @@ const Claims = () => {
       setUpdatingStatus(null);
     }
   };
-  
+
   // Confirm + toggle flow: user clicks badge -> open dialog -> confirmAndToggle calls toggleClaimStatus
   const confirmAndToggle = async () => {
     if (!confirmToggleClaimId || !confirmToggleRawStatus) {
@@ -554,9 +554,9 @@ const Claims = () => {
                         {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                       </Badge>
 
-                      {reviewCard.expert.reviewData && 
-                        (reviewCard.expert.classification === 'Invalid' || 
-                          reviewCard.expert.classification === 'Unreliable' || 
+                      {reviewCard.expert.reviewData &&
+                        (reviewCard.expert.classification === 'Invalid' ||
+                          reviewCard.expert.classification === 'Unreliable' ||
                           reviewCard.expert.classification === 'Fallacy') && (
                           <div className="flex-1">
                             {(() => {
@@ -606,12 +606,12 @@ const Claims = () => {
                     </div>
                   )}
                   </div>
-                  
+
                 </div>
 
                 {/* Bottom row: Review content (classification, tags, scores, comments) */}
                 <div className="mt-2">
-                  
+
 
                   {reviewCard.expert.scores.length > 0 && (
                     <div className="mb-2">
@@ -692,21 +692,30 @@ const Claims = () => {
   ];
 
   // Claims are now filtered and sorted by the database query
-  const filteredAndSortedClaims = claims;
+    // Only show claim 913322f9-6d96-49fa-ace9-9587e8952a80 if running on localhost
+    let filteredAndSortedClaims = claims;
+    const specialClaimId = '913322f9-6d96-49fa-ace9-9587e8952a80';
+    if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+      // On localhost, show all claims
+      filteredAndSortedClaims = claims;
+    } else {
+      // On production, filter out the special claim
+      filteredAndSortedClaims = claims.filter(c => c.id !== specialClaimId);
+    }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
       <Header />
-      
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
-              Reviewed Claims
+              Health Claims
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Community-driven claims about products and services for women's health conditions. 
+              Community-driven claims about products and services for women's health conditions.
               Upvote Claims with strong scientific backing to prioritize them for expert review.
             </p>
           </div>
@@ -736,7 +745,7 @@ const Claims = () => {
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogTitle>Submit a new claim</DialogTitle>
-                      <ClaimSubmissionForm 
+                      <ClaimSubmissionForm
                         onSuccess={() => {
                           setShowSubmissionForm(false);
                           // Refresh the claims data by re-running the fetch
@@ -746,7 +755,7 @@ const Claims = () => {
                       />
                     </DialogContent>
                   </Dialog>
-                  
+
                   <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
                     <SelectTrigger className="w-[180px] h-9">
                       <div className="flex items-center gap-2">
@@ -762,7 +771,7 @@ const Claims = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  
+
                   <Button
                     variant={sortBy === 'votes' ? 'default' : 'outline'}
                     size="sm"
@@ -812,7 +821,7 @@ const Claims = () => {
                   </div>
                 </div>
               )}
-              
+
               {user && filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>No claims found for the selected category.</p>
@@ -851,7 +860,7 @@ const Claims = () => {
                         </Badge>
                       )}
                     </div>
-                    
+
                     <Button
                       variant={userVotes.has(claim.id) ? "default" : "outline"}
                       size="sm"
@@ -872,7 +881,7 @@ const Claims = () => {
                         {expandedClaim === claim.id ? '▼' : '▶'}
                       </span>
                     </CardTitle>
-                  </div>                  
+                  </div>
                   <ClaimLinksSection links={claim.links} />
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
@@ -889,7 +898,7 @@ const Claims = () => {
                       } = agg;
 
                       // Build two columns: left for contradicting, right for supporting
-                      
+
                       return (
                         <div className="grid grid-cols-2 gap-4 items-start">
                           <div className="space-y-1">
@@ -994,7 +1003,7 @@ const Claims = () => {
                 {/* The full review reel is available via the 'See Full Review' button which opens the dialog. */}
               </Card>
             ))}
-            
+
             {/* Pagination Controls */}
             {user && totalClaims > 0 && (
               <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
@@ -1165,10 +1174,10 @@ const Claims = () => {
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
                   if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-                  
+
                   // Create individual cards for each expert review on each publication
                   const reviewCards: ExpertReviewCard[] = [];
-                  
+
                   claim.publications.forEach(pub => {
                     // Group scores by expert
                     const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
@@ -1186,7 +1195,7 @@ const Claims = () => {
                     Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
                       const expertProfile = expertProfiles[expertUserId];
                       const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
-                      
+
                       // For consolidated schema, pick the latest row for this expert (there should be one)
                       const latestRow = (scores || []).reduce((a, b) => {
                         const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
@@ -1242,7 +1251,7 @@ const Claims = () => {
               </DialogContent>
             </Dialog>
           )}
-          
+
           {/* Publication Review Dialog */}
           {user && (
             <PublicationReviewForm
