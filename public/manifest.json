@@ -1,6 +1,6 @@
 {
-  "name": "ClaimWell - Women Edition",
-  "short_name": "ClaimWell",
+  "name": "The Health Integrity Project - Women Edition",
+  "short_name": "HI Project",
   "description": "Science-backed evaluation platform for women's health products and services",
   "start_url": "/",
   "display": "standalone",
@@ -51,7 +51,7 @@
     {
       "name": "Community",
       "short_name": "Community",
-      "description": "Join the ClaimWell community",
+  "description": "Join The Health Integrity Project community",
       "url": "/community",
       "icons": [
         {

@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import MailingListSignup from "./MailingListSignup";
-import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 const HeroSection = () => {
   return (
@@ -13,17 +12,16 @@ const HeroSection = () => {
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3">
             <div className="flex flex-col items-center">
               <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight m-0 p-0">
-                The Health Project
+                The Health Integrity Project
               </h1>
               <div className="w-full flex justify-end">
                 <span className="text-me md:text-xl text-primary">Women Edition</span>
               </div>
             </div>
-              <PWAInstallPrompt size="sm" className="shadow-xl mt-2" />
+
           </div>
           <div className="text-xl md:text-2xl text-white/90 mb-6 ">
             evidence-based insights for health claims
-
           </div>
           <p className="text-xl md:text-xl text-white/70 mb-8 leading-relaxed">
           Building trust through transparency. Learn how to evaluate and trust health products
@@ -47,6 +45,7 @@ const HeroSection = () => {
           </div>
           <div className="order-1 lg:order-2">
             <MailingListSignup />
+
           </div>
         </div>
       </div>

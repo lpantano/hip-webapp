@@ -17,9 +17,9 @@ const Header = () => {
           <Link
             to="/"
             className="flex items-center gap-3 hover:text-accent transition-colors"
-            aria-label="ClaimWell home"
+            aria-label="The Health Integrity Project home"
           >
-            <img src="/logo-only-transparent.png" alt="ClaimWell logo" className="w-7 h-7 md:w-9 md:h-9 object-contain" />
+            <img src="/logo-hi2-tr.png" alt="The Health Integrity Project logo" className="w-7 h-7 md:w-14 md:h-14 object-contain" />
             {/* <div className="leading-none">
               <span className="text-3xl md:text-4xl font-extrabold text-white/80 -mt-1">W</span>
             </div> */}
