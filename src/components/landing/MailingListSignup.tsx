@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +11,7 @@ const MailingListSignup = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
 
   const handleMailingList = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +52,7 @@ const MailingListSignup = () => {
         <Button type="submit" className="bg-white text-primary hover:bg-white/90 px-6" disabled={loading}>
           {loading ? "Submitting..." : "Subscribe"}
         </Button>
+        <PWAInstallPrompt size="sm" className="shadow-xl mt-1" />
       </form>
       {success && <div className="text-white mt-2">Thank you for subscribing!</div>}
       {error && <div className="text-red-400 mt-2">{error}</div>}

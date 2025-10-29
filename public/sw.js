@@ -4,7 +4,7 @@ const urlsToCache = [
   '/',
   '/claims',
   '/community',
-  '/logo-only.png',
+  '/logo-hi2-tr.png',
 ];
 
 // Listen for skip waiting message
