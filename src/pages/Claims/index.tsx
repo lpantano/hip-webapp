@@ -711,7 +711,7 @@ const Claims = () => {
         <div className="container mx-auto px-6">
           <div className="mb-6 flex justify-end">
             <a
-              href="/ResearchWorkflow"
+              href="/workflow"
               className="inline-block px-4 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
             >
               Learn how we review information and science

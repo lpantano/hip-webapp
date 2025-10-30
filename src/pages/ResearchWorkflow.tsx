@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight, ArrowDown } from 'lucide-react';
 
 const ResearchWorkflow = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -186,7 +186,7 @@ const ResearchWorkflow = () => {
                     <div className="flex-1 flex items-center justify-end pr-2">
                       <span className="text-xs text-gray-500">Any Yes</span>
                     </div>
-                    <ArrowRight className={`w-5 h-5 transition-all duration-300 ${
+                    <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
                       isPathActive('quality-yes') ? 'text-blue-500' : 'text-gray-300'
                     }`} />
                   </div>
