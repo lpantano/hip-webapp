@@ -104,6 +104,37 @@ const EducationSection = () => {
           </p>
         </div>
 
+        {/* Callout section with 75% statistic */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-6">
+            <div className="bg-accent text-accent-foreground rounded-full px-8 py-6 shadow-lg">
+              <div className="text-5xl font-bold">75%</div>
+            </div>
+            <div className="text-center md:text-left max-w-xl">
+              <p className="text-lg font-medium text-foreground">
+                Agree that scientific research methods are the best way to find out whether something is true or false
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                <a href="https://www.nature.com/articles/s41562-025-02088-w" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                  Nature Human Behaviour
+                </a> volume 9, pages 713–730 (2025)
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-primary text-primary-foreground rounded-lg py-6 px-8 text-center mb-6 shadow-md">
+            <h3 className="text-2xl md:text-3xl font-semibold">
+              Trust the science—but only when the science is trustworthy.
+            </h3>
+          </div>
+
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-base text-foreground leading-relaxed">
+              Scientific <strong>evidence is only as strong as the methods</strong> behind it. While science is the best way to test whether something is true or false, the credibility of any result depends on <strong>how carefully the study is designed, conducted, and analyzed</strong>. Reliable conclusions come from research that follows rigorous, transparent, and widely accepted standards.
+            </p>
+          </div>
+        </div>
+
         {/* Research development path (new) */}
         <div className="max-w-6xl mx-auto mb-8">
           <div className="bg-card/60 border border-border rounded-lg p-4">
