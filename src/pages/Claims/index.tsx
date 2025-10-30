@@ -709,6 +709,14 @@ const Claims = () => {
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
+          <div className="mb-6 flex justify-end">
+            <a
+              href="/ResearchWorkflow"
+              className="inline-block px-4 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
+            >
+              Learn how we review information and science
+            </a>
+          </div>
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">

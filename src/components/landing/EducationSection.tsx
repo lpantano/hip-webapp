@@ -1,10 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckCircle, AlertTriangle, Target } from 'lucide-react';
-import SampleSizeCard from './EducationSection/SampleSizeCard';
-import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
-import PitfallsCard from './EducationSection/PitfallsCard';
 
 const EducationSection = () => {
   // interactive research path state
