@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight, ArrowDown } from 'lucide-react';
+import {Arrow} from '../components/ui/arrow';
+import Header from '../components/layout/Header';
 
 const ResearchWorkflow = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [qualityAnswers, setQualityAnswers] = useState({
-    isReview: null,
-    isQualitative: null,
-    hasConflict: null,
-    overstatesClaim: null
+    isReview: false,
+    isQualitative: false,
+    hasConflict: false,
+    overstatesClaim: false
   });
   const [answers, setAnswers] = useState({});
   const [classification, setClassification] = useState(null);
   const [highlightPath, setHighlightPath] = useState([]);
+
+  // refs to center the visual workflow on the active node
+  const visualRef = useRef(null);
+  const qualityRef = useRef(null);
+  const humanRef = useRef(null);
+  const sampleRef = useRef(null);
 
   const qualityQuestions = [
     { id: 'isReview', label: 'Is this a review paper?' },
@@ -81,10 +89,10 @@ const ResearchWorkflow = () => {
   const resetWorkflow = () => {
     setCurrentStep(0);
     setQualityAnswers({
-      isReview: null,
-      isQualitative: null,
-      hasConflict: null,
-      overstatesClaim: null
+      isReview: false,
+      isQualitative: false,
+      hasConflict: false,
+      overstatesClaim: false
     });
     setAnswers({});
     setClassification(null);
@@ -145,7 +153,34 @@ const ResearchWorkflow = () => {
     return currentStep + 1;
   };
 
+  // Center the workflow visual container on the active node when step changes
+  useEffect(() => {
+    const container = visualRef.current;
+    let targetEl = null;
+
+    // Map currentStep to node ref: 0 => quality, 1 => human, 2 => sample
+    if (currentStep === 0) targetEl = qualityRef.current;
+    else if (currentStep === 1) targetEl = humanRef.current;
+    else if (currentStep === 2) targetEl = sampleRef.current;
+
+    if (container && targetEl && typeof container.scrollTo === 'function') {
+      // Use bounding rects to compute the target center relative to the container
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+
+      // center of target relative to container's scrollLeft
+      const targetCenter = (targetRect.left - containerRect.left) + (targetRect.width / 2) + container.scrollLeft;
+      const left = Math.max(0, Math.min(targetCenter - container.clientWidth / 2, container.scrollWidth - container.clientWidth));
+
+      container.scrollTo({ left, behavior: 'smooth' });
+    }
+  }, [currentStep, highlightPath, classification]);
+
   return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
+      <Header />
+
+    <main className="pt-24 pb-16">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Header */}
@@ -161,166 +196,8 @@ const ResearchWorkflow = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Visual Workflow - Column Layout */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 w-full max-w-[650px] mx-auto overflow-x-auto" >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">Workflow Visualization</h2>
-
-            <div className="flex items-start justify-center gap-4 min-w-max">
-              {/* Column 1: Quality Screen */}
-              <div className="flex flex-col items-center flex-1">
-                <div className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
-                  isNodeActive('quality') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
-                }`}>
-                  <div className="text-center">
-                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
-                      isNodeActive('quality') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                    }`}>
-                      <span className="font-bold">1</span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-700">Quality Screen</p>
-                  </div>
-                </div>
-
-                {/* Outcomes from Quality */}
-                <div className="flex flex-col items-center w-full mt-6 space-y-3">
-                  <div className="flex items-center w-full">
-                    <div className="flex-1 flex items-center justify-end pr-2">
-                      <span className="text-xs text-gray-500">Any Yes</span>
-                    </div>
-                    <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
-                      isPathActive('quality-yes') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                  </div>
-
-                  <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 ${
-                    isNodeActive('quality-yes') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
-                  }`}>
-                    <p className="text-xs font-semibold text-gray-700">Inconclusive</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Arrow between columns */}
-              <div className="flex flex-col items-center justify-start pt-16">
-                <div className="flex items-center">
-                  <span className="text-xs text-gray-500 mr-2">All No</span>
-                  <ArrowRight className={`w-6 h-6 transition-all duration-300 ${
-                    isPathActive('quality-no') ? 'text-blue-500' : 'text-gray-300'
-                  }`} />
-                </div>
-              </div>
-
-              {/* Column 2: Human Study */}
-              <div className="flex flex-col items-center flex-1">
-                <div className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
-                  isNodeActive('human') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
-                }`}>
-                  <div className="text-center">
-                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
-                      isNodeActive('human') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                    }`}>
-                      <span className="font-bold">2</span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-700">Human Study?</p>
-                  </div>
-                </div>
-
-                {/* Outcomes from Human */}
-                <div className="flex flex-col items-center w-full mt-6 space-y-3">
-                  <div className="flex items-center w-full">
-                    <div className="flex-1 flex items-center justify-end pr-2">
-                      <span className="text-xs text-gray-500">No</span>
-                    </div>
-                    <ArrowRight className={`w-5 h-5 transition-all duration-300 ${
-                      isPathActive('human-no') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                  </div>
-
-                  <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 ${
-                    isNodeActive('human-no') ? 'border-orange-400 bg-orange-100 shadow-md' : 'border-gray-200 bg-gray-50'
-                  }`}>
-                    <p className="text-xs font-semibold text-gray-700">Not Tested</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Arrow between columns */}
-              <div className="flex flex-col items-center justify-start pt-16">
-                <div className="flex items-center">
-                  <span className="text-xs text-gray-500 mr-2">Yes</span>
-                  <ArrowRight className={`w-6 h-6 transition-all duration-300 ${
-                    isPathActive('human-yes') ? 'text-blue-500' : 'text-gray-300'
-                  }`} />
-                </div>
-              </div>
-
-              {/* Column 3: Sample Size */}
-              <div className="flex flex-col items-center flex-1">
-                <div className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
-                  isNodeActive('sample') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
-                }`}>
-                  <div className="text-center">
-                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
-                      isNodeActive('sample') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                    }`}>
-                      <span className="font-bold">3</span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-700">Sample Size</p>
-                  </div>
-                </div>
-
-                {/* Outcomes from Sample Size */}
-                <div className="flex flex-col items-center w-full mt-6 space-y-2">
-                  <div className="flex items-center w-full">
-                    <div className="flex-1 flex items-center justify-end pr-2">
-                      <span className="text-xs text-gray-500">&lt;100</span>
-                    </div>
-                    <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
-                      isPathActive('sample-small') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                  </div>
-                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
-                    isNodeActive('sample-small') ? 'border-yellow-400 bg-yellow-100 shadow-md' : 'border-gray-200 bg-gray-50'
-                  }`}>
-                    <p className="text-xs font-semibold text-gray-700">Limited</p>
-                  </div>
-
-                  <div className="flex items-center w-full mt-2">
-                    <div className="flex-1 flex items-center justify-end pr-2">
-                      <span className="text-xs text-gray-500">100-500K</span>
-                    </div>
-                    <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
-                      isPathActive('sample-medium') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                  </div>
-                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
-                    isNodeActive('sample-medium') ? 'border-blue-400 bg-blue-100 shadow-md' : 'border-gray-200 bg-gray-50'
-                  }`}>
-                    <p className="text-xs font-semibold text-gray-700">Tested</p>
-                  </div>
-
-                  <div className="flex items-center w-full mt-2">
-                    <div className="flex-1 flex items-center justify-end pr-2">
-                      <span className="text-xs text-gray-500">&gt;500K</span>
-                    </div>
-                    <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
-                      isPathActive('sample-large') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                  </div>
-                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
-                    isNodeActive('sample-large') ? 'border-green-400 bg-green-100 shadow-md' : 'border-gray-200 bg-gray-50'
-                  }`}>
-                    <p className="text-xs font-semibold text-gray-700">Widely</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Questions */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 w-full max-w-[600px] mx-auto">
-            {!classification ? (
-              <div className="space-y-6">
-                {/* Progress */}
+          <div ref={visualRef} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 w-full max-w-[650px] mx-auto overflow-x-auto" >
+            {/* Progress */}
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">
@@ -337,11 +214,184 @@ const ResearchWorkflow = () => {
                     ></div>
                   </div>
                 </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">Workflow</h2>
+
+            <div className="flex items-start justify-center gap-4 min-w-max">
+              {/* Column 1: Quality Screen */}
+              <div className="flex flex-col items-center flex-1">
+                <div ref={qualityRef} className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('quality') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
+                }`}>
+                  <div className="text-center  min-h-[90px]">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
+                      isNodeActive('quality') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">1</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Quality Screen</p>
+                  </div>
+                </div>
+
+                {/* Outcomes from Quality */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex items-center justify-center pr-2">
+                      {/* <span className="text-xs text-gray-500">Any Yes</span>
+                      <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
+                      isPathActive('quality-yes') ? 'text-blue-500' : 'text-gray-300'
+                    }`} /> */}
+                    <Arrow length={40} label="Any yes" direction="vertical" isActive={isPathActive('quality-yes')}  />
+                    </div>
+
+                  </div>
+
+                  <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 ${
+                    isNodeActive('quality-yes') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <p className="text-xs font-semibold text-gray-700">Inconclusive</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow between columns */}
+              <div className="flex flex-col items-center justify-start pt-16">
+                <div className="flex items-center">
+                  {/* <span className="text-xs text-gray-500 mr-2">All No</span> */}
+                  {/* <ArrowRight className={`w-6 h-6 transition-all duration-300 ${
+                    isPathActive('quality-no') ? 'text-blue-500' : 'text-gray-300'
+                  }`} /> */}
+                  <Arrow length={40} label="All No" isActive={isPathActive('quality-no')}  />
+
+                </div>
+              </div>
+
+              {/* Column 2: Human Study */}
+              <div className="flex flex-col items-center flex-1">
+                <div ref={humanRef} className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('human') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
+                }`}>
+                  <div className="text-center  min-h-[90px]">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
+                      isNodeActive('human') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">2</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Human Study?</p>
+                  </div>
+                </div>
+
+                {/* Outcomes from Human */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full ">
+                    <div className="flex-1 flex items-center justify-center pr-2">
+                      {/* <span className="text-xs text-gray-500">No</span>
+                      <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
+                      isPathActive('human-no') ? 'text-blue-500' : 'text-gray-300'
+                    }`} /> */}
+                    <Arrow length={40} label="No" direction="vertical" isActive={isPathActive('human-no')}  />
+
+                    </div>
+
+                  </div>
+
+                  <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 ${
+                    isNodeActive('human-no') ? 'border-orange-400 bg-orange-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <p className="text-xs font-semibold text-gray-700">Not Tested</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow between columns */}
+              <div className="flex flex-col items-center justify-start pt-16">
+                <div className="flex items-center">
+                  {/* <span className="text-xs text-gray-500 mr-2">Yes</span> */}
+                  {/* <ArrowRight className={`w-6 h-6 transition-all duration-300 ${
+                    isPathActive('human-yes') ? 'text-blue-500' : 'text-gray-300'
+                  }`} /> */}
+                  <Arrow length={50} label="Yes" isActive={isPathActive('human-yes')}  />
+                </div>
+              </div>
+
+              {/* Column 3: Sample Size */}
+              <div className="flex flex-col items-center flex-1">
+                <div ref={sampleRef} className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('sample') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
+                }`}>
+                  <div className="text-center  min-h-[90px] ">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
+                      isNodeActive('sample') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">3</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Sample Size</p>
+                  </div>
+                </div>
+              </div>
+              {/* Column 4: Outcomes from Sample Size */}
+              <div className="flex flex-col items-center flex-2">
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex min-w-[80px] items-center justify-start pr-2">
+                      {/* <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
+                      isPathActive('sample-small') ? 'text-blue-500' : 'text-gray-300'
+                    }`} />
+                      <span className="text-xs text-gray-500">&lt;100</span> */}
+                      <Arrow length={40} label="100" isActive={isPathActive('sample-small')}  />
+                    </div>
+                    <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
+                      isNodeActive('sample-small') ? 'border-yellow-400 bg-yellow-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                    }`}>
+                      <p className="text-xs font-semibold text-gray-700">Limited</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center w-full mt-2">
+                    <div className="flex-1 flex  min-w-[80px] items-center justify-start pr-2">
+                    {/* <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
+                      isPathActive('sample-medium') ? 'text-blue-500' : 'text-gray-300'
+                    }`} />
+                      <span className="text-xs text-gray-500">100-500K</span> */}
+                      <Arrow length={40} label="100-500K" isActive={isPathActive('sample-medium')}  />
+                    </div>
+
+
+                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
+                    isNodeActive('sample-medium') ? 'border-blue-400 bg-blue-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <p className="text-xs font-semibold text-gray-700">Tested</p>
+                  </div>
+                  </div>
+
+                  <div className="flex items-center w-full mt-2">
+                    <div className="flex-1 flex  min-w-[80px]  items-center justify-start pr-2">
+                      {/* <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
+                      isPathActive('sample-large') ? 'text-blue-500' : 'text-gray-300'
+                    }`} />
+                      <span className="text-xs text-gray-500">&gt;500K</span> */}
+                      <Arrow length={40} label="&gt;500K" isActive={isPathActive('sample-large')}  />
+                    </div>
+                    <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
+                    isNodeActive('sample-large') ? 'border-green-400 bg-green-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                  }`}>
+                      <p className="text-xs font-semibold text-gray-700">Widely</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Questions */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 w-full max-w-[600px] mx-auto">
+            {!classification ? (
+              <div className="space-y-6">
+
 
                 {currentStep === 0 ? (
                   /* Quality Questions */
                   <div>
-                    <div className="text-center mb-6">
+                    {/* <div className="text-center mb-6">
                       <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
                         <span className="text-xl font-bold text-blue-600">1</span>
                       </div>
@@ -351,11 +401,11 @@ const ResearchWorkflow = () => {
                       <p className="text-sm text-gray-600">
                         Answer all questions below
                       </p>
-                    </div>
+                    </div> */}
 
                     <div className="space-y-4">
                       {qualityQuestions.map((question) => (
-                        <div key={question.id} className="p-4 border-2 border-gray-200 rounded-xl">
+                        <div key={question.id} className="p-2 border-2 border-gray-200 rounded-xl">
                           <div className="flex items-center justify-between gap-4">
                             <p className="text-sm font-medium text-gray-800 mb-0">
                               {question.label}
@@ -364,7 +414,7 @@ const ResearchWorkflow = () => {
                             <div className="flex gap-3">
                               <button
                                 onClick={() => handleQualityAnswer(question.id, true)}
-                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                className={`py-2 px-2 rounded-lg border-2 transition-all duration-200 ${
                                   qualityAnswers[question.id] === true
                                     ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
                                     : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
@@ -374,7 +424,7 @@ const ResearchWorkflow = () => {
                               </button>
                               <button
                                 onClick={() => handleQualityAnswer(question.id, false)}
-                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                className={`py-2 px-2 rounded-lg border-2 transition-all duration-200 ${
                                   qualityAnswers[question.id] === false
                                     ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
                                     : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
@@ -404,11 +454,11 @@ const ResearchWorkflow = () => {
                   /* Regular Question */
                   <div>
                     <div className="text-center">
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+                      {/* <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
                         <span className="text-xl font-bold text-blue-600">
                           {currentStep + 1}
                         </span>
-                      </div>
+                      </div> */}
                       <h2 className="text-2xl font-semibold text-gray-900 mb-6">
                         {steps[currentStep - 1].question}
                       </h2>
@@ -436,18 +486,18 @@ const ResearchWorkflow = () => {
             ) : (
               /* Result */
               <div className="text-center space-y-6">
-                <div className="inline-flex items-center justify-center mb-4">
+                {/* <div className="inline-flex items-center justify-center mb-4">
                   <div className={`p-6 rounded-full ${getClassificationColor(classification)}`}>
                     {getClassificationIcon(classification)}
                   </div>
-                </div>
+                </div> */}
 
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">
                   Classification Result
                 </h2>
 
                 <div className={`inline-block px-8 py-4 rounded-xl border-2 ${getClassificationColor(classification)}`}>
-                  <p className="text-2xl font-semibold">
+                  <p className="text-lg font-semibold">
                     {classification}
                   </p>
                 </div>
@@ -493,6 +543,8 @@ const ResearchWorkflow = () => {
           </div>
         </div>
       </div>
+    </div>
+    </main>
     </div>
   );
 };
