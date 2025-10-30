@@ -14,20 +14,15 @@ const SampleSizeCard = () => {
             <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <Users className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle className="text-xl">Sample Size</CardTitle>
-            <CardDescription>
-              Why the number of participants matters
+            <CardTitle className="text-xl">Study Size</CardTitle>
+            <CardDescription className="text-base font-medium">
+              Large studies lead to lasting truths
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <button
-              type="button"
-              className="text-black dark:text-white hover:text-black/80 dark:hover:text-white/80 bg-transparent border-none cursor-pointer flex items-center justify-center mx-auto"
-              tabIndex={-1}
-            >
-              {/* You can use an icon here if desired, e.g. <BookOpen className="w-4 h-4 mr-2" /> */}
-              Learn More
-            </button>
+          <CardContent className="text-center text-sm text-muted-foreground px-6">
+            <p className="leading-relaxed">
+              Sample size refers to the essential count of experimental or observational units necessary for conducting reliable, reproducible research. Generally speaking, a study is not conclusive if the group being sampled is not large enough. Larger sample sizes increase the power to find true changes.
+            </p>
           </CardContent>
         </Card>
       </DialogTrigger>

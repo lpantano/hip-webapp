@@ -38,14 +38,14 @@ const PitfallsCard = () => {
               <AlertTriangle className="w-8 h-8 text-primary" />
             </div>
             <CardTitle className="text-xl">Common Pitfalls</CardTitle>
-            <CardDescription>
-              Mistakes that can mislead research conclusions
+            <CardDescription className="text-base font-medium">
+              Watch for these research traps
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <Button variant="ghost" className="text-black dark:text-white hover:text-black/80 dark:hover:text-white/80">
-              Learn More
-            </Button>
+          <CardContent className="text-center text-sm text-muted-foreground px-6">
+            <p className="leading-relaxed">
+              Research can be affected by placebo effects, nocebo effects, and confounding variables. Understanding these common pitfalls helps you critically evaluate study findings and identify potential sources of bias in research conclusions.
+            </p>
           </CardContent>
         </Card>
       </DialogTrigger>

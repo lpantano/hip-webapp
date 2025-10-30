@@ -4,7 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { CheckCircle, AlertTriangle, Target } from 'lucide-react';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
-import PitfallsCard from './EducationSection/PitfallsCard';
+import StudyDesignCard from './EducationSection/StudyDesignCard';
+import AddressingBiasCard from './EducationSection/AddressingBiasCard';
+import ResearchConsensusCard from './EducationSection/ResearchConsensusCard';
 
 const EducationSection = () => {
   // interactive research path state
@@ -164,11 +166,13 @@ const EducationSection = () => {
           </div>
         </div>
 
-        {/* <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           <SampleSizeCard />
           <PopulationDiversityCard />
-          <PitfallsCard />
-        </div> */}
+          <StudyDesignCard />
+          <AddressingBiasCard />
+          <ResearchConsensusCard />
+        </div>
 
         {/* Dialog for pitfall details */}
         <Dialog open={pitfallOpen} onOpenChange={(open) => { setPitfallOpen(open); if (!open) setSelectedPitfall(null); }}>
