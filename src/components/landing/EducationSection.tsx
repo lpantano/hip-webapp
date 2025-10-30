@@ -115,7 +115,7 @@ const EducationSection = () => {
                 Agree that scientific research methods are the best way to find out whether something is true or false
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                <a href="https://www.nature.com/articles/s41562-025-02088-w" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                <a href="https://www.nature.com/articles/s41562-024-02090-5.pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
                   Nature Human Behaviour
                 </a> volume 9, pages 713–730 (2025)
               </p>
