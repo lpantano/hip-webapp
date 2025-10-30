@@ -19,11 +19,6 @@ const StudyDesignCard = () => {
               Careful planning leads to credible results
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center text-sm text-muted-foreground px-6">
-            <p className="leading-relaxed">
-              Thoughtful consideration when conducting a scientific experiment increases the chances of a reliable result. Balanced cohorts, proper controls, and rigorous quality checks ensure good data. Appropriate statistical models suitable for the design strengthens confidence in the results.
-            </p>
-          </CardContent>
         </Card>
       </DialogTrigger>
 
@@ -38,7 +33,12 @@ const StudyDesignCard = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 mt-6">
-          {/* Add detailed content here */}
+          {/* Introduction */}
+          <div>
+            <p className="text-muted-foreground">
+              Thoughtful consideration when conducting a scientific experiment increases the chances of a reliable result. Balanced cohorts, proper controls, and rigorous quality checks ensure good data. Appropriate statistical models suitable for the design strengthens confidence in the results.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

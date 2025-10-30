@@ -19,11 +19,6 @@ const SampleSizeCard = () => {
               Large studies lead to lasting truths
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center text-sm text-muted-foreground px-6">
-            <p className="leading-relaxed">
-              Sample size refers to the essential count of experimental or observational units necessary for conducting reliable, reproducible research. Generally speaking, a study is not conclusive if the group being sampled is not large enough. Larger sample sizes increase the power to find true changes.
-            </p>
-          </CardContent>
         </Card>
       </DialogTrigger>
 
@@ -38,6 +33,13 @@ const SampleSizeCard = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 mt-6">
+          {/* Introduction */}
+          <div>
+            <p className="text-muted-foreground">
+              Sample size refers to the essential count of experimental or observational units necessary for conducting reliable, reproducible research. Generally speaking, a study is not conclusive if the group being sampled is not large enough. Larger sample sizes increase the power to find true changes.
+            </p>
+          </div>
+
           {/* Visual Example */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 p-6 rounded-lg">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">

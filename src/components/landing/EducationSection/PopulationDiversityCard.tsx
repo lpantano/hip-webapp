@@ -20,11 +20,6 @@ const PopulationDiversityCard = () => {
               Diverse data, stronger discoveries
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center text-sm text-muted-foreground px-6">
-            <p className="leading-relaxed">
-              Population diversity refers to the inclusion of participants with a wide range of characteristics—such as age, sex, race, ethnicity, geography, socioeconomic status, and health background. A sample population with adequate representation creates research results which can be more applicable to the general population.
-            </p>
-          </CardContent>
         </Card>
       </DialogTrigger>
 
@@ -39,6 +34,13 @@ const PopulationDiversityCard = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 mt-6">
+          {/* Introduction */}
+          <div>
+            <p className="text-muted-foreground">
+              Population diversity refers to the inclusion of participants with a wide range of characteristics—such as age, sex, race, ethnicity, geography, socioeconomic status, and health background. A sample population with adequate representation creates research results which can be more applicable to the general population.
+            </p>
+          </div>
+
           <div>
             <h3 className="text-lg font-semibold mb-3">What is Population Representation?</h3>
             <p className="text-muted-foreground">

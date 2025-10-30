@@ -20,11 +20,6 @@ const ResearchConsensusCard = () => {
               Repeated results build confidence
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center text-sm text-muted-foreground px-6">
-            <p className="leading-relaxed">
-              When findings are confirmed through independent experiments, it demonstrates that the results are consistent, and not due to chance or specific conditions. Reproducible outcomes across different studies and research groups provide stronger evidence and validation for the results.
-            </p>
-          </CardContent>
         </Card>
       </DialogTrigger>
 
@@ -39,7 +34,12 @@ const ResearchConsensusCard = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 mt-6">
-          {/* Add detailed content here */}
+          {/* Introduction */}
+          <div>
+            <p className="text-muted-foreground">
+              When findings are confirmed through independent experiments, it demonstrates that the results are consistent, and not due to chance or specific conditions. Reproducible outcomes across different studies and research groups provide stronger evidence and validation for the results.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

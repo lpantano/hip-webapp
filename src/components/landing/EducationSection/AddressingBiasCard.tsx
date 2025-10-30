@@ -19,11 +19,6 @@ const AddressingBiasCard = () => {
               Clear the noise to see the signal
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center text-sm text-muted-foreground px-6">
-            <p className="leading-relaxed">
-              Human studies are complex. Differences in age, background, and other factors can influence results, so careful design and proper analysis are key. By identifying and controlling for confounding variables, researchers can reduce bias and build stronger, more trustworthy conclusions.
-            </p>
-          </CardContent>
         </Card>
       </DialogTrigger>
 
@@ -38,7 +33,12 @@ const AddressingBiasCard = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 mt-6">
-          {/* Add detailed content here */}
+          {/* Introduction */}
+          <div>
+            <p className="text-muted-foreground">
+              Human studies are complex. Differences in age, background, and other factors can influence results, so careful design and proper analysis are key. By identifying and controlling for confounding variables, researchers can reduce bias and build stronger, more trustworthy conclusions.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
