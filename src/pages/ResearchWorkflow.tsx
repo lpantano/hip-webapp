@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowDown } from 'lucide-react';
+import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight } from 'lucide-react';
 
 const ResearchWorkflow = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -160,151 +160,153 @@ const ResearchWorkflow = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Visual Workflow */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          {/* Visual Workflow - Column Layout */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 w-full max-w-[650px] mx-auto overflow-x-auto" >
             <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">Workflow Visualization</h2>
 
-            <div className="flex flex-col items-center space-y-4">
-              {/* Step 1: Quality Check */}
-              <div className={`w-full max-w-sm p-4 rounded-xl border-2 transition-all duration-300 ${
-                isNodeActive('quality') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
-              }`}>
-                <div className="text-center">
-                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
-                    isNodeActive('quality') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    <span className="font-bold">1</span>
+            <div className="flex items-start justify-center gap-4 min-w-max">
+              {/* Column 1: Quality Screen */}
+              <div className="flex flex-col items-center flex-1">
+                <div className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('quality') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
+                }`}>
+                  <div className="text-center">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
+                      isNodeActive('quality') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">1</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Quality Screen</p>
                   </div>
-                  <p className="text-sm font-medium text-gray-700">Quality Screen</p>
+                </div>
+
+                {/* Outcomes from Quality */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex items-center justify-end pr-2">
+                      <span className="text-xs text-gray-500">Any Yes</span>
+                    </div>
+                    <ArrowRight className={`w-5 h-5 transition-all duration-300 ${
+                      isPathActive('quality-yes') ? 'text-blue-500' : 'text-gray-300'
+                    }`} />
+                  </div>
+
+                  <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 ${
+                    isNodeActive('quality-yes') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <p className="text-xs font-semibold text-gray-700">Inconclusive</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Arrows from Quality */}
-              <div className="flex items-start justify-center w-full gap-8">
-                <div className="flex flex-col items-center flex-1">
-                  <ArrowDown className={`w-6 h-6 transition-all duration-300 ${
-                    isPathActive('quality-yes') ? 'text-blue-500' : 'text-gray-300'
-                  }`} />
-                  <span className="text-xs text-gray-500 mt-1">Any Yes</span>
-                </div>
-                <div className="flex flex-col items-center flex-1">
-                  <ArrowDown className={`w-6 h-6 transition-all duration-300 ${
+              {/* Arrow between columns */}
+              <div className="flex flex-col items-center justify-start pt-16">
+                <div className="flex items-center">
+                  <span className="text-xs text-gray-500 mr-2">All No</span>
+                  <ArrowRight className={`w-6 h-6 transition-all duration-300 ${
                     isPathActive('quality-no') ? 'text-blue-500' : 'text-gray-300'
                   }`} />
-                  <span className="text-xs text-gray-500 mt-1">All No</span>
                 </div>
               </div>
 
-              {/* Results Row 1 */}
-              <div className="flex items-center justify-center w-full gap-8">
-                <div className={`flex-1 p-3 rounded-lg border-2 text-center transition-all duration-300 ${
-                  isNodeActive('quality-yes') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
-                }`}>
-                  <p className="text-xs font-semibold text-gray-700">Inconclusive</p>
-                </div>
-
-                {/* Step 2: Human Study */}
-                <div className={`flex-1 p-3 rounded-lg border-2 transition-all duration-300 ${
+              {/* Column 2: Human Study */}
+              <div className="flex flex-col items-center flex-1">
+                <div className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
                   isNodeActive('human') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
                 }`}>
                   <div className="text-center">
-                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full mb-1 ${
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
                       isNodeActive('human') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
                     }`}>
-                      <span className="text-sm font-bold">2</span>
+                      <span className="font-bold">2</span>
                     </div>
-                    <p className="text-xs font-medium text-gray-700">Human Study?</p>
+                    <p className="text-sm font-medium text-gray-700">Human Study?</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Arrows from Human */}
-              <div className="flex items-start justify-end w-full gap-8 pr-0">
-                <div className="flex flex-col items-center flex-1 invisible">
-                  <ArrowDown className="w-6 h-6 text-gray-300" />
-                </div>
-                <div className="flex items-start justify-center gap-8 flex-1">
-                  <div className="flex flex-col items-center">
-                    <ArrowDown className={`w-6 h-6 transition-all duration-300 ${
+                {/* Outcomes from Human */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex items-center justify-end pr-2">
+                      <span className="text-xs text-gray-500">No</span>
+                    </div>
+                    <ArrowRight className={`w-5 h-5 transition-all duration-300 ${
                       isPathActive('human-no') ? 'text-blue-500' : 'text-gray-300'
                     }`} />
-                    <span className="text-xs text-gray-500 mt-1">No</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <ArrowDown className={`w-6 h-6 transition-all duration-300 ${
-                      isPathActive('human-yes') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                    <span className="text-xs text-gray-500 mt-1">Yes</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Results Row 2 */}
-              <div className="flex items-center justify-end w-full gap-8">
-                <div className="flex-1 invisible"></div>
-                <div className="flex items-center justify-center gap-8 flex-1">
-                  <div className={`p-3 rounded-lg border-2 text-center transition-all duration-300 ${
+                  <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 ${
                     isNodeActive('human-no') ? 'border-orange-400 bg-orange-100 shadow-md' : 'border-gray-200 bg-gray-50'
                   }`}>
                     <p className="text-xs font-semibold text-gray-700">Not Tested</p>
                   </div>
-
-                  {/* Step 3: Sample Size */}
-                  <div className={`p-3 rounded-lg border-2 transition-all duration-300 ${
-                    isNodeActive('sample') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
-                  }`}>
-                    <div className="text-center">
-                      <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full mb-1 ${
-                        isNodeActive('sample') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-                      }`}>
-                        <span className="text-sm font-bold">3</span>
-                      </div>
-                      <p className="text-xs font-medium text-gray-700">Sample Size</p>
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {/* Arrows from Sample */}
-              <div className="flex items-start justify-end w-full">
-                <div className="flex-1 invisible"></div>
-                <div className="flex items-start justify-center gap-4 flex-1">
-                  <div className="flex flex-col items-center">
-                    <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
+              {/* Arrow between columns */}
+              <div className="flex flex-col items-center justify-start pt-16">
+                <div className="flex items-center">
+                  <span className="text-xs text-gray-500 mr-2">Yes</span>
+                  <ArrowRight className={`w-6 h-6 transition-all duration-300 ${
+                    isPathActive('human-yes') ? 'text-blue-500' : 'text-gray-300'
+                  }`} />
+                </div>
+              </div>
+
+              {/* Column 3: Sample Size */}
+              <div className="flex flex-col items-center flex-1">
+                <div className={`w-full p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('sample') ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' : 'border-gray-200 bg-white'
+                }`}>
+                  <div className="text-center">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 ${
+                      isNodeActive('sample') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">3</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Sample Size</p>
+                  </div>
+                </div>
+
+                {/* Outcomes from Sample Size */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-2">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex items-center justify-end pr-2">
+                      <span className="text-xs text-gray-500">&lt;100</span>
+                    </div>
+                    <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
                       isPathActive('sample-small') ? 'text-blue-500' : 'text-gray-300'
                     }`} />
-                    <span className="text-xs text-gray-500 mt-1">&lt;100</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
-                      isPathActive('sample-medium') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                    <span className="text-xs text-gray-500 mt-1">100-500K</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <ArrowDown className={`w-5 h-5 transition-all duration-300 ${
-                      isPathActive('sample-large') ? 'text-blue-500' : 'text-gray-300'
-                    }`} />
-                    <span className="text-xs text-gray-500 mt-1">&gt;500K</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Final Results Row */}
-              <div className="flex items-center justify-end w-full">
-                <div className="flex-1 invisible"></div>
-                <div className="flex items-center justify-center gap-4 flex-1">
-                  <div className={`p-2 rounded-lg border-2 text-center transition-all duration-300 ${
+                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
                     isNodeActive('sample-small') ? 'border-yellow-400 bg-yellow-100 shadow-md' : 'border-gray-200 bg-gray-50'
                   }`}>
                     <p className="text-xs font-semibold text-gray-700">Limited</p>
                   </div>
-                  <div className={`p-2 rounded-lg border-2 text-center transition-all duration-300 ${
+
+                  <div className="flex items-center w-full mt-2">
+                    <div className="flex-1 flex items-center justify-end pr-2">
+                      <span className="text-xs text-gray-500">100-500K</span>
+                    </div>
+                    <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
+                      isPathActive('sample-medium') ? 'text-blue-500' : 'text-gray-300'
+                    }`} />
+                  </div>
+                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
                     isNodeActive('sample-medium') ? 'border-blue-400 bg-blue-100 shadow-md' : 'border-gray-200 bg-gray-50'
                   }`}>
                     <p className="text-xs font-semibold text-gray-700">Tested</p>
                   </div>
-                  <div className={`p-2 rounded-lg border-2 text-center transition-all duration-300 ${
+
+                  <div className="flex items-center w-full mt-2">
+                    <div className="flex-1 flex items-center justify-end pr-2">
+                      <span className="text-xs text-gray-500">&gt;500K</span>
+                    </div>
+                    <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
+                      isPathActive('sample-large') ? 'text-blue-500' : 'text-gray-300'
+                    }`} />
+                  </div>
+                  <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 ${
                     isNodeActive('sample-large') ? 'border-green-400 bg-green-100 shadow-md' : 'border-gray-200 bg-gray-50'
                   }`}>
                     <p className="text-xs font-semibold text-gray-700">Widely</p>
@@ -315,7 +317,7 @@ const ResearchWorkflow = () => {
           </div>
 
           {/* Interactive Questions */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 w-full max-w-[600px] mx-auto">
             {!classification ? (
               <div className="space-y-6">
                 {/* Progress */}
@@ -354,30 +356,33 @@ const ResearchWorkflow = () => {
                     <div className="space-y-4">
                       {qualityQuestions.map((question) => (
                         <div key={question.id} className="p-4 border-2 border-gray-200 rounded-xl">
-                          <p className="text-sm font-medium text-gray-800 mb-3">
-                            {question.label}
-                          </p>
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => handleQualityAnswer(question.id, true)}
-                              className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
-                                qualityAnswers[question.id] === true
-                                  ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                                  : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
-                              }`}
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() => handleQualityAnswer(question.id, false)}
-                              className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
-                                qualityAnswers[question.id] === false
-                                  ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                                  : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
-                              }`}
-                            >
-                              No
-                            </button>
+                          <div className="flex items-center justify-between gap-4">
+                            <p className="text-sm font-medium text-gray-800 mb-0">
+                              {question.label}
+                            </p>
+
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => handleQualityAnswer(question.id, true)}
+                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                  qualityAnswers[question.id] === true
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
+                                }`}
+                              >
+                                Yes
+                              </button>
+                              <button
+                                onClick={() => handleQualityAnswer(question.id, false)}
+                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                  qualityAnswers[question.id] === false
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
+                                }`}
+                              >
+                                No
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
