@@ -709,23 +709,24 @@ const Claims = () => {
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
-          <div className="mb-6 flex justify-end">
-            <a
-              href="/workflow"
-              className="inline-block px-4 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
-            >
-              Learn how we review information and science
-            </a>
-          </div>
+
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
               Health Claims
             </h1>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-lg text-muted-foreground mb-4">
               Community-driven claims about products and services for women's health conditions.
               Upvote Claims with strong scientific backing to prioritize them for expert review.
             </p>
+            <div className="mb-1 flex justify-center">
+            <a
+              href="/workflow"
+              className="inline-block px-2 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
+            >
+              Learn how we review information and science
+            </a>
+          </div>
           </div>
 
           {/* Tabs Navigation */}
