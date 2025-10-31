@@ -1,72 +1,43 @@
-import { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Header from '@/components/layout/Header';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Founder {
   name: string;
   role: string;
   bio: string;
-  avatar_url?: string;
+  avatar_url: string;
 }
 
 const Team = () => {
-  const [founders, setFounders] = useState<Founder[]>([
+  const founders: Founder[] = [
     {
       name: "Lorena Pantano",
       role: "CEO / Chief Product Officer",
       bio: "Leading product strategy and company vision with 10+ years in health tech innovation.",
+      avatar_url: "/team/lorena-pantano.jpg"
     },
     {
       name: "Meeta Mistry",
       role: "Chief Scientific Officer",
       bio: "PhD in Data Science, specializing in health data analysis and women's health research.",
+      avatar_url: "/team/meeta-mistry.jpg"
     },
     {
       name: "Judit Flo Gaya",
       role: "Chief Security Officer",
       bio: "Cybersecurity expert ensuring the highest standards of data protection and privacy.",
+      avatar_url: "/team/judit-flo.jpg"
     },
     {
       name: "Lina Faller",
       role: "Chief Technology Officer",
       bio: "Full-stack engineer with expertise in scalable health platforms and AI integration.",
+      avatar_url: "/team/lina-faller.jpg"
     }
-  ]);
-
-  useEffect(() => {
-    fetchFounderAvatars();
-  }, []);
-
-  const fetchFounderAvatars = async () => {
-    try {
-      // Fetch from profiles table to get avatar URLs
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('display_name, avatar_url, profile_avatar_url')
-        .in('display_name', ['Lorena Pantano', 'Meeta Mistry', 'Judit Flo Gaya', 'Lina Faller']);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        // Update founders with avatar URLs from database
-        setFounders(prevFounders =>
-          prevFounders.map(founder => {
-            const profile = data.find(p => p.display_name === founder.name);
-            return {
-              ...founder,
-              avatar_url: profile?.profile_avatar_url || profile?.avatar_url
-            };
-          })
-        );
-      }
-    } catch (error) {
-      console.error('Error fetching founder avatars:', error);
-    }
-  };
+  ];
 
   return (
     <div className="min-h-screen bg-background">
