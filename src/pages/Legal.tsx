@@ -30,17 +30,7 @@ const Legal = () => {
                   </p>
                 </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Research Standards</h2>
-                  <p className="mb-4">All research featured on our platform adheres to strict quality standards:</p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Peer Review:</strong> Only peer-reviewed studies from reputable journals</li>
-                    <li><strong>Sample Size Transparency:</strong> Clear indication of study sample sizes and limitations</li>
-                    <li><strong>Population Representation:</strong> Diversity metrics and demographic information</li>
-                    <li><strong>Research Consensus:</strong> Multiple studies supporting each affirmation when available</li>
-                    <li><strong>Evidence Quality:</strong> Strength of evidence clearly communicated</li>
-                  </ul>
-                </section>
+
 
                 <section>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">Data Usage Terms</h2>
@@ -77,18 +67,7 @@ const Legal = () => {
                   </ul>
                 </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Research Methodology Transparency</h2>
-                  <p className="mb-4">
-                    We believe in complete transparency about research quality. Each study includes:
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Sample Size Scoring:</strong> Clear indicators of study participant numbers</li>
-                    <li><strong>Representation Metrics:</strong> Information about demographic diversity</li>
-                    <li><strong>Consensus Indicators:</strong> How many studies support each finding</li>
-                    <li><strong>Evidence Strength:</strong> Quality assessment of the research methodology</li>
-                  </ul>
-                </section>
+
 
                 <section>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">Updates and Changes</h2>
@@ -126,7 +105,7 @@ const Legal = () => {
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Email address for account creation and communication</li>
                     <li>Usage analytics to improve our research tools</li>
-                    <li>Research preferences and saved affirmations</li>
+                    <li>Research preferences and saved health claims</li>
                   </ul>
                 </section>
 
@@ -134,7 +113,7 @@ const Legal = () => {
                   <h2 className="text-2xl font-semibold text-foreground mb-4">How We Use Your Data</h2>
                   <p className="mb-4">Your information is used to:</p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Provide personalized research-backed affirmations</li>
+                    <li>Provide personalized research-backed health claims</li>
                     <li>Improve our platform's educational content</li>
                     <li>Send important updates about new research findings</li>
                     <li>Maintain platform security and prevent abuse</li>
