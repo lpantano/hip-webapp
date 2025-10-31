@@ -17,13 +17,13 @@ const About = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16">
+      <section className="pt-24 pb-12 overflow-visible">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6 bg-hero-gradient bg-clip-text text-transparent">
+          <div className="max-w-5xl mx-auto text-center">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               About Health Integrity Project
             </h1>
-            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-5 leading-relaxed">
               Empowering women with evidence-based insights through collaborative research and transparent data analysis.
             </p>
           </div>
@@ -31,7 +31,7 @@ const About = () => {
       </section>
 
       {/* Navigation Links */}
-      <section className="pb-16">
+      <section className="pb-12">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-3 gap-6">
@@ -92,7 +92,7 @@ const About = () => {
       </section>
 
       {/* Vision Section */}
-      <section id="vision" className="py-16 bg-muted/30">
+      <section id="vision" className="py-12 bg-muted/30">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -148,7 +148,7 @@ const About = () => {
       </section>
 
       {/* Business Model Section */}
-      <section id="business-model" className="py-16">
+      <section id="business-model" className="py-12">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
