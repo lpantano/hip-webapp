@@ -711,7 +711,7 @@ const Claims = () => {
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Health Claims
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
