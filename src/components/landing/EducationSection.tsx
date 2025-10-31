@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ResearchQualityScale from './ResearchQualityScale';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
 import StudyDesignCard from './EducationSection/StudyDesignCard';
@@ -246,6 +247,15 @@ const EducationSection = () => {
             <ChevronRight size={20} />
           </button>
         </div>
+
+        {/* Research quality scale - compact badge style */}
+        {/* <ResearchQualityScale
+          steps={steps}
+          selectedStep={selectedStep}
+          setSelectedStep={setSelectedStep}
+          setIsHoveringPath={setIsHoveringPath}
+          PHASE_INFO={PHASE_INFO}
+        /> */}
 
         {/* Dialog for pitfall details */}
         <Dialog open={pitfallOpen} onOpenChange={(open) => { setPitfallOpen(open); if (!open) setSelectedPitfall(null); }}>
