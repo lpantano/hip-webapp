@@ -51,12 +51,12 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Smartphone className="w-5 h-5" />
-              Install ClaimWell App
+              Install HealthIntegrityProject App
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-muted-foreground">
-              Add ClaimWell to your home screen for quick access and a native app experience!
+              Add HealthIntegrityProject to your home screen for quick access and a native app experience!
             </p>
             
             <div className="space-y-3">
@@ -83,7 +83,7 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
                 <ol className="text-sm space-y-1 list-decimal list-inside">
                   <li>Look for the install icon in the address bar</li>
                   <li>Click it and select "Install"</li>
-                  <li>Or go to browser menu → "Install ClaimWell"</li>
+                  <li>Or go to browser menu → "Install HealthIntegrityProject"</li>
                 </ol>
               </div>
             </div>
@@ -92,7 +92,7 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  Once installed, ClaimWell will work offline and send you notifications for new expert reviews!
+                  Once installed, HealthIntegrityProject will work offline and send you notifications for new expert reviews!
                 </p>
               </div>
             </div>
