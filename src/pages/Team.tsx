@@ -29,7 +29,7 @@ const Team = () => {
       name: "Judit Flo Gaya",
       role: "Chief Security Officer",
       bio: "Cybersecurity expert ensuring the highest standards of data protection and privacy.",
-      avatar_url: "/team/judit-flo.jpg"
+      avatar_url: "/team/judit-flo.png"
     },
     {
       name: "Lina Faller",
@@ -42,12 +42,12 @@ const Team = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Header Section */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Meet Our Team
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -61,7 +61,7 @@ const Team = () => {
               <Users className="h-8 w-8 text-primary" />
               Our Founders
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {founders.map((founder, index) => (
                 <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
