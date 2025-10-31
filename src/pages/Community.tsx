@@ -47,28 +47,28 @@ const Community = () => {
       const { data: membersData, error: membersError } = await supabase
         .from('expert_stats')
         .select('*')
-      
+
       if (membersError) throw membersError;
-      
+
       const members = membersData || [];
-      
+
       // Sort members to show experts first, then researchers
       const sortedMembers = members.sort((a, b) => {
         const aMemberType = (a as CommunityMember).member_type;
         const bMemberType = (b as CommunityMember).member_type;
-        
+
         // Experts first (including fallback for existing data without member_type)
         if ((aMemberType === 'expert' || !aMemberType) && bMemberType === 'researcher') return -1;
         if (aMemberType === 'researcher' && (bMemberType === 'expert' || !bMemberType)) return 1;
-        
+
         // Within same type, sort by display name or expertise area
         const aName = (a as CommunityMember).display_name || (a as CommunityMember).expertise_area;
         const bName = (b as CommunityMember).display_name || (b as CommunityMember).expertise_area;
         return aName.localeCompare(bName);
       });
-      
+
       setAllMembers(sortedMembers);
-      
+
     } catch (error) {
       console.error('Error fetching community members:', error);
     } finally {
@@ -91,7 +91,7 @@ const Community = () => {
   };
 
   const getSocialLink = (links: { platform: string; url: string }[], platform: string) => {
-    return links.find(link => 
+    return links.find(link =>
       link.platform.toLowerCase().includes(platform.toLowerCase())
     )?.url;
   };
@@ -113,7 +113,7 @@ const Community = () => {
 
   const getContributorBadge = (member: CommunityMember) => {
     const level = member.contributor_level || 'Seedling';
-    
+
     const badgeMap = {
       'Luminary': { level: 'Luminary', emoji: '🌟', description: 'Top Contributor' },
       'Architect': { level: 'Architect', emoji: '🏛️', description: 'Advanced Contributor' },
@@ -121,7 +121,7 @@ const Community = () => {
       'Explorer': { level: 'Explorer', emoji: '🔬', description: 'Intermediate Contributor' },
       'Seedling': { level: 'Seedling', emoji: '🌱', description: 'Entry / New Contributor' }
     };
-    
+
     return badgeMap[level as keyof typeof badgeMap] || badgeMap['Seedling'];
   };
 
@@ -135,9 +135,9 @@ const Community = () => {
     const title = formatExpertiseArea(member.expertise_area) + ` ${member.member_type === 'expert' ? 'Specialist' : 'Researcher'}`;
     const yearsOnPlatform = getYearsOnPlatform(member.created_at);
     const contributorBadge = getContributorBadge(member);
-    
+
     return (
-      <Card 
+      <Card
         className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer relative max-w-[240px] p-4"
         onClick={() => openProfile(member)}
       >
@@ -207,11 +207,11 @@ const Community = () => {
                 const Icon = getSocialIcon(link.platform);
                 // use url as key since it's unique after dedupe
                 return (
-                  <Button 
+                  <Button
                     key={link.url}
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-7 w-7 p-0" 
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 p-0"
                     onClick={(e) => e.stopPropagation()}
                     asChild
                   >
@@ -238,12 +238,12 @@ const Community = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Header Section */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Our Community
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -257,7 +257,7 @@ const Community = () => {
               <Users className="h-8 w-8 text-primary" />
               Community Members
             </h2>
-            
+
             {loading ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">Loading community members...</p>

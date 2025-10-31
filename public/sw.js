@@ -1,5 +1,5 @@
 // At the top of sw.js
-const CACHE_NAME = `claimwell-${self.registration.scope}-v${new Date().getTime()}`;
+const CACHE_NAME = `healthintegrityproject-${self.registration.scope}-v${new Date().getTime()}`;
 const urlsToCache = [
   '/',
   '/claims',
