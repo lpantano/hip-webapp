@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/layout/Header';
-import { Users, Eye, Building2, Map } from 'lucide-react';
+import { Users, Eye, Building2 } from 'lucide-react';
 
 const About = () => {
   const scrollToSection = (id: string) => {
@@ -34,7 +34,7 @@ const About = () => {
       <section className="pb-16">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
                 <CardHeader className="text-center">
                   <Users className="w-12 h-12 mx-auto mb-4 text-primary" />
@@ -86,20 +86,6 @@ const About = () => {
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
-                <CardHeader className="text-center">
-                  <Map className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <CardTitle>Roadmap & Support</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground mb-4">
-                    Explore our future plans and ways to support our mission
-                  </p>
-                  <Button asChild variant="outline">
-                    <Link to="/roadmap">View Roadmap</Link>
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
@@ -210,41 +196,6 @@ const About = () => {
                   </ul>
                 </CardContent>
               </Card>
-            </div>
-
-            <div className="bg-muted/30 rounded-lg p-8">
-              <h3 className="text-2xl font-semibold mb-6 text-center">Investment & Support</h3>
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold mb-4 text-primary">Angel Investors</h4>
-                  <p className="text-muted-foreground mb-4">
-                    We welcome angel investors who align with our mission of empowering women 
-                    through evidence-based insights.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Investors participate in our cooperative structure while maintaining 
-                    our community-first approach.
-                  </p>
-                </div>
-                
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold mb-4 text-primary">Donations</h4>
-                  <p className="text-muted-foreground mb-4">
-                    Donations help us maintain free access to essential research insights 
-                    and support underrepresented communities.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Every donation directly impacts our ability to provide transparent, 
-                    accessible research analysis.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link to="/roadmap">View Our Roadmap & Support Options</Link>
-                </Button>
-              </div>
             </div>
           </div>
         </div>
