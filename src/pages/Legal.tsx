@@ -7,7 +7,7 @@ const Legal = () => {
       <Header />
       <main className="container mx-auto px-6 pt-32 pb-20">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold bg-hero-gradient bg-clip-text text-transparent mb-8">Legal Information</h1>
+          <h1 className="text-4xl text-center font-bold bg-hero-gradient bg-clip-text text-transparent mb-8">Legal Information</h1>
 
           <Tabs defaultValue="terms" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-card/60 border border-border">
@@ -18,14 +18,14 @@ const Legal = () => {
                 Privacy Policy
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="terms" className="mt-6">
               <div className="bg-card border border-border rounded-lg p-8 space-y-6 text-foreground">
                 <section>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">Platform Purpose</h2>
                   <p className="mb-4">
-                    HealthIntegrityProject is an educational platform that provides research-backed affirmations 
-                    and insights specifically focused on women's experiences, health, and empowerment. Our mission is to 
+                    HealthIntegrityProject is an educational platform that provides research-backed affirmations
+                    and insights specifically focused on women's experiences, health, and empowerment. Our mission is to
                     bridge the gap between scientific research and practical self-empowerment tools.
                   </p>
                 </section>
@@ -93,7 +93,7 @@ const Legal = () => {
                 <section>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">Updates and Changes</h2>
                   <p className="mb-4">
-                    We reserve the right to update these terms as our platform evolves. Users will be notified of 
+                    We reserve the right to update these terms as our platform evolves. Users will be notified of
                     significant changes, and continued use constitutes acceptance of updated terms.
                   </p>
                 </section>
@@ -115,7 +115,7 @@ const Legal = () => {
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="privacy" className="mt-6">
               <div className="bg-card border border-border rounded-lg p-8 space-y-6 text-foreground">
                 <section>
