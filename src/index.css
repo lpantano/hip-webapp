@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
@@ -18,11 +18,11 @@ All colors MUST be HSL.
     --popover-foreground: 222.2 84% 4.9%; /* very dark blue-gray */
 
     /* PRIMARY: Bright Sky (friendly / modern) */
-    /* #1995AD, #A1D6E2, #F1F1F2  teal blue, light blue, and light gray */ 
-    --primary: 191 46% 54%; /* #3FD0F1 sky blue */
+    /* #1995AD, #A1D6E2, #F1F1F2  teal blue, light blue, and light gray */
+    --primary: 204.6 41.9% 44.5%; /* #427aa1 ocean blue */
     --primary-foreground: 0 0% 100%; /* white */
 
-    --secondary: 275 85% 76%; /* light purple */
+    --secondary: 240 100% 76.1%; /* #b8b8ff light purple */
     --secondary-foreground: 0 0% 100%; /* white */
 
     --muted: 220 20% 95%; /* very light gray */
@@ -41,7 +41,7 @@ All colors MUST be HSL.
     --ring: 204 90% 65%; /* light blue */
 
     --radius: 0.75rem;
-    
+
     /* Theme gradients */
     --hero-gradient: linear-gradient(135deg, hsl(199 46% 54%) 0%, hsl(204 90% 85%) 100%); /* medium blue to light sky blue */
     --card-gradient: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%); /* white to very light blue-gray */
@@ -97,7 +97,7 @@ All colors MUST be HSL.
     --border: 217.2 32.6% 17.5%; /* dark gray-blue */
     --input: 217.2 32.6% 17.5%; /* dark gray-blue */
     --ring: 204 90% 48%; /* medium blue */
-    
+
     /* Dark mode gradients tuned to original brand */
     --hero-gradient: linear-gradient(135deg, hsl(210 79% 26%) 0%, hsl(165 78% 26%) 100%); /* dark blue to dark teal */
     --card-gradient: linear-gradient(145deg, hsl(222.2 84% 4.9%) 0%, hsl(217.2 32.6% 17.5%) 100%); /* very dark blue-gray to dark gray-blue */

@@ -14,28 +14,28 @@ const Header = () => {
     <header className="absolute top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-sm border-b border-white/10">
       <div className="container mx-auto px-4 py-2 md:px-6 md:py-4">
         <div className="flex items-center justify-between">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center gap-3 hover:text-accent transition-colors"
-            aria-label="ClaimWell home"
+            aria-label="The Health Integrity Project home"
           >
-            <img src="/logo-only-transparent.png" alt="ClaimWell logo" className="w-7 h-7 md:w-9 md:h-9 object-contain" />
+            <img src="/logo-hi2-tr.png" alt="The Health Integrity Project logo" className="w-7 h-7 md:w-14 md:h-14 object-contain" />
             {/* <div className="leading-none">
               <span className="text-3xl md:text-4xl font-extrabold text-white/80 -mt-1">W</span>
             </div> */}
           </Link>
-          
+
           {/* Mobile Navigation - Show only Claims and Community with icons */}
           <nav className="flex md:hidden items-center gap-2">
-            <Link 
-              to="/claims" 
+            <Link
+              to="/claims"
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
-              title="Claims"
+              title="Health"
             >
               Claims
             </Link>
-            <Link 
-              to="/community" 
+            <Link
+              to="/community"
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Community"
             >
@@ -55,7 +55,7 @@ const Header = () => {
               Community
             </Link>
             <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
-              Claims
+              Health
             </Link>
             {/* <Link to="/games" className="text-white/80 hover:text-white transition-colors">
               Games
@@ -67,7 +67,7 @@ const Header = () => {
               Legal
             </Link>
           </nav>
-          
+
           <div className="flex items-center gap-4">
             {/* Mobile Hamburger Menu */}
             <DropdownMenu>
