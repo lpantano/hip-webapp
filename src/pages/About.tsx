@@ -166,7 +166,7 @@ const About = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">
-                    Health Integrity Project operates as a cooperative where every member has a weighted vote
+                    HealthIntegrityProject operates as a cooperative where every member has a weighted vote
                     in the company's direction. This ensures that decisions reflect the community's
                     needs and values.
                   </p>
