@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckCircle, AlertTriangle, Target } from 'lucide-react';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
 import StudyDesignCard from './EducationSection/StudyDesignCard';
@@ -135,74 +134,73 @@ const EducationSection = () => {
           </div>
         </div>
 
-        {/* Research development path (new) */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="bg-card/60 border border-border rounded-lg p-4">
-            {/* interactive path: clickable steps show details below */}
-            {/* use existing useState already present in this file for other dialogs */}
-            {/* define phase info inline so translations/changes are easy */}
-            <div className="flex flex-col items-start">
-              <div className="flex flex-wrap items-center justify-center gap-4 w-full py-2">
-                {steps.map((s, i) => (
-                  <div key={s.id} className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedStep(s.id)}
-                      onMouseEnter={() => setIsHoveringPath(true)}
-                      onMouseLeave={() => setIsHoveringPath(false)}
-                      className={`flex flex-col items-center gap-1 px-2 py-2 rounded-md min-w-[90px] max-w-[120px] break-words ${selectedStep === s.id ? 'ring-2 ring-primary/40 bg-primary/5' : 'hover:bg-muted/30'}`}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-center ${selectedStep === s.id ? 'bg-primary/20' : 'bg-primary/10'}`}>{s.step}</div>
-                      <div className="text-xs font-medium text-center leading-tight break-words">{s.label}</div>
-                    </button>
-                    {i < steps.length - 1 && <div className="h-px w-4 bg-border mx-1" />}
-                  </div>
-                ))}
-              </div>
-
-              {/* details panel - fixed height to prevent layout shifts when content changes */}
-              <div className="w-full mt-4 p-4 bg-background/80 rounded h-[140px] md:h-[180px] overflow-auto">
-                {PHASE_INFO[selectedStep] && (
-                  <div>
-                    <div className="font-semibold text-lg">
-                      {PHASE_INFO[selectedStep].title}
-                      {('time' in PHASE_INFO[selectedStep]) ? (
-                        <span className="text-sm text-muted-foreground"> • {PHASE_INFO[selectedStep].time}</span>
-                      ) : null}
-                      {('threshold' in PHASE_INFO[selectedStep]) ? (
-                        <span className="text-sm text-muted-foreground"> • Threshold: {PHASE_INFO[selectedStep].threshold}</span>
-                      ) : null}
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-2">{PHASE_INFO[selectedStep].desc}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* end interactive path; the existing 3-column summary follows (kept unchanged) */}
-            {/* <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
-              <div className="p-3 bg-muted/30 rounded">
-                <div className="font-semibold">Phase 1 — Safety</div>
-                <div className="text-xs text-muted-foreground">Small group of healthy volunteers to test safety, dosing and side effects.</div>
-              </div>
-              <div className="p-3 bg-muted/30 rounded">
-                <div className="font-semibold">Phase 2 — Efficacy</div>
-                <div className="text-xs text-muted-foreground">Larger group to evaluate effectiveness and short-term side effects.</div>
-              </div>
-              <div className="p-3 bg-muted/30 rounded">
-                <div className="font-semibold">Phase 3 — Confirmation</div>
-                <div className="text-xs text-muted-foreground">Large, multi-site trials to confirm benefit-risk profile and rare adverse events.</div>
-              </div>
-            </div> */}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
           <SampleSizeCard />
           <PopulationDiversityCard />
           <StudyDesignCard />
           <AddressingBiasCard />
           <ResearchConsensusCard />
+        </div>
+
+        {/* Research quality scale - compact badge style */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="bg-muted/30 border border-muted rounded-lg p-4">
+            <div className="flex flex-col items-center gap-3">
+              {/* Compact badge row */}
+              <div className="flex items-center justify-center gap-2 w-full">
+                {steps.map((s, i) => (
+                  <div key={s.id} className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStep(s.id)}
+                      onMouseEnter={() => setIsHoveringPath(true)}
+                      onMouseLeave={() => setIsHoveringPath(false)}
+                      className={`group relative flex flex-col items-center gap-1.5 px-3 py-2 rounded-md transition-all ${
+                        selectedStep === s.id
+                          ? 'bg-accent/70 shadow-sm'
+                          : 'hover:bg-accent/30'
+                      }`}
+                      aria-label={s.label}
+                    >
+                      {/* Badge number */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                        selectedStep === s.id
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-orange-200 text-orange-700 group-hover:bg-orange-300'
+                      }`}>
+                        {s.step}
+                      </div>
+                      {/* Compact label - hidden on mobile, shown on larger screens */}
+                      <div className="hidden sm:block text-[10px] font-medium text-center leading-tight text-muted-foreground max-w-[80px]">
+                        {s.label}
+                      </div>
+                    </button>
+                    {/* Connector line */}
+                    {i < steps.length - 1 && (
+                      <div className="h-px w-3 sm:w-6 bg-muted-foreground/30" />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Compact details panel */}
+              {PHASE_INFO[selectedStep] && (
+                <div className="w-full px-4 py-2 bg-background/50 rounded-md border border-muted/50">
+                  <div className="text-center">
+                    <div className="font-semibold text-base mb-1">
+                      {PHASE_INFO[selectedStep].title}
+                      {('threshold' in PHASE_INFO[selectedStep]) && (
+                        <span className="text-xs text-muted-foreground ml-2">• Threshold: {PHASE_INFO[selectedStep].threshold}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-snug">
+                      {PHASE_INFO[selectedStep].desc}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Dialog for pitfall details */}
