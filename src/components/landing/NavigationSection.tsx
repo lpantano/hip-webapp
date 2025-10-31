@@ -16,7 +16,7 @@ const NavigationSection = () => {
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Learn More About ClaimWell</h2>
+            <h2 className="text-3xl font-bold mb-4">Learn More About HealthIntegrityProject</h2>
             <p className="text-muted-foreground">
               Discover our team, vision, approach, and roadmap for the future
             </p>
