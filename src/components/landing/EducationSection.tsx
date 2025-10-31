@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckCircle, AlertTriangle, Target, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
 import StudyDesignCard from './EducationSection/StudyDesignCard';
@@ -65,7 +65,7 @@ const EducationSection = () => {
   }, []);
 
   // pointer/touch handlers for dragging
-  const onPointerDown = useCallback((e: any) => {
+  const onPointerDown = useCallback((e) => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
     // capture the pointer so we keep receiving events
@@ -76,7 +76,7 @@ const EducationSection = () => {
     scrollLeftStartRef.current = scroller.scrollLeft;
   }, []);
 
-  const onPointerMove = useCallback((e: any) => {
+  const onPointerMove = useCallback((e) => {
     const scroller = scrollerRef.current;
     if (!scroller || !isDraggingRef.current) return;
     e.preventDefault();
@@ -84,8 +84,16 @@ const EducationSection = () => {
     scroller.scrollLeft = scrollLeftStartRef.current - dx;
   }, []);
 
-  const endDrag = useCallback((e: any) => {
-    try { (e.target as Element).releasePointerCapture?.(e.pointerId); } catch {}
+  const endDrag = useCallback((e) => {
+    try {
+      (e.target as Element).releasePointerCapture?.(e.pointerId);
+    } catch (err) {
+      // In some environments or older browsers releasePointerCapture may fail.
+      // Log a warning so we can debug if this happens in the wild.
+      // Avoid throwing so the UI remains responsive.
+      console.warn('releasePointerCapture failed in EducationSection endDrag', err);
+    }
+
     isDraggingRef.current = false;
     setIsDragging(false);
   }, []);
@@ -205,7 +213,6 @@ const EducationSection = () => {
 
           <div
             ref={scrollerRef}
-            // allow vertical overflow so hovered/scaled cards aren't clipped
             className={`overflow-x-auto overflow-y-visible rounded-md py-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
