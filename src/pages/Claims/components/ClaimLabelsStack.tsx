@@ -22,7 +22,7 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
     { level: 4, labels: ['Tested in Humans'] },
     { level: 3, labels: ['Limited Tested in Humans'] },
     { level: 2, labels: ['Not Tested in Humans'] },
-    { level: 1, labels: ['Invalid', 'Unreliable', 'Fallacy'] }
+    { level: 1, labels: ['Invalid', 'Unreliable', 'Fallacy', 'Inconclusive', 'Misinformation'] }
     ];
 
   // Build stack from top (5) to bottom (1)
@@ -85,7 +85,7 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
                     </div>
                 );
     }
-    
+
     // absent -> thin colored line (20% width, centered) with colored border and transparent background
         // Absent: show bordered thin bar, but when opened we'll fill it with bg/text and show label inside
         // return (
