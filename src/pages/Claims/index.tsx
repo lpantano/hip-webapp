@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import { isProblematicCategory } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
@@ -571,9 +572,7 @@ const Claims = () => {
                       </Badge>
 
                       {reviewCard.expert.reviewData &&
-                        (reviewCard.expert.classification === 'Invalid' ||
-                          reviewCard.expert.classification === 'Unreliable' ||
-                          reviewCard.expert.classification === 'Fallacy') && (
+                        isProblematicCategory(String(reviewCard.expert.classification)) && (
                           <div className="flex-1">
                             {(() => {
                               const reasons = getClassificationReasons(reviewCard.expert.reviewData);
