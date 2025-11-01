@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import { getEvidenceClassificationBorder } from '@/lib/classification-colors';
+import { PROBLEMATIC_CATEGORIES } from '@/lib/classification-categories';
 
 type Props = {
   classificationOrder: string[];
@@ -22,7 +23,7 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
     { level: 4, labels: ['Tested in Humans'] },
     { level: 3, labels: ['Limited Tested in Humans'] },
     { level: 2, labels: ['Not Tested in Humans'] },
-    { level: 1, labels: ['Invalid', 'Unreliable', 'Fallacy', 'Inconclusive', 'Misinformation'] }
+    { level: 1, labels: [...PROBLEMATIC_CATEGORIES] }
     ];
 
   // Build stack from top (5) to bottom (1)
