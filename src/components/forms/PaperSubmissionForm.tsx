@@ -27,6 +27,7 @@ interface FormData {
   url: string;
   abstract: string;
   stance: 'supporting' | 'contradicting' | null;
+  source: string;
 }
 
 export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }: PaperSubmissionFormProps) => {
@@ -42,7 +43,8 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
     doi: '',
     url: '',
     abstract: '',
-    stance: null
+    stance: null,
+    source: ''
   });
 
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -140,6 +142,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
         url: formData.url.trim() || null,
         abstract: formData.abstract.trim() || null,
         stance: formData.stance,
+        source: formData.source.trim() || null,
         submitted_by: user.id,
         status: 'pending'
       };
@@ -240,6 +243,22 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
                 Enter a DOI, PubMed URL, or PMID and click "Fetch" to automatically populate the paper details below.
               </p>
             </div>
+          </div>
+
+          {/* Source Field */}
+          <div className="space-y-2">
+            <Label htmlFor="source">Source (Optional)</Label>
+            <Input
+              id="source"
+              type="url"
+              placeholder="Where did you find this paper? (e.g., https://scholar.google.com)"
+              value={formData.source}
+              onChange={(e) => handleInputChange('source', e.target.value)}
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Provide the URL where you found this paper (e.g., Google Scholar, ResearchGate, etc.)
+            </p>
           </div>
 
           {/* Paper Details Section */}

@@ -210,6 +210,7 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
+            source: p.source || null,
             stance: p.stance,
             rawScores: []
           };
@@ -467,6 +468,7 @@ const Claims = () => {
       journal: string;
       year: number;
       authors: string;
+      source?: string | null;
     };
     expert: {
       expert_user_id: string;
@@ -546,6 +548,20 @@ const Claims = () => {
                     <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
                     <p className="text-xs text-muted-foreground">
                       {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
+                      {reviewCard.publication.source && (
+                        <>
+                          {' • '}
+                          <a
+                            href={reviewCard.publication.source}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                            title="View source"
+                          >
+                            Source <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </>
+                      )}
                     </p>
                     <br></br>
                     {reviewCard.expert.classification && (
@@ -1224,7 +1240,8 @@ const Claims = () => {
                           title: pub.title,
                           journal: pub.journal,
                           year: pub.year,
-                          authors: pub.authors
+                          authors: pub.authors,
+                          source: pub.source || null
                         },
                         expert: {
                           expert_user_id: expertUserId,
