@@ -19,6 +19,7 @@ import Profile from "./pages/Profile";
 // import Games from "./pages/Games";
 import NotFound from "./pages/NotFound";
 import ResearchWorkflow from "./pages/ResearchWorkflow";
+import Footer from "./components/layout/Footer";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <DevRoleSelector />
+          <Footer />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

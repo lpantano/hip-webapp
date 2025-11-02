@@ -3,47 +3,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Legal = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
       <Header />
       <main className="container mx-auto px-6 pt-32 pb-20">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8">Legal Information</h1>
-          
+          <h1 className="text-4xl text-center font-bold bg-hero-gradient bg-clip-text text-transparent mb-8">Legal Information</h1>
+
           <Tabs defaultValue="terms" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/10 backdrop-blur-sm">
-              <TabsTrigger value="terms" className="text-white data-[state=active]:bg-white/20">
+            <TabsList className="grid w-full grid-cols-2 bg-card/60 border border-border">
+              <TabsTrigger value="terms" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 Terms of Service
               </TabsTrigger>
-              <TabsTrigger value="privacy" className="text-white data-[state=active]:bg-white/20">
+              <TabsTrigger value="privacy" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 Privacy Policy
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="terms" className="mt-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 space-y-6 text-white/90">
+              <div className="bg-card border border-border rounded-lg p-8 space-y-6 text-foreground">
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Platform Purpose</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Platform Purpose</h2>
                   <p className="mb-4">
-                    ClaimWell is an educational platform that provides research-backed affirmations 
-                    and insights specifically focused on women's experiences, health, and empowerment. Our mission is to 
+                    HealthIntegrityProject is an educational platform that provides research-backed affirmations
+                    and insights specifically focused on women's experiences, health, and empowerment. Our mission is to
                     bridge the gap between scientific research and practical self-empowerment tools.
                   </p>
                 </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Research Standards</h2>
-                  <p className="mb-4">All research featured on our platform adheres to strict quality standards:</p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Peer Review:</strong> Only peer-reviewed studies from reputable journals</li>
-                    <li><strong>Sample Size Transparency:</strong> Clear indication of study sample sizes and limitations</li>
-                    <li><strong>Population Representation:</strong> Diversity metrics and demographic information</li>
-                    <li><strong>Research Consensus:</strong> Multiple studies supporting each affirmation when available</li>
-                    <li><strong>Evidence Quality:</strong> Strength of evidence clearly communicated</li>
-                  </ul>
-                </section>
+
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Data Usage Terms</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Data Usage Terms</h2>
                   <p className="mb-4">By using our platform, you agree that:</p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Research data is for educational and personal empowerment purposes only</li>
@@ -54,7 +44,7 @@ const Legal = () => {
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">User Responsibilities</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">User Responsibilities</h2>
                   <p className="mb-4">Users are expected to:</p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Use the platform respectfully and in accordance with its educational purpose</li>
@@ -65,7 +55,7 @@ const Legal = () => {
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Limitation of Liability</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Limitation of Liability</h2>
                   <p className="mb-4">
                     While we strive for accuracy, this platform is for educational purposes only. We are not liable for:
                   </p>
@@ -77,64 +67,53 @@ const Legal = () => {
                   </ul>
                 </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Research Methodology Transparency</h2>
-                  <p className="mb-4">
-                    We believe in complete transparency about research quality. Each study includes:
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Sample Size Scoring:</strong> Clear indicators of study participant numbers</li>
-                    <li><strong>Representation Metrics:</strong> Information about demographic diversity</li>
-                    <li><strong>Consensus Indicators:</strong> How many studies support each finding</li>
-                    <li><strong>Evidence Strength:</strong> Quality assessment of the research methodology</li>
-                  </ul>
-                </section>
+
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Updates and Changes</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Updates and Changes</h2>
                   <p className="mb-4">
-                    We reserve the right to update these terms as our platform evolves. Users will be notified of 
+                    We reserve the right to update these terms as our platform evolves. Users will be notified of
                     significant changes, and continued use constitutes acceptance of updated terms.
                   </p>
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Contact</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Contact</h2>
                   <p>
                     For questions about these terms or our data usage policies, contact us at{" "}
-                    <a href="mailto:terms@claimwell.com" className="text-accent hover:underline">
-                      terms@claimwell.com
+                    <a href="mailto:terms@healthintegrityproject.org" className="text-accent hover:underline">
+                      terms@healthintegrityproject.org
                     </a>
                   </p>
                 </section>
 
-                <div className="border-t border-white/20 pt-6 mt-8">
-                  <p className="text-sm text-white/70">
+                <div className="border-t border-border pt-6 mt-8">
+                  <p className="text-sm text-foreground/70">
                     Last updated: {new Date().toLocaleDateString()}
                   </p>
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="privacy" className="mt-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 space-y-6 text-white/90">
+              <div className="bg-card border border-border rounded-lg p-8 space-y-6 text-foreground">
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Data Collection</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Data Collection</h2>
                   <p className="mb-4">
                     We collect minimal personal information necessary to provide our research platform services. This includes:
                   </p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Email address for account creation and communication</li>
                     <li>Usage analytics to improve our research tools</li>
-                    <li>Research preferences and saved affirmations</li>
+                    <li>Research preferences and saved health claims</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">How We Use Your Data</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">How We Use Your Data</h2>
                   <p className="mb-4">Your information is used to:</p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Provide personalized research-backed affirmations</li>
+                    <li>Provide personalized research-backed health claims</li>
                     <li>Improve our platform's educational content</li>
                     <li>Send important updates about new research findings</li>
                     <li>Maintain platform security and prevent abuse</li>
@@ -142,7 +121,7 @@ const Legal = () => {
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Data Protection</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Data Protection</h2>
                   <p className="mb-4">
                     We implement industry-standard security measures to protect your personal information:
                   </p>
@@ -155,7 +134,7 @@ const Legal = () => {
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Your Rights</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Your Rights</h2>
                   <p className="mb-4">You have the right to:</p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Access your personal data</li>
@@ -166,7 +145,7 @@ const Legal = () => {
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Research Ethics</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Research Ethics</h2>
                   <p className="mb-4">
                     Our platform is committed to ethical research practices. All research cited on our platform:
                   </p>
@@ -179,17 +158,17 @@ const Legal = () => {
                 </section>
 
                 <section>
-                  <h2 className="text-2xl font-semibold text-white mb-4">Contact Us</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">Contact Us</h2>
                   <p>
                     If you have questions about this Privacy Policy or your data, please contact us at{" "}
-                    <a href="mailto:privacy@claimwell.com" className="text-accent hover:underline">
-                      privacy@claimwell.com
+                    <a href="mailto:privacy@healthintegrityproject.org" className="text-accent hover:underline">
+                      privacy@healthintegrityproject.org
                     </a>
                   </p>
                 </section>
 
-                <div className="border-t border-white/20 pt-6 mt-8">
-                  <p className="text-sm text-white/70">
+                <div className="border-t border-border pt-6 mt-8">
+                  <p className="text-sm text-foreground/70">
                     Last updated: {new Date().toLocaleDateString()}
                   </p>
                 </div>

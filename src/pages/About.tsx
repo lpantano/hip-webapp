@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/layout/Header';
-import { Users, Eye, Building2, Map } from 'lucide-react';
+import { Users, Eye, Building2 } from 'lucide-react';
 
 const About = () => {
   const scrollToSection = (id: string) => {
@@ -15,15 +15,15 @@ const About = () => {
   return (
     <div className="min-h-screen ">
       <Header />
-      
+
       {/* Hero Section */}
-      <section className="pt-24 pb-16">
+      <section className="pt-24 pb-12 overflow-visible">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6 bg-hero-gradient bg-clip-text text-transparent">
-              About ClaimWell
+          <div className="max-w-5xl mx-auto text-center">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
+              About Health Integrity Project
             </h1>
-            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-5 leading-relaxed">
               Empowering women with evidence-based insights through collaborative research and transparent data analysis.
             </p>
           </div>
@@ -31,10 +31,10 @@ const About = () => {
       </section>
 
       {/* Navigation Links */}
-      <section className="pb-16">
+      <section className="pb-12">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
                 <CardHeader className="text-center">
                   <Users className="w-12 h-12 mx-auto mb-4 text-primary" />
@@ -59,7 +59,7 @@ const About = () => {
                   <p className="text-muted-foreground mb-4">
                     Discover what drives us and our future goals
                   </p>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => scrollToSection('vision')}
                   >
@@ -77,7 +77,7 @@ const About = () => {
                   <p className="text-muted-foreground mb-4">
                     Learn about our cooperative structure and values
                   </p>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => scrollToSection('business-model')}
                   >
@@ -86,48 +86,34 @@ const About = () => {
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
-                <CardHeader className="text-center">
-                  <Map className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <CardTitle>Roadmap & Support</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground mb-4">
-                    Explore our future plans and ways to support our mission
-                  </p>
-                  <Button asChild variant="outline">
-                    <Link to="/roadmap">View Roadmap</Link>
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
       </section>
 
       {/* Vision Section */}
-      <section id="vision" className="py-16 bg-muted/30">
+      <section id="vision" className="py-12 bg-muted/30">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-6">Our Vision</h2>
               <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto mb-8"></div>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h3 className="text-2xl font-semibold mb-6 text-primary">Transforming Research Access</h3>
                 <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                  We envision a world where every woman has access to reliable, evidence-based information 
-                  about health, career, and life decisions. Our mission is to bridge the gap between 
+                  We envision a world where every woman has access to reliable, evidence-based information
+                  about health, career, and life decisions. Our mission is to bridge the gap between
                   complex research and practical insights.
                 </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  By making research transparent, accessible, and actionable, we empower women to make 
+                  By making research transparent, accessible, and actionable, we empower women to make
                   informed decisions backed by solid evidence rather than myths or assumptions.
                 </p>
               </div>
-              
+
               <div className="space-y-6">
                 <Card className="border-primary/20">
                   <CardContent className="pt-6">
@@ -137,7 +123,7 @@ const About = () => {
                     </p>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="border-primary/20">
                   <CardContent className="pt-6">
                     <h4 className="font-semibold mb-3 text-primary">Community-Driven</h4>
@@ -146,7 +132,7 @@ const About = () => {
                     </p>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="border-primary/20">
                   <CardContent className="pt-6">
                     <h4 className="font-semibold mb-3 text-primary">Transparent Process</h4>
@@ -162,7 +148,7 @@ const About = () => {
       </section>
 
       {/* Business Model Section */}
-      <section id="business-model" className="py-16">
+      <section id="business-model" className="py-12">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -180,8 +166,8 @@ const About = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">
-                    ClaimWell operates as a cooperative where every member has a weighted vote 
-                    in the company's direction. This ensures that decisions reflect the community's 
+                    HealthIntegrityProject operates as a cooperative where every member has a weighted vote
+                    in the company's direction. This ensures that decisions reflect the community's
                     needs and values.
                   </p>
                   <ul className="space-y-2 text-muted-foreground">
@@ -199,7 +185,7 @@ const About = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">
-                    Our profits are reinvested back into the community and product development, 
+                    Our profits are reinvested back into the community and product development,
                     ensuring sustainable growth that benefits everyone involved.
                   </p>
                   <ul className="space-y-2 text-muted-foreground">
@@ -210,41 +196,6 @@ const About = () => {
                   </ul>
                 </CardContent>
               </Card>
-            </div>
-
-            <div className="bg-muted/30 rounded-lg p-8">
-              <h3 className="text-2xl font-semibold mb-6 text-center">Investment & Support</h3>
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold mb-4 text-primary">Angel Investors</h4>
-                  <p className="text-muted-foreground mb-4">
-                    We welcome angel investors who align with our mission of empowering women 
-                    through evidence-based insights.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Investors participate in our cooperative structure while maintaining 
-                    our community-first approach.
-                  </p>
-                </div>
-                
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold mb-4 text-primary">Donations</h4>
-                  <p className="text-muted-foreground mb-4">
-                    Donations help us maintain free access to essential research insights 
-                    and support underrepresented communities.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Every donation directly impacts our ability to provide transparent, 
-                    accessible research analysis.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link to="/roadmap">View Our Roadmap & Support Options</Link>
-                </Button>
-              </div>
             </div>
           </div>
         </div>

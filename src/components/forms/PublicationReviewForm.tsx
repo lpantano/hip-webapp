@@ -22,9 +22,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { 
-  type ReviewCategory, 
-  type ReviewAnswer, 
+import {
+  type ReviewCategory,
+  type ReviewAnswer,
   type ReviewData,
   createEmptyReviewData,
   getClassificationReasons,
@@ -32,6 +32,7 @@ import {
   ETHNICITY_OPTIONS
 } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
 
 interface Publication {
@@ -62,21 +63,13 @@ interface ExistingReview {
   updated_at: string;
 }
 
-const REVIEW_CATEGORIES: ReviewCategory[] = [
-  'Fallacy',
-  'Invalid',
-  'Unreliable',
-  'Not Tested in Humans',
-  'Limited Tested in Humans',
-  'Tested in Humans',
-  'Widely Tested in Humans'
-];
+const REVIEW_CATEGORIES: ReviewCategory[] = [...CLASSIFICATION_CATEGORIES];
 
 const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted }: PublicationReviewFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [reviewData, setReviewData] = useState<ReviewData>(createEmptyReviewData());
   const [comment, setComment] = useState('');
   const [customEthnicity, setCustomEthnicity] = useState('');
@@ -109,10 +102,10 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
       if (existingReview.review_data) {
         try {
           // Handle both cases: direct object or JSON string
-          const reviewData = typeof existingReview.review_data === 'string' 
-            ? JSON.parse(existingReview.review_data) 
+          const reviewData = typeof existingReview.review_data === 'string'
+            ? JSON.parse(existingReview.review_data)
             : existingReview.review_data;
-          
+
           // Validate that the parsed data has the expected structure
           if (reviewData && typeof reviewData === 'object' && 'category' in reviewData) {
             // Ensure all fields exist for backwards compatibility
@@ -134,7 +127,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               overstatesEvidence: (loadedData.validation as {overstatesEvidence?: boolean}).overstatesEvidence || false,
               isValid: true
             };
-            
+
             if (!loadedData.systemUsed) {
               loadedData.systemUsed = {
                 cells: false,
@@ -148,20 +141,20 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
             if (typeof loadedData.womenNotIncluded === 'undefined') {
               loadedData.womenNotIncluded = false;
             }
-            
+
             // Recompute isValid based on validation fields
             validationWithDefaults.isValid = !(
-              validationWithDefaults.hasConflictOfInterest || 
-              validationWithDefaults.isReview || 
+              validationWithDefaults.hasConflictOfInterest ||
+              validationWithDefaults.isReview ||
               validationWithDefaults.isCategoricalMetaAnalysis ||
               validationWithDefaults.overstatesEvidence
             );
-            
+
             loadedData.validation = validationWithDefaults;
-            
+
             // Recompute category based on decision tree
             loadedData.category = computeCategory(loadedData);
-            
+
             setReviewData(loadedData);
           } else {
             setReviewData(createEmptyReviewData());
@@ -184,10 +177,10 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   // Validation function
   const validateForm = (): string[] => {
     const errors: string[] = [];
-    
-    // If publication overstates evidence (Fallacy), no further validation needed
+
+    // If publication overstates evidence (Misinformation), no further validation needed
     if (reviewData.validation.overstatesEvidence) {
-      return errors; // Empty array - no validation errors for Fallacy
+      return errors; // Empty array - no validation errors for Misinformation
     }
 
     // If publication has other validation issues (Invalid), no further validation needed
@@ -226,14 +219,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
       if (!publication?.id || !user?.id) throw new Error('Missing required data');
-      
+
       // Validate form before submission
       const errors = validateForm();
       if (errors.length > 0) {
         setValidationErrors(errors);
         throw new Error('Please fix validation errors before submitting');
       }
-      
+
       setValidationErrors([]); // Clear any previous errors
 
       const payload = {
@@ -285,12 +278,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
         humans: false,
         [system]: value
       };
-      
+
       const newData = {
         ...prev,
         systemUsed: newSystemUsed
       };
-      
+
       return {
         ...newData,
         category: computeCategory(newData)
@@ -326,27 +319,27 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   // Compute category based on decision tree
   const computeCategory = (data: ReviewData): ReviewCategory => {
-    // 1. If claim overstates evidence, it's a Fallacy (highest priority)
+    // 1. If claim overstates evidence, it's Misinformation (highest priority)
     if (data.validation.overstatesEvidence) {
-      return 'Fallacy';
+      return 'Misinformation';
     }
-    
+
     // 2. If any other validation issue, it's Invalid
     if (!data.validation.isValid) {
       return 'Invalid';
     }
-    
-    // 3. If any quality check is "NO", it's Unreliable
+
+    // 3. If any quality check is "NO", it's Inconclusive
     const hasNoQualityChecks = Object.values(data.qualityChecks).some(check => check === 'NO');
     if (hasNoQualityChecks) {
-      return 'Unreliable';
+      return 'Inconclusive';
     }
-    
+
     // 4. If humans not selected in system used, it's Not Tested in Humans
     if (!data.systemUsed.humans) {
       return 'Not Tested in Humans';
     }
-    
+
     // 5. Based on study size for human studies
     switch (data.studySize) {
       case 'less_than_100':
@@ -366,18 +359,18 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     setReviewData(prev => {
       const newValidation = { ...prev.validation, [field]: value };
       const isValid = !(
-        newValidation.hasConflictOfInterest || 
-        newValidation.isReview || 
+        newValidation.hasConflictOfInterest ||
+        newValidation.isReview ||
         newValidation.isCategoricalMetaAnalysis ||
         newValidation.overstatesEvidence
       );
       newValidation.isValid = isValid;
-      
+
       const newData = {
         ...prev,
         validation: newValidation
       };
-      
+
       return {
         ...newData,
         category: computeCategory(newData)
@@ -486,7 +479,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
                 <div className="mt-2">
-                  <Badge 
+                  <Badge
                     className={`text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
                   >
                     {reviewData.category}
@@ -500,12 +493,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               <div className="bg-slate-50  rounded-lg p-3 space-y-3">
                 <div className="flex items-center gap-2">
                   <Label className="text-sm font-semibold">Publication Validation</Label>
-                  
+
                 </div>
                 <p className="text-xs">
                   Check if any apply. If so, publication will be marked as invalid for evidence assessment.
                 </p>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                   <div className="flex items-start space-x-2">
                     <Checkbox
@@ -586,7 +579,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 <div className="bg-slate-50  rounded-lg p-3 space-y-3">
                   <Label className="text-sm font-semibold">Quality Assessment</Label>
                   <p className="text-xs">
-                    Evaluate the study design and methodology. Any "NO" will classify as "Unreliable".
+                    Evaluate the study design and methodology. Any "NO" will classify as "Inconclusive".
                   </p>
                   <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                     {/* Study Design */}
@@ -609,9 +602,9 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Representation was removed from the schema — UI intentionally omitted for current reviews. */}
-                    
+
                     {/* Control Group */}
                     <div className="bg-white border rounded-lg p-3">
                       <Label className="text-xs font-medium block mb-3 text-gray-700">Control Group</Label>
@@ -632,7 +625,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Bias Addressed */}
                     <div className="bg-white border rounded-lg p-3">
                       <Label className="text-xs font-medium block mb-3 text-gray-700">Bias Addressed</Label>
@@ -653,7 +646,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Statistics */}
                     <div className="bg-white border rounded-lg p-3">
                       <Label className="text-xs font-medium block mb-3 text-gray-700">Statistics</Label>
@@ -675,11 +668,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       </div>
                     </div>
                   </div>
-                  
+
                   {Object.values(reviewData.qualityChecks).some(check => check === 'NO') && (
                     <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
                       <p className="text-xs text-red-700 font-medium">
-                        ⚠️ This publication will be classified as "Unreliable" due to quality issues
+                        ⚠️ This publication will be classified as "Inconclusive" due to quality issues
                       </p>
                     </div>
                   )}
@@ -793,7 +786,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           </Label>
                         </div>
                       </div>
-                      
+
                       {/* Women Not Included Chip */}
                       <div className="border-t pt-3">
                         <button
@@ -816,16 +809,16 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 </div>
               )}
 
-              
+
 
               {/* Evidence & Tags - Only show for valid human studies with good quality */}
               {(() => {
-                const showEvidenceTags = reviewData.validation.isValid && 
-                                       !Object.values(reviewData.qualityChecks).some(check => check === 'NO') && 
+                const showEvidenceTags = reviewData.validation.isValid &&
+                                       !Object.values(reviewData.qualityChecks).some(check => check === 'NO') &&
                                        reviewData.systemUsed.humans;
-                
+
                 if (!showEvidenceTags) return null;
-                
+
                 return (
                   <div className="space-y-3">
                     <Label className="text-base font-semibold">Evidence & Tags</Label>
@@ -875,28 +868,28 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             </Command>
                           </PopoverContent>
                         </Popover>
-                        
+
                         {/* Custom ethnicity input */}
                         <div className="flex gap-1 mt-1">
-                          <input 
-                            type="text" 
-                            placeholder="Custom..." 
-                            value={customEthnicity} 
-                            onChange={(e) => setCustomEthnicity(e.target.value)} 
-                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())} 
-                            className="flex-1 rounded border px-2 py-1 text-xs h-6" 
+                          <input
+                            type="text"
+                            placeholder="Custom..."
+                            value={customEthnicity}
+                            onChange={(e) => setCustomEthnicity(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())}
+                            className="flex-1 rounded border px-2 py-1 text-xs h-6"
                           />
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={addCustomEthnicity} 
-                            disabled={!customEthnicity.trim()} 
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={addCustomEthnicity}
+                            disabled={!customEthnicity.trim()}
                             className="text-xs px-2 py-1 h-6"
                           >
                             +
                           </Button>
                         </div>
-                        
+
                         {/* Selected badges */}
                         {reviewData.tags.ethnicityLabels.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -953,7 +946,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           </Command>
                         </PopoverContent>
                       </Popover>
-                      
+
                       {/* Selected badges */}
                       {reviewData.tags.ageRanges.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
@@ -1015,13 +1008,13 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           <Button variant="outline" onClick={onClose} className="px-4">
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={() => submitReviewMutation.mutate()}
             disabled={submitReviewMutation.isPending}
             className="px-6"
           >
-            {submitReviewMutation.isPending 
-              ? (isUpdate ? 'Updating...' : 'Submitting...') 
+            {submitReviewMutation.isPending
+              ? (isUpdate ? 'Updating...' : 'Submitting...')
               : (isUpdate ? 'Update' : 'Submit')
             }
           </Button>
