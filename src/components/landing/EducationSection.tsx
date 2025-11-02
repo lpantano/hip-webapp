@@ -186,18 +186,25 @@ const EducationSection = () => {
 
           <div className="bg-primary text-primary-foreground rounded-lg py-3 px-4 text-center mb-6 shadow-md">
             <h3 className="text-xl md:text-xl font-semibold">
-              Trust the science—but only when the science is trustworthy.
+              Trust science when it's rigorous and reported honestly.
             </h3>
           </div>
 
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-base text-foreground leading-relaxed">
-              Scientific <strong>evidence is only as strong as the methods</strong> behind it. While science is the best way to test whether something is true or false, the credibility of any result depends on <strong>how carefully the study is designed, conducted, and analyzed</strong>. Reliable conclusions come from research that follows rigorous, transparent, and widely accepted standards.
+              Scientific <strong>evidence is only as strong as the methods</strong> behind it. While science is the best way to test whether something is true or false, trustworthy information requires both <strong>rigorous research methods</strong> and <strong>honest, accurate communication</strong> of findings. Reliable conclusions come from research that follows rigorous standards—and is reported fairly to the public.
             </p>
           </div>
         </div>
 
-
+        <div className="mb-1 flex justify-center">
+            <a
+              href="/workflow"
+              className="inline-block px-2 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
+            >
+              Learn how we review information and science
+            </a>
+        </div>
         { /* Education cards carousel - continuous horizontal rolling with controls */}
         <div className="relative max-w-4xl mx-auto my-4">
           {/* left arrow */}
