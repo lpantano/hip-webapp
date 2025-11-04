@@ -90,14 +90,14 @@ export const AGE_RANGES = [
 // Common ethnicity labels (can be expanded)
 export const ETHNICITY_OPTIONS = [
   'White/Caucasian',
-  'Black/African American',
-  'Hispanic/Latino',
+  'Black or African American',
   'Asian',
-  'Native American/Indigenous',
-  'Pacific Islander',
-  'Middle Eastern/North African',
-  'Mixed/Multiple',
-  'Not specified'
+  'American Indian or Alaska Native',
+  'Native Hawaiian or Pacific Islander',
+  'Hispanic or Latino',
+  'Ashkenazi Jewish',
+  'Indigenous populations',
+  'European ancestry populations'
 ];
 
 // Helper function to get classification reasons for Invalid, Inconclusive, or Misinformation categories
