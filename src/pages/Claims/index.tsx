@@ -30,6 +30,7 @@ import ClaimLinksSection from './components/ClaimLinksSection';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
+import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
@@ -680,16 +681,7 @@ const Claims = () => {
     );
   };
 
-  const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'nutrition', label: 'Nutrition' },
-    { value: 'fitness', label: 'Fitness' },
-    { value: 'mental_health', label: 'Mental Health' },
-    { value: 'pregnancy', label: 'Pregnancy' },
-    { value: 'menopause', label: 'Menopause' },
-    { value: 'perimenopause', label: 'Perimenopause' },
-    { value: 'general_health', label: 'General Health' }
-  ];
+  const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
   // Claims are now filtered and sorted by the database query
     // Only show claim 913322f9-6d96-49fa-ace9-9587e8952a80 if running on localhost

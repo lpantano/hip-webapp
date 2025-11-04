@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { DOIService } from '@/services/DOIService';
+import { CLAIM_CATEGORIES } from '@/constants/categories';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
@@ -243,15 +244,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     }
   };
 
-  const categoryOptions = [
-    { value: 'nutrition', label: 'Nutrition' },
-    { value: 'fitness', label: 'Fitness' },
-    { value: 'mental_health', label: 'Mental Health' },
-    { value: 'pregnancy', label: 'Pregnancy' },
-    { value: 'menopause', label: 'Menopause' },
-    { value: 'general_health', label: 'General Health' },
-    { value: 'perimenopause', label: 'Perimenopause' },
-  ];
+  const categoryOptions = CLAIM_CATEGORIES;
 
   if (authLoading) {
     return (
