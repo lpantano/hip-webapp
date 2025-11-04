@@ -897,7 +897,6 @@ const Claims = () => {
                       </span>
                     </CardTitle>
                   </div>
-                  <ClaimLinksSection links={claim.links} />
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
                     {(() => {
@@ -909,6 +908,10 @@ const Claims = () => {
                         contradictingLabelCounts,
                         supportingWomenNotIncluded,
                         contradictingWomenNotIncluded,
+                        supportingObservationalCount,
+                        contradictingObservationalCount,
+                        supportingClinicalTrialCount,
+                        contradictingClinicalTrialCount,
                         aggregatedReasons
                       } = agg;
 
@@ -916,6 +919,24 @@ const Claims = () => {
 
                       return (
                         <div className="grid grid-cols-2 gap-4 items-start">
+
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
+                              <span className="font-semibold text-xs">Supporting Papers</span>
+                            </div>
+                            <div>
+                              <ClaimLabelsStack
+                                classificationOrder={classificationOrder}
+                                labelCounts={supportingLabelCounts}
+                                womenNotIncludedCount={supportingWomenNotIncluded}
+                                observationalCount={supportingObservationalCount}
+                                clinicalTrialCount={supportingClinicalTrialCount}
+                                stance="supporting"
+                                aggregatedReasonsForStance={aggregatedReasons.supporting}
+                              />
+                            </div>
+                          </div>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
@@ -927,35 +948,24 @@ const Claims = () => {
                                 classificationOrder={classificationOrder}
                                 labelCounts={contradictingLabelCounts}
                                 womenNotIncludedCount={contradictingWomenNotIncluded}
+                                observationalCount={contradictingObservationalCount}
+                                clinicalTrialCount={contradictingClinicalTrialCount}
                                 stance="contradicting"
                                 aggregatedReasonsForStance={aggregatedReasons.contradicting}
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Supporting Papers</span>
-                            </div>
-                            <div>
-                              <ClaimLabelsStack
-                                classificationOrder={classificationOrder}
-                                labelCounts={supportingLabelCounts}
-                                womenNotIncludedCount={supportingWomenNotIncluded}
-                                stance="supporting"
-                                aggregatedReasonsForStance={aggregatedReasons.supporting}
                               />
                             </div>
                           </div>
                         </div>
                       );
                     })()}
+
                   </div>
                 </CardHeader>
                 {/* Expanded view with individual reviews (moved to component) */}
                 {expandedClaim === claim.id && (
                   <ClaimPublicationsExpanded
                     publications={claim.publications}
+                    links={claim.links}
                     isExpert={isExpert}
                     user={user}
                     setReviewPublication={setReviewPublication}

@@ -24,7 +24,7 @@ export default function ClaimLinksSection({ links }: { links?: LinkRow[] | null 
         return (
           <div key={link.id} className="text-sm">
             Source:{' '}
-            <a
+            {/* <a
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
@@ -32,7 +32,9 @@ export default function ClaimLinksSection({ links }: { links?: LinkRow[] | null 
               title={link.url}
             >
               {link.title || displayUrl}
-            </a>
+            </a> */}
+            {link.title || displayUrl}
+
             {link.description && (
               <div className="text-xs text-muted-foreground">{link.description}</div>
             )}
