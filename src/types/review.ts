@@ -1,9 +1,9 @@
 // Type definitions for the publication review data structure
 
-export type ReviewCategory = 
-  | 'Fallacy'
+export type ReviewCategory =
+  | 'Misinformation'
   | 'Invalid'
-  | 'Unreliable'
+  | 'Inconclusive'
   | 'Not Tested in Humans'
   | 'Limited Tested in Humans'
   | 'Tested in Humans'
@@ -90,29 +90,29 @@ export const AGE_RANGES = [
 // Common ethnicity labels (can be expanded)
 export const ETHNICITY_OPTIONS = [
   'White/Caucasian',
-  'Black/African American',
-  'Hispanic/Latino',
+  'Black or African American',
   'Asian',
-  'Native American/Indigenous',
-  'Pacific Islander',
-  'Middle Eastern/North African',
-  'Mixed/Multiple',
-  'Not specified'
+  'American Indian or Alaska Native',
+  'Native Hawaiian or Pacific Islander',
+  'Hispanic or Latino',
+  'Ashkenazi Jewish',
+  'Indigenous populations',
+  'European ancestry populations'
 ];
 
-// Helper function to get classification reasons for Invalid, Unreliable, or Fallacy categories
+// Helper function to get classification reasons for Invalid, Inconclusive, or Misinformation categories
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getClassificationReasons = (data: any): string[] => {
   const reasons: string[] = [];
-  
+
   if (!data) return reasons;
-  
-  // Check for Fallacy reasons
-  if (data.validation?.overstatesEvidence) {
-    reasons.push("Claim overstates or misinterprets the evidence");
+
+    // Check for Misinformation reasons
+  if (data.invalidReasons?.overstatesEvidence) {
+    reasons.push('Claim overstates what the evidence shows');
   }
-  
-  // Check for Invalid reasons (excluding overstatesEvidence as it's already Fallacy)
+
+  // Check for Invalid reasons (excluding overstatesEvidence as it's already Misinformation)
   if (!data.validation?.overstatesEvidence) {
     if (data.validation?.hasConflictOfInterest) {
       reasons.push("Has conflict of interest");
@@ -124,8 +124,8 @@ export const getClassificationReasons = (data: any): string[] => {
       reasons.push("Is a categorical meta-analysis");
     }
   }
-  
-  // Check for Unreliable reasons (quality checks)
+
+  // Check for Inconclusive reasons (quality checks)
   if (data.qualityChecks?.studyDesign === 'NO') {
     reasons.push("Poor study design");
   }
@@ -138,6 +138,6 @@ export const getClassificationReasons = (data: any): string[] => {
   if (data.qualityChecks?.statistics === 'NO') {
     reasons.push("Poor statistical analysis");
   }
-  
+
   return reasons;
 };

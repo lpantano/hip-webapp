@@ -44,7 +44,7 @@ const FeatureRequests = () => {
         .from('feature_requests_full')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data;
     }
@@ -59,7 +59,7 @@ const FeatureRequests = () => {
         .from('feature_votes')
         .select('feature_request_id')
         .eq('user_id', user.id);
-      
+
       if (error) throw error;
       return data?.map(vote => vote.feature_request_id) || [];
     },
@@ -97,9 +97,9 @@ const FeatureRequests = () => {
           .delete()
           .eq('user_id', user.id)
           .eq('feature_request_id', requestId);
-        
+
         if (error) throw error;
-        
+
         toast({
           title: "Vote removed",
           description: "Your vote has been removed."
@@ -113,9 +113,9 @@ const FeatureRequests = () => {
             feature_request_id: requestId,
             is_expert: isExpert
           });
-        
+
         if (error) throw error;
-        
+
         toast({
           title: "Vote added",
           description: "Thank you for voting!"
@@ -134,7 +134,7 @@ const FeatureRequests = () => {
     }
   };
 
-  const filteredRequests = featureRequests.filter(request => 
+  const filteredRequests = featureRequests.filter(request =>
     filterStatus === "all" || request.status === filterStatus
   );
 
@@ -160,11 +160,11 @@ const FeatureRequests = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
-      
+
         <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Feature Requests
-            </h1>            
+            </h1>
             <p className="text-muted-foreground">
               Suggest and vote on new features for the platform. Only members can vote.
             </p>
@@ -242,7 +242,7 @@ const FeatureRequests = () => {
         <div className="grid gap-6">
           {sortedRequests.map((request) => {
             const hasVoted = userVotes.includes(request.id);
-            
+
             return (
               <Card key={request.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
@@ -283,16 +283,16 @@ const FeatureRequests = () => {
                           <ArrowUp className={`h-4 w-4 ${hasVoted ? 'text-white' : ''}`} />
                           {hasVoted ? 'Voted' : 'Upvote'}
                         </Button>
-                        
+
                         {/* Vote counts display */}
                         <div className="flex items-center gap-4 text-sm">
                           <div className="text-center">
                             <div className="font-medium">{request.member_votes || 0}</div>
                             <div className="text-xs text-muted-foreground">Members</div>
                           </div>
-                          
+
                           <Separator orientation="vertical" className="h-8" />
-                          
+
                           <div className="text-center">
                             <div className="font-medium">{request.expert_votes || 0}</div>
                             <div className="text-xs text-muted-foreground">Experts</div>
@@ -309,7 +309,7 @@ const FeatureRequests = () => {
                         </>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MessageSquare className="h-4 w-4" />
                       <span className="text-sm">{request.comments_count || 0}</span>

@@ -8,6 +8,7 @@ import PopulationDiversityCard from './EducationSection/PopulationDiversityCard'
 import StudyDesignCard from './EducationSection/StudyDesignCard';
 import AddressingBiasCard from './EducationSection/AddressingBiasCard';
 import ResearchConsensusCard from './EducationSection/ResearchConsensusCard';
+import { CATEGORY_DESCRIPTIONS } from '@/lib/classification-categories';
 
 const EducationSection = () => {
   // interactive research path state
@@ -15,7 +16,7 @@ const EducationSection = () => {
   const [pitfallOpen, setPitfallOpen] = useState(false);
 
   const steps = useMemo(() => [
-    { id: 'unreliable', label: 'Unreliable' , step: 1},
+    { id: 'inconclusive', label: 'Inconclusive' , step: 1},
     { id: 'notTestedInHuman', label: 'No Tested in Humans', step: 2 },
     { id: 'limitedTestedInHuman', label: 'Limited Tested in Humans', step: 3 },
     { id: 'testedInHuman', label: 'Tested in Humans', step: 4 },
@@ -103,8 +104,8 @@ const EducationSection = () => {
   type CustomPhase = { title: string; desc: string; threshold: number };
   const PHASE_INFO: Record<string, StandardPhase | CustomPhase> = {
 
-    'unreliable': {
-      title: 'Unreliable Research',
+    'inconclusive': {
+      title: 'Inconclusive Research',
       desc: 'Fails to pass at least one of the five quality checks (such as peer review, control group, blinding, randomization, or preregistration).',
       threshold: 0
     },
