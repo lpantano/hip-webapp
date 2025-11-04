@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface PublicationData {
   title?: string;
   journal?: string;
@@ -36,7 +38,7 @@ export class DOIService {
 
       return null;
     } catch (error) {
-      console.error('Error fetching publication data:', error);
+      logger.error('Error fetching publication data:', error);
       return null;
     }
   }
@@ -94,7 +96,7 @@ export class DOIService {
         authors,
       };
     } catch (error) {
-      console.error('Crossref API error:', error);
+      logger.error('Crossref API error:', error);
       return null;
     }
   }
@@ -126,7 +128,7 @@ export class DOIService {
         authors,
       };
     } catch (error) {
-      console.error('OpenAlex API error:', error);
+      logger.error('OpenAlex API error:', error);
       return null;
     }
   }
@@ -157,7 +159,7 @@ export class DOIService {
           abstract = abstract.replace(/^\d+\.\s*/, '').trim();
         }
       } catch (abstractError) {
-        console.warn('Could not fetch abstract for PMID:', pmid);
+        logger.warn('Could not fetch abstract for PMID:', pmid);
       }
 
       const title = articleData.title || '';
@@ -179,7 +181,7 @@ export class DOIService {
         authors,
       };
     } catch (error) {
-      console.error('PubMed API error:', error);
+      logger.error('PubMed API error:', error);
       return null;
     }
   }
