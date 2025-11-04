@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   type ReviewCategory, 
   type ReviewAnswer, 
@@ -834,7 +835,21 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* Ethnicity/Population Dropdown */}
                       <div>
-                        <Label className="text-xs font-medium">Ethnicity/Population</Label>
+                        <TooltipProvider>
+                          <div className="flex items-center gap-1 mb-1">
+                            <Label className="text-xs font-medium">Ethnicity/Population</Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 hover:bg-slate-300 text-xs text-slate-600">
+                                  ?
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-xs">Select from common options or use the "Custom..." text box to add something more specific like "Japanese" or "Abenaki"</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
                         <Popover open={ethnicityOpen} onOpenChange={setEthnicityOpen}>
                           <PopoverTrigger asChild>
                             <Button
