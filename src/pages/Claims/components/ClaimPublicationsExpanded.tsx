@@ -14,6 +14,7 @@ type Publication = {
   journal: string;
   year: number;
   url: string;
+  source?: string | null;
   stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
   rawScores?: PublicationScoreRow[];
 };
@@ -52,7 +53,23 @@ const ClaimPublicationsExpanded: React.FC<{
                         )}
                       </h5>
                       <p className="text-xs text-muted-foreground flex items-center gap-2">
-                        <span>{pub.authors} • {pub.journal} ({pub.year})</span>
+                        <span>
+                          {pub.authors} • {pub.journal} ({pub.year})
+                          {pub.source && (
+                            <>
+                              {' • '}
+                              <a
+                                href={pub.source}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-primary hover:underline"
+                                title="View source"
+                              >
+                                Source <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </>
+                          )}
+                        </span>
                         <span className="flex items-center gap-1">
                           {Object.entries(agg.classificationCounts).map(([label, count]) => (
                             <Badge key={label} className={`text-xs ${getEvidenceClassificationColor(label)} pointer-events-none transition-none`}>

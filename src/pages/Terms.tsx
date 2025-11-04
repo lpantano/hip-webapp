@@ -12,7 +12,7 @@ const Terms = () => {
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Platform Purpose</h2>
               <p className="mb-4">
-                ClaimWell is an educational platform that provides research-backed affirmations 
+                HealthIntegrityProject is an educational platform that provides research-backed affirmations 
                 and insights specifically focused on women's experiences, health, and empowerment. Our mission is to 
                 bridge the gap between scientific research and practical self-empowerment tools.
               </p>

@@ -23,6 +23,7 @@ interface PublicationRow {
   publication_year?: number | null;
   doi?: string | null;
   url?: string | null;
+  source?: string | null;
   authors?: string | null;
   stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
   created_at: string;
@@ -88,6 +89,7 @@ interface ClaimUI {
     journal: string;
     year: number;
     url: string;
+    source?: string | null;
     stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
