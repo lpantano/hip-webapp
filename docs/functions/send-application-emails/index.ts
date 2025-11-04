@@ -38,8 +38,8 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
     const siteUrl = Deno.env.get('SITE_URL') || 'https://evidencedecoded.com'
-    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@evidencedecoded.com'
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Evidence Decoded <noreply@evidencedecoded.com>'
+    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@healthintegrityproject.org'
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Evidence Decoded <noreply@healthintegrityproject.org>'
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing Supabase configuration')
