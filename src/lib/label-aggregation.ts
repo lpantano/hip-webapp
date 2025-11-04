@@ -7,6 +7,10 @@ export type LabelAggregation = {
   contradictingLabelCounts: Record<string, number>;
   supportingWomenNotIncluded: number;
   contradictingWomenNotIncluded: number;
+  supportingObservationalCount: number;
+  contradictingObservationalCount: number;
+  supportingClinicalTrialCount: number;
+  contradictingClinicalTrialCount: number;
   // aggregatedReasons[stance][label] => array of formatted reason strings (with counts)
   aggregatedReasons: {
     supporting: Record<string, string[]>;
@@ -17,6 +21,8 @@ export type LabelAggregation = {
 export type PublicationAggregation = {
   classificationCounts: Record<string, number>;
   womenNotIncludedCount: number;
+  observationalCount: number;
+  clinicalTrialCount: number;
 };
 
 /**
@@ -28,6 +34,8 @@ export function aggregatePublicationReviewData(
 ): PublicationAggregation {
   const classificationCounts: Record<string, number> = {};
   let womenNotIncludedCount = 0;
+  let observationalCount = 0;
+  let clinicalTrialCount = 0;
 
   (publication.rawScores || []).forEach((row) => {
     const rd = (row && (row as { review_data?: unknown }).review_data) as Record<string, unknown> | undefined | null;
@@ -38,9 +46,14 @@ export function aggregatePublicationReviewData(
   if (maybeLabel) classificationCounts[maybeLabel] = (classificationCounts[maybeLabel] || 0) + 1;
 
   if (rdObj['womenNotIncluded'] === true) womenNotIncludedCount++;
+
+  // Aggregate study type counts
+  const studyType = rdObj['studyType'] as { observational?: boolean; clinicalTrial?: boolean } | undefined;
+  if (studyType?.observational) observationalCount++;
+  if (studyType?.clinicalTrial) clinicalTrialCount++;
   });
 
-  return { classificationCounts, womenNotIncludedCount };
+  return { classificationCounts, womenNotIncludedCount, observationalCount, clinicalTrialCount };
 }
 
 /**
@@ -68,6 +81,10 @@ export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
   const contradictingLabelCounts: Record<string, number> = {};
   let supportingWomenNotIncluded = 0;
   let contradictingWomenNotIncluded = 0;
+  let supportingObservationalCount = 0;
+  let contradictingObservationalCount = 0;
+  let supportingClinicalTrialCount = 0;
+  let contradictingClinicalTrialCount = 0;
 
   // For reasons, collect raw reasons then collapse to counts per label+stance
   const supportingReasonsRaw: Record<string, string[]> = {};
@@ -76,7 +93,14 @@ export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
   claim.publications.forEach((pub: PublicationMinimal) => {
     (pub.rawScores || []).forEach((score) => {
       const rd = score.review_data as Record<string, unknown> | undefined;
-      type ReviewDataLike = { womenNotIncluded?: boolean; category?: string };
+      type ReviewDataLike = {
+        womenNotIncluded?: boolean;
+        category?: string;
+        studyType?: {
+          observational?: boolean;
+          clinicalTrial?: boolean;
+        };
+      };
       const rdl = rd as ReviewDataLike | undefined;
       const label = rdl?.category as string | undefined;
       if (label) {
@@ -89,6 +113,16 @@ export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
       if (rdl?.womenNotIncluded) {
         if (pub.stance === 'supporting') supportingWomenNotIncluded++;
         else if (pub.stance === 'contradicting') contradictingWomenNotIncluded++;
+      }
+
+      // Aggregate study type counts
+      if (rdl?.studyType?.observational) {
+        if (pub.stance === 'supporting') supportingObservationalCount++;
+        else if (pub.stance === 'contradicting') contradictingObservationalCount++;
+      }
+      if (rdl?.studyType?.clinicalTrial) {
+        if (pub.stance === 'supporting') supportingClinicalTrialCount++;
+        else if (pub.stance === 'contradicting') contradictingClinicalTrialCount++;
       }
 
       // collect reasons for the three classification types
@@ -121,6 +155,10 @@ export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
     contradictingLabelCounts,
     supportingWomenNotIncluded,
     contradictingWomenNotIncluded,
+    supportingObservationalCount,
+    contradictingObservationalCount,
+    supportingClinicalTrialCount,
+    contradictingClinicalTrialCount,
     aggregatedReasons: {
       supporting: collapseReasons(supportingReasonsRaw),
       contradicting: collapseReasons(contradictingReasonsRaw)

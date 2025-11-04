@@ -67,6 +67,28 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
 } as const;
 
 // ============================================================================
+// STUDY TAG COLORS
+// ============================================================================
+
+/**
+ * Background color classes for study tags (used in badges)
+ */
+export const STUDY_TAG_COLORS: Record<string, string> = {
+  'women_not_included': 'bg-pink-100 text-pink-800',
+  'observational': 'bg-blue-100 text-blue-800',
+  'clinical_trial': 'bg-purple-100 text-purple-800',
+} as const;
+
+/**
+ * Border color classes for study tags (used in form buttons/chips with selected state)
+ */
+export const STUDY_TAG_BORDER_COLORS: Record<string, string> = {
+  'women_not_included': 'border-pink-400',
+  'observational': 'border-blue-400',
+  'clinical_trial': 'border-purple-400',
+} as const;
+
+// ============================================================================
 // CATEGORY EXPLANATIONS
 // ============================================================================
 
@@ -155,6 +177,20 @@ export function isHumanTestingCategory(category: string): boolean {
     'Widely Tested in Humans'
   ];
   return humanCategories.includes(category);
+}
+
+/**
+ * Get background color classes for a study tag
+ */
+export function getStudyTagColor(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
+  return STUDY_TAG_COLORS[tag] || 'bg-gray-100 text-gray-800';
+}
+
+/**
+ * Get border color classes for a study tag (used in form buttons/chips)
+ */
+export function getStudyTagBorderColor(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
+  return STUDY_TAG_BORDER_COLORS[tag] || 'border-gray-400';
 }
 
 // ============================================================================
