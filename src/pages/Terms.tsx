@@ -90,8 +90,8 @@ const Terms = () => {
               <h2 className="text-2xl font-semibold text-white mb-4">Contact</h2>
               <p>
                 For questions about these terms or our data usage policies, contact us at{" "}
-                <a href="mailto:terms@healthintegrityproject.org" className="text-accent hover:underline">
-                  terms@healthintegrityproject.org
+                <a href="mailto:legal@healthintegrityproject.org" className="text-accent hover:underline">
+                  legal@healthintegrityproject.org
                 </a>
               </p>
             </section>
