@@ -7,13 +7,13 @@ const Terms = () => {
       <main className="container mx-auto px-6 py-20">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-white mb-8">Terms of Service & Data Usage</h1>
-          
+
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 space-y-6 text-white/90">
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Platform Purpose</h2>
               <p className="mb-4">
-                HealthIntegrityProject is an educational platform that provides research-backed affirmations 
-                and insights specifically focused on women's experiences, health, and empowerment. Our mission is to 
+                HealthIntegrityProject is an educational platform that provides research-backed affirmations
+                and insights specifically focused on women's experiences, health, and empowerment. Our mission is to
                 bridge the gap between scientific research and practical self-empowerment tools.
               </p>
             </section>
@@ -81,7 +81,7 @@ const Terms = () => {
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Updates and Changes</h2>
               <p className="mb-4">
-                We reserve the right to update these terms as our platform evolves. Users will be notified of 
+                We reserve the right to update these terms as our platform evolves. Users will be notified of
                 significant changes, and continued use constitutes acceptance of updated terms.
               </p>
             </section>
