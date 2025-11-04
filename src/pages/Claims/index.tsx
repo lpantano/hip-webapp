@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import { isProblematicCategory } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
@@ -210,6 +211,7 @@ const Claims = () => {
             journal: p.journal || '',
             year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
             url: p.url || p.doi || '',
+            source: p.source || null,
             stance: p.stance,
             rawScores: []
           };
@@ -467,6 +469,7 @@ const Claims = () => {
       journal: string;
       year: number;
       authors: string;
+      source?: string | null;
     };
     expert: {
       expert_user_id: string;
@@ -546,6 +549,20 @@ const Claims = () => {
                     <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
                     <p className="text-xs text-muted-foreground">
                       {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
+                      {reviewCard.publication.source && (
+                        <>
+                          {' • '}
+                          <a
+                            href={reviewCard.publication.source}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                            title="View source"
+                          >
+                            Source <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </>
+                      )}
                     </p>
                     <br></br>
                     {reviewCard.expert.classification && (
@@ -555,9 +572,7 @@ const Claims = () => {
                       </Badge>
 
                       {reviewCard.expert.reviewData &&
-                        (reviewCard.expert.classification === 'Invalid' ||
-                          reviewCard.expert.classification === 'Unreliable' ||
-                          reviewCard.expert.classification === 'Fallacy') && (
+                        isProblematicCategory(String(reviewCard.expert.classification)) && (
                           <div className="flex-1">
                             {(() => {
                               const reasons = getClassificationReasons(reviewCard.expert.reviewData);
@@ -711,7 +726,7 @@ const Claims = () => {
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-12 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6  bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Health Claims
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
@@ -1224,7 +1239,8 @@ const Claims = () => {
                           title: pub.title,
                           journal: pub.journal,
                           year: pub.year,
-                          authors: pub.authors
+                          authors: pub.authors,
+                          source: pub.source || null
                         },
                         expert: {
                           expert_user_id: expertUserId,

@@ -1,4 +1,5 @@
-import { getClassificationReasons, ReviewData } from '@/types/review';
+import { getClassificationReasons } from '@/types/review';
+import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from './classification-categories';
 
 export type LabelAggregation = {
   classificationOrder: string[];
@@ -61,15 +62,7 @@ type ClaimMinimal = {
 };
 
 export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
-  const classificationOrder = [
-    'Invalid',
-    'Fallacy',
-    'Unreliable',
-    'Not Tested in Humans',
-    'Limited Tested in Humans',
-    'Tested in Humans',
-    'Widely Tested in Humans'
-  ];
+  const classificationOrder = [...CLASSIFICATION_CATEGORIES];
 
   const supportingLabelCounts: Record<string, number> = {};
   const contradictingLabelCounts: Record<string, number> = {};
@@ -99,7 +92,7 @@ export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
       }
 
       // collect reasons for the three classification types
-      if (label && (label === 'Invalid' || label === 'Unreliable' || label === 'Fallacy')) {
+      if (label && isProblematicCategory(label)) {
         const reasons = getClassificationReasons(rdl);
         if (reasons && reasons.length > 0) {
           const target = pub.stance === 'supporting' ? supportingReasonsRaw : contradictingReasonsRaw;
