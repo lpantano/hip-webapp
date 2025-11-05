@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast, toast as globalToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 // Define your custom error message part from the PostgreSQL trigger
 const CUSTOM_WHITELIST_ERROR_KEY = 'Signup not allowed';
@@ -98,7 +99,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       } catch (e) {
         // swallow and continue
-        console.info('handleAuthErrorRedirect failed', e);
+        logger.info('handleAuthErrorRedirect failed', e);
       }
       return false; // No relevant error found
     };
