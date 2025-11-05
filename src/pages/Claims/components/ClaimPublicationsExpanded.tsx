@@ -68,47 +68,46 @@ const ClaimPublicationsExpanded: React.FC<{
                           </a>
                         )}
                       </h5>
-                      <p className="text-xs text-muted-foreground flex items-center gap-2">
-                        <span>
-                          {pub.authors} • {pub.journal} ({pub.year})
-                          {pub.source && (
-                            <>
-                              {' • '}
-                              <a
-                                href={pub.source}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-primary hover:underline"
-                                title="View source"
-                              >
-                                Source <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </>
-                          )}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          {Object.entries(agg.classificationCounts).map(([label, count]) => (
-                            <Badge key={label} className={`text-xs ${getEvidenceClassificationColor(label)} pointer-events-none transition-none`}>
-                              {label} ({count})
-                            </Badge>
-                          ))}
-                          {agg.womenNotIncludedCount > 0 && (
-                            <Badge className={`text-xs ${getStudyTagColor('women_not_included')} pointer-events-none transition-none`}>
-                              ♀ Women Not Included ({agg.womenNotIncludedCount})
-                            </Badge>
-                          )}
-                          {agg.observationalCount > 0 && (
-                            <Badge className={`text-xs ${getStudyTagColor('observational')} pointer-events-none transition-none`}>
-                              🔬 Observational ({agg.observationalCount})
-                            </Badge>
-                          )}
-                          {agg.clinicalTrialCount > 0 && (
-                            <Badge className={`text-xs ${getStudyTagColor('clinical_trial')} pointer-events-none transition-none`}>
-                              💊 Clinical Trial ({agg.clinicalTrialCount})
-                            </Badge>
-                          )}
-                        </span>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {pub.authors} • {pub.journal} ({pub.year})
+                        {pub.source && (
+                          <>
+                            {' • '}
+                            <a
+                              href={pub.source}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                              title="View source"
+                            >
+                              Source <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </>
+                        )}
                       </p>
+                      {/* Badges: inline on desktop, stacked on mobile */}
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-1.5">
+                        {Object.entries(agg.classificationCounts).map(([label, count]) => (
+                          <Badge key={label} className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getEvidenceClassificationColor(label)} pointer-events-none transition-none`}>
+                            {label} ({count})
+                          </Badge>
+                        ))}
+                        {agg.womenNotIncludedCount > 0 && (
+                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('women_not_included')} pointer-events-none transition-none`}>
+                            Women Not Included ({agg.womenNotIncludedCount})
+                          </Badge>
+                        )}
+                        {agg.observationalCount > 0 && (
+                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('observational')} pointer-events-none transition-none`}>
+                            Observational ({agg.observationalCount})
+                          </Badge>
+                        )}
+                        {agg.clinicalTrialCount > 0 && (
+                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('clinical_trial')} pointer-events-none transition-none`}>
+                            Clinical Trial ({agg.clinicalTrialCount})
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 

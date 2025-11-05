@@ -147,14 +147,12 @@ function LevelButton({
   // If any womenNotIncluded flag, append it at the bottom (after level 1)
     if (womenNotIncludedCount > 0) {
         stack.push(
-            <div key={`women-${stance}`} className="mt-1 w-full">
-            <span
-                className={`w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden`}
-                style={{ minWidth: 0 }}
+            <div
+                key={`women-${stance}`}
+                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden`}
             >
-                <span className="break-words">♀ Women Not Included</span>
+                <span className="break-words">Women Not Included</span>
                 <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
-            </span>
             </div>
         );
     }
@@ -162,28 +160,24 @@ function LevelButton({
     // Add study type labels if present
     if (observationalCount > 0) {
         stack.push(
-            <div key={`observational-${stance}`} className="mt-1 w-full">
-            <span
-                className={`w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden`}
-                style={{ minWidth: 0 }}
+            <div
+                key={`observational-${stance}`}
+                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden`}
             >
-                <span className="break-words">🔬 Observational</span>
+                <span className="break-words">Observational</span>
                 <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
-            </span>
             </div>
         );
     }
 
     if (clinicalTrialCount > 0) {
         stack.push(
-            <div key={`clinical-trial-${stance}`} className="mt-1 w-full">
-            <span
-                className={`w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden`}
-                style={{ minWidth: 0 }}
+            <div
+                key={`clinical-trial-${stance}`}
+                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden`}
             >
-                <span className="break-words">💊 Clinical Trial</span>
+                <span className="break-words">Clinical Trial</span>
                 <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
-            </span>
             </div>
         );
     }
