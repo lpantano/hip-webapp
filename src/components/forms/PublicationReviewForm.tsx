@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -68,7 +68,6 @@ const REVIEW_CATEGORIES: ReviewCategory[] = [...CLASSIFICATION_CATEGORIES];
 
 const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted }: PublicationReviewFormProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [reviewData, setReviewData] = useState<ReviewData>(createEmptyReviewData());
@@ -245,9 +244,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     },
     onSuccess: () => {
       const wasUpdate = !!existingReview;
-      toast({
-        title: wasUpdate ? 'Review updated' : 'Review submitted',
-        description: `Your publication review has been ${wasUpdate ? 'updated' : 'saved'} successfully.`,
+      toast.success(wasUpdate ? 'Review updated' : 'Review submitted', {
+        description: `Your publication review has been ${wasUpdate ? 'updated' : 'saved'} successfully.`
       });
       queryClient.invalidateQueries({ queryKey: ['publication-review'] });
       queryClient.invalidateQueries({ queryKey: ['publication-reviews'] });
@@ -257,10 +255,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
-      toast({
-        title: 'Error',
-        description: message || 'Failed to submit review. Please try again.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: message || 'Failed to submit review. Please try again.'
       });
     }
   });

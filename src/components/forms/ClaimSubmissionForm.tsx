@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { DOIService } from '@/services/DOIService';
@@ -58,7 +58,6 @@ interface ClaimSubmissionFormProps {
 export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDOI, setLoadingDOI] = useState<number | null>(null);
-  const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
   const form = useForm<FormData>({
@@ -95,17 +94,14 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         form.setValue(`publications.${index}.abstract`, pubData.abstract || '');
         form.setValue(`publications.${index}.url`, pubData.url || `https://doi.org/${doi}`);
         
-        toast({
-          title: "Publication Data Retrieved",
+        toast.success("Publication Data Retrieved", {
           description: `Successfully fetched details for: ${pubData.title?.substring(0, 50)}...`,
         });
       }
     } catch (error) {
       console.error('Error fetching publication data:', error);
-      toast({
-        title: "Publication Fetch Error",
+      toast.error("Publication Fetch Error", {
         description: "Could not retrieve publication data. Please enter details manually.",
-        variant: "destructive",
       });
     } finally {
       setLoadingDOI(null);
@@ -119,26 +115,21 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     try {
       // Ensure the field is set (the input is already controlled, but this guarantees the form value)
       form.setValue(`sources.${index}.source_url`, url);
-      toast({
-        title: "URL Saved",
+      toast.success("URL Saved", {
         description: `Saved source URL.`,
       });
     } catch (error) {
       console.error('Error saving URL:', error);
-      toast({
-        title: "Save Error",
+      toast.error("Save Error", {
         description: "Could not save the URL. Please try again.",
-        variant: "destructive",
       });
     }
   };
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
+      toast.error("Authentication Required", {
         description: "Please sign in to submit a claim.",
-        variant: "destructive",
       });
       return;
     }
@@ -223,8 +214,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
         console.log('claim_links inserted successfully');
       }
 
-      toast({
-        title: "Claim Submitted Successfully",
+      toast.success("Claim Submitted Successfully", {
         description: "Your claim has been submitted for review.",
       });
 
@@ -233,10 +223,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     } catch (error: unknown) {
       console.error('Error submitting claim:', error);
       const message = error instanceof Error ? error.message : "Failed to submit claim. Please try again.";
-      toast({
-        title: "Submission Error",
+      toast.error("Submission Error", {
         description: message,
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);

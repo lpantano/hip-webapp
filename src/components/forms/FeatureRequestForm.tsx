@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 type Props = {
   onSuccess?: () => void;
@@ -31,7 +31,6 @@ const LABEL_OPTIONS = [
 
 const FeatureRequestForm: React.FC<Props> = ({ onSuccess, onCancel }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
@@ -44,11 +43,11 @@ const FeatureRequestForm: React.FC<Props> = ({ onSuccess, onCancel }) => {
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!user) {
-      toast({ title: 'Sign in required', description: 'You must be signed in to submit a feature request.', variant: 'destructive' });
+      toast.error('Sign in required', { description: 'You must be signed in to submit a feature request.' });
       return;
     }
     if (!title.trim()) {
-      toast({ title: 'Validation', description: 'Please provide a short title for the request.', variant: 'destructive' });
+      toast.error('Validation', { description: 'Please provide a short title for the request.' });
       return;
     }
 
@@ -65,14 +64,14 @@ const FeatureRequestForm: React.FC<Props> = ({ onSuccess, onCancel }) => {
 
       if (error) throw error;
 
-      toast({ title: 'Request submitted', description: 'Your feature request was created.' });
+      toast.success('Request submitted', { description: 'Your feature request was created.' });
       setTitle('');
       setDescription('');
       setSelectedLabels([]);
       if (onSuccess) onSuccess();
     } catch (err) {
       console.error('Failed to submit feature request', err);
-      toast({ title: 'Error', description: 'Failed to submit request. Please try again.', variant: 'destructive' });
+      toast.error('Error', { description: 'Failed to submit request. Please try again.' });
     } finally {
       setLoading(false);
     }

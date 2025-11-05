@@ -8,7 +8,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -27,7 +27,6 @@ type Props = {
 
 export const ResourceSubmissionForm = ({ onSuccess }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const form = useForm<FormData>({
@@ -42,10 +41,8 @@ export const ResourceSubmissionForm = ({ onSuccess }: Props) => {
 
   const onSubmit = async (values: FormData) => {
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to submit a resource.",
-        variant: "destructive",
+      toast.error("Authentication required", {
+        description: "Please sign in to submit a resource."
       });
       return;
     }
@@ -61,22 +58,19 @@ export const ResourceSubmissionForm = ({ onSuccess }: Props) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Resource submitted successfully",
-        description: "Your resource is now waiting for review.",
+      toast.success("Resource submitted successfully", {
+        description: "Your resource is now waiting for review."
       });
 
       form.reset();
-      
+
       // Close the form if onSuccess callback is provided
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      toast({
-        title: "Error submitting resource",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
+      toast.error("Error submitting resource", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
       });
     } finally {
       setIsSubmitting(false);
