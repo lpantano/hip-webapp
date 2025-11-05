@@ -15,7 +15,7 @@ import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,6 +31,7 @@ import ClaimLinksSection from './components/ClaimLinksSection';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
+import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
@@ -62,7 +63,6 @@ const Claims = () => {
   const [sourceDescription, setSourceDescription] = useState('');
   const [sourceType, setSourceType] = useState('webpage');
   const [sourceSubmitting, setSourceSubmitting] = useState(false);
-  const { toast } = useToast();
 
   // Confirmation dialog state for toggling claim status
   const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
@@ -430,11 +430,11 @@ const Claims = () => {
       if (error) throw error;
       // Refresh data
       await fetchData(currentPage);
-      toast({ title: 'Status updated', description: `Claim status set to ${newStatus}.` });
+      toast.success('Status updated', { description: `Claim status set to ${newStatus}.` });
     } catch (e: unknown) {
       console.error('Failed to update claim status', e);
       const msg = e instanceof Error ? e.message : 'Failed to update status';
-      toast({ title: 'Update failed', description: msg, variant: 'destructive' });
+      toast.error('Update failed', { description: msg });
     } finally {
       setUpdatingStatus(null);
     }
@@ -518,15 +518,15 @@ const Claims = () => {
             // But the correct way is to pass tags in the reviewCard.expert, so let's check if they exist.
             const tags = reviewCard.expert.tags || null;
             return (
-              <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-4 shadow-sm">
+              <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-3 sm:p-4 shadow-sm">
                 {/* Top row: Avatar + Publication info */}
-                <div className="flex items-start gap-4 mb-3">
-                  <div className="flex flex-col items-center gap-2 w-24">
+                <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-3">
+                  <div className="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-24">
                     {reviewCard.expert.avatar_url ? (
                       <img
                         src={reviewCard.expert.avatar_url}
                         alt={reviewCard.expert.display_name || 'Expert'}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
@@ -542,12 +542,12 @@ const Claims = () => {
                     >
                       {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
                     </div>
-                    <div className="font-semibold text-sm text-center">{reviewCard.expert.display_name || 'Expert'}</div>
+                    <div className="font-semibold text-sm text-center sm:text-center flex-1 sm:flex-none">{reviewCard.expert.display_name || 'Expert'}</div>
                   </div>
 
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-1">{reviewCard.publication.title}</h4>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex-1 w-full">
+                    <h4 className="font-semibold text-sm mb-1 break-words">{reviewCard.publication.title}</h4>
+                    <p className="text-xs text-muted-foreground break-words">
                       {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
                       {reviewCard.publication.source && (
                         <>
@@ -595,7 +595,7 @@ const Claims = () => {
                   {tags && (
                     <div className="flex flex-wrap gap-2 mb-2">
                       {Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && (
-                        <span className="text-xs flex items-center gap-1">
+                        <span className="text-xs flex flex-wrap items-center gap-1">
                           <span className="font-medium">Ethnicities:</span>
                           {tags.ethnicityLabels.map((eth: string, i: number) => (
                             <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
@@ -603,7 +603,7 @@ const Claims = () => {
                         </span>
                       )}
                       {Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && (
-                        <span className="text-xs flex items-center gap-1">
+                        <span className="text-xs flex flex-wrap items-center gap-1">
                           <span className="font-medium">Ages:</span>
                           {tags.ageRanges.map((age: string, i: number) => (
                             <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
@@ -630,7 +630,7 @@ const Claims = () => {
 
                   {reviewCard.expert.scores.length > 0 && (
                     <div className="mb-2">
-                      <div className="flex flex-row flex-wrap gap-3 items-center">
+                      <div className="flex flex-row flex-wrap gap-2 sm:gap-3 items-center">
                         {reviewCard.expert.scores.map((scoreItem, idx) => (
                           <div key={idx} className="flex items-center gap-1">
                             {(() => {
@@ -695,16 +695,7 @@ const Claims = () => {
     );
   };
 
-  const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'nutrition', label: 'Nutrition' },
-    { value: 'fitness', label: 'Fitness' },
-    { value: 'mental_health', label: 'Mental Health' },
-    { value: 'pregnancy', label: 'Pregnancy' },
-    { value: 'menopause', label: 'Menopause' },
-    { value: 'perimenopause', label: 'Perimenopause' },
-    { value: 'general_health', label: 'General Health' }
-  ];
+  const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
   // Claims are now filtered and sorted by the database query
     // Only show claim 913322f9-6d96-49fa-ace9-9587e8952a80 if running on localhost
@@ -723,14 +714,13 @@ const Claims = () => {
       <Header />
 
       <main className="pt-24 pb-16">
-        <div className="container mx-auto px-6">
-
+        <div className="container mx-auto px-4 sm:px-6">
           {/* Header Section */}
-          <div className="max-w-4xl mx-auto mb-12 text-center">
-            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
+          <div className="max-w-4xl mx-auto mb-8 sm:mb-12 text-center px-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Health Claims
             </h1>
-            <p className="text-lg text-muted-foreground mb-4">
+            <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
               Upvote Claims with strong scientific backing to prioritize them for expert review.
             </p>
@@ -762,12 +752,13 @@ const Claims = () => {
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                     <DialogTrigger asChild>
-                      <Button size="sm" className="gap-2" disabled={!user}>
+                      <Button size="sm" className="gap-2 whitespace-nowrap" disabled={!user}>
                         <Plus className="w-4 h-4" />
-                        {user ? 'New Claim' : 'Sign in to Submit Claim'}
+                        <span className="hidden sm:inline">{user ? 'New Claim' : 'Sign in to Submit Claim'}</span>
+                        <span className="sm:hidden">{user ? 'New' : 'Sign In'}</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogTitle>Submit a new claim</DialogTitle>
                       <ClaimSubmissionForm
                         onSuccess={() => {
@@ -781,7 +772,7 @@ const Claims = () => {
                   </Dialog>
 
                   <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
-                    <SelectTrigger className="w-[180px] h-9">
+                    <SelectTrigger className="w-full sm:w-[180px] h-9">
                       <div className="flex items-center gap-2">
                         <Filter className="w-4 h-4" />
                         <SelectValue />
@@ -800,15 +791,19 @@ const Claims = () => {
                     variant={sortBy === 'votes' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setSortBy('votes')}
+                    className="whitespace-nowrap"
                   >
-                    Sort by Votes
+                    <span className="hidden sm:inline">Sort by Votes</span>
+                    <span className="sm:hidden">Votes</span>
                   </Button>
                   <Button
                     variant={sortBy === 'recent' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setSortBy('recent')}
+                    className="whitespace-nowrap"
                   >
-                    Most Recent
+                    <span className="hidden sm:inline">Most Recent</span>
+                    <span className="sm:hidden">Recent</span>
                   </Button>
                 </div>
               </div>
@@ -906,7 +901,6 @@ const Claims = () => {
                       </span>
                     </CardTitle>
                   </div>
-                  <ClaimLinksSection links={claim.links} />
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
                     {(() => {
@@ -918,13 +912,35 @@ const Claims = () => {
                         contradictingLabelCounts,
                         supportingWomenNotIncluded,
                         contradictingWomenNotIncluded,
+                        supportingObservationalCount,
+                        contradictingObservationalCount,
+                        supportingClinicalTrialCount,
+                        contradictingClinicalTrialCount,
                         aggregatedReasons
                       } = agg;
 
                       // Build two columns: left for contradicting, right for supporting
 
                       return (
-                        <div className="grid grid-cols-2 gap-4 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
+                              <span className="font-semibold text-xs">Supporting Papers</span>
+                            </div>
+                            <div>
+                              <ClaimLabelsStack
+                                classificationOrder={classificationOrder}
+                                labelCounts={supportingLabelCounts}
+                                womenNotIncludedCount={supportingWomenNotIncluded}
+                                observationalCount={supportingObservationalCount}
+                                clinicalTrialCount={supportingClinicalTrialCount}
+                                stance="supporting"
+                                aggregatedReasonsForStance={aggregatedReasons.supporting}
+                              />
+                            </div>
+                          </div>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
@@ -936,35 +952,24 @@ const Claims = () => {
                                 classificationOrder={classificationOrder}
                                 labelCounts={contradictingLabelCounts}
                                 womenNotIncludedCount={contradictingWomenNotIncluded}
+                                observationalCount={contradictingObservationalCount}
+                                clinicalTrialCount={contradictingClinicalTrialCount}
                                 stance="contradicting"
                                 aggregatedReasonsForStance={aggregatedReasons.contradicting}
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Supporting Papers</span>
-                            </div>
-                            <div>
-                              <ClaimLabelsStack
-                                classificationOrder={classificationOrder}
-                                labelCounts={supportingLabelCounts}
-                                womenNotIncludedCount={supportingWomenNotIncluded}
-                                stance="supporting"
-                                aggregatedReasonsForStance={aggregatedReasons.supporting}
                               />
                             </div>
                           </div>
                         </div>
                       );
                     })()}
+
                   </div>
                 </CardHeader>
                 {/* Expanded view with individual reviews (moved to component) */}
                 {expandedClaim === claim.id && (
                   <ClaimPublicationsExpanded
                     publications={claim.publications}
+                    links={claim.links}
                     isExpert={isExpert}
                     user={user}
                     setReviewPublication={setReviewPublication}
@@ -982,19 +987,21 @@ const Claims = () => {
                           variant="default"
                           size="sm"
                           onClick={() => setShowReelClaim(claim.id)}
-                          className="flex items-center gap-2 shadow-md"
+                          className="flex items-center gap-2 shadow-md whitespace-nowrap"
                         >
                           <Eye className="w-4 h-4" />
-                          Review Reel
+                          <span className="hidden sm:inline">Review Reel</span>
+                          <span className="sm:hidden">Reviews</span>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setShowPaperForm(claim.id)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 whitespace-nowrap"
                         >
                           <FileText className="w-4 h-4" />
-                          Add Paper
+                          <span className="hidden sm:inline">Add Paper</span>
+                          <span className="sm:hidden">Paper</span>
                         </Button>
                               {(
                                 // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
@@ -1012,10 +1019,11 @@ const Claims = () => {
                                     setSourceDescription('');
                                     setSourceType('webpage');
                                   }}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-2 whitespace-nowrap"
                                 >
                                   <Link className="w-4 h-4" />
-                                  Add Source
+                                  <span className="hidden sm:inline">Add Source</span>
+                                  <span className="sm:hidden">Source</span>
                                 </Button>
                               )}
                       </div>
@@ -1031,7 +1039,7 @@ const Claims = () => {
             {/* Pagination Controls */}
             {user && totalClaims > 0 && (
               <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                   Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
                 </div>
                 <div className="flex items-center gap-2">
@@ -1040,15 +1048,15 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0 || loading}
-                    className="min-w-[80px]"
+                    className="min-w-[70px] sm:min-w-[80px]"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      'Previous'
+                      <span className="text-xs sm:text-sm">Previous</span>
                     )}
                   </Button>
-                  <div className="px-3 py-1 text-sm bg-background rounded border min-w-[100px] text-center">
+                  <div className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-background rounded border min-w-[80px] sm:min-w-[100px] text-center">
                     Page {currentPage + 1} of {Math.ceil(totalClaims / CLAIMS_PER_PAGE)}
                   </div>
                   <Button
@@ -1056,12 +1064,12 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={!hasMoreClaims || loading}
-                    className="min-w-[80px]"
+                    className="min-w-[70px] sm:min-w-[80px]"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      'Next'
+                      <span className="text-xs sm:text-sm">Next</span>
                     )}
                   </Button>
                 </div>
@@ -1077,7 +1085,7 @@ const Claims = () => {
           {/* Paper Submission Dialog */}
           {user && showPaperForm && (
             <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
                   return claim ? (
@@ -1102,7 +1110,7 @@ const Claims = () => {
           {/* Source Submission Dialog */}
           {user && showSourceForm && (
             <Dialog open={!!showSourceForm} onOpenChange={() => setShowSourceForm(null)}>
-              <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[80vh] overflow-y-auto">
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showSourceForm);
                   if (!claim) return null;
@@ -1110,7 +1118,7 @@ const Claims = () => {
                   const submitSource = async () => {
                     const normalized = normalizeUrl(sourceUrl);
                     if (!normalized) {
-                      toast({ title: 'Invalid URL', description: 'Please enter a valid URL before saving.', variant: 'destructive' });
+                      toast.error('Invalid URL', { description: 'Please enter a valid URL before saving.' });
                       return;
                     }
 
@@ -1133,11 +1141,11 @@ const Claims = () => {
                       // Refresh claims list
                       await fetchData(currentPage);
                       setShowSourceForm(null);
-                      toast({ title: 'Source added', description: 'Your source was added successfully.' });
+                      toast.success('Source added', { description: 'Your source was added successfully.' });
                     } catch (e: unknown) {
                       console.error('Error adding source link:', e);
                       const message = e instanceof Error ? e.message : 'Failed to add source.';
-                      toast({ title: 'Add Source Failed', description: message, variant: 'destructive' });
+                      toast.error('Add Source Failed', { description: message });
                     } finally {
                       setSourceSubmitting(false);
                     }
@@ -1176,7 +1184,7 @@ const Claims = () => {
           {/* Confirmation Dialog for toggling claim status */}
           {user && (
             <Dialog open={!!confirmToggleClaimId} onOpenChange={(open) => { if (!open) { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); } }}>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-[95vw] sm:max-w-md">
                 <DialogTitle>Confirm status change</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   {`Are you sure you want to change the status from "${confirmToggleRawStatus ? confirmToggleRawStatus.replace('_', ' ') : ''}" to "${confirmToggleRawStatus === 'proposed' ? 'under review' : 'proposed'}"?`}
@@ -1194,7 +1202,7 @@ const Claims = () => {
           {/* Expert Reviews Reel Dialog */}
           {user && (
             <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-5xl max-h-[90vh] overflow-y-auto">
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
                   if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;

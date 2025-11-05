@@ -45,13 +45,13 @@ The system uses:
 You'll need to set up the following email addresses:
 
 **Required Emails:**
-- `noreply@evidencedecoded.com` - For sending automated confirmations
-- `admin@evidencedecoded.com` - Receives application notifications
-- `applications@evidencedecoded.com` - Alternative sender for admin notifications
+- `noreply@healthintegrityproject.org` - For sending automated confirmations
+- `admin@healthintegrityproject.org` - Receives application notifications
+- `applications@healthintegrityproject.org` - Alternative sender for admin notifications
 
 **Optional Emails:**
-- `support@evidencedecoded.com` - For user inquiries mentioned in emails
-- `hello@evidencedecoded.com` - General contact
+- `support@healthintegrityproject.org` - For user inquiries mentioned in emails
+- `hello@healthintegrityproject.org` - General contact
 
 ### 3. Supabase Environment Variables
 
@@ -62,8 +62,8 @@ Add these environment variables in your Supabase project settings:
 RESEND_API_KEY=re_your_actual_api_key_here
 
 # Email Addresses
-ADMIN_EMAIL=admin@evidencedecoded.com
-FROM_EMAIL=Evidence Decoded <noreply@evidencedecoded.com>
+ADMIN_EMAIL=admin@healthintegrityproject.org
+FROM_EMAIL=Evidence Decoded <noreply@healthintegrityproject.org>
 
 # Site Configuration
 SITE_URL=https://yourdomain.com

@@ -7,7 +7,8 @@ export type ReviewCategory =
   | 'Not Tested in Humans'
   | 'Limited Tested in Humans'
   | 'Tested in Humans'
-  | 'Widely Tested in Humans';
+  | 'Widely Tested in Humans'
+  | null; // null when no selections have been made yet
 
 export type ReviewAnswer = 'PASS' | 'NO' | 'NA';
 
@@ -42,11 +43,15 @@ export interface ReviewData {
   };
   studySize: 'less_than_100' | 'less_than_500k' | 'more_than_500k' | null;
   womenNotIncluded: boolean;
+  studyType: {
+    observational: boolean;
+    clinicalTrial: boolean;
+  };
 }
 
 // Helper to create empty review data
 export const createEmptyReviewData = (): ReviewData => ({
-  category: 'Not Tested in Humans',
+  category: null, // No category until selections are made
   tags: {
     testedInHuman: false,
     ethnicityLabels: [],
@@ -71,7 +76,11 @@ export const createEmptyReviewData = (): ReviewData => ({
     humans: false
   },
   studySize: null,
-  womenNotIncluded: false
+  womenNotIncluded: false,
+  studyType: {
+    observational: false,
+    clinicalTrial: false
+  }
 });
 
 // Age range options
@@ -90,14 +99,14 @@ export const AGE_RANGES = [
 // Common ethnicity labels (can be expanded)
 export const ETHNICITY_OPTIONS = [
   'White/Caucasian',
-  'Black/African American',
-  'Hispanic/Latino',
+  'Black or African American',
   'Asian',
-  'Native American/Indigenous',
-  'Pacific Islander',
-  'Middle Eastern/North African',
-  'Mixed/Multiple',
-  'Not specified'
+  'American Indian or Alaska Native',
+  'Native Hawaiian or Pacific Islander',
+  'Hispanic or Latino',
+  'Ashkenazi Jewish',
+  'Indigenous populations',
+  'European ancestry populations'
 ];
 
 // Helper function to get classification reasons for Invalid, Inconclusive, or Misinformation categories

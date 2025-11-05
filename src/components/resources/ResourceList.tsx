@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ExternalLink, ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ResourceReviewForm } from "@/components/forms/ResourceReviewForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -44,7 +44,6 @@ export const ResourceList = ({ status }: ResourceListProps) => {
   const [selectedResource, setSelectedResource] = useState<string | null>(null);
   const [isExpertOrResearcher, setIsExpertOrResearcher] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const fetchResources = useCallback(async () => {
     setLoading(true);
@@ -103,15 +102,13 @@ export const ResourceList = ({ status }: ResourceListProps) => {
       }
     } catch (error) {
       console.error("Error fetching resources:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch resources. Please try again.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Failed to fetch resources. Please try again."
       });
     } finally {
       setLoading(false);
     }
-  }, [status, toast]);
+  }, [status]);
 
   useEffect(() => {
     fetchResources();
@@ -179,22 +176,19 @@ export const ResourceList = ({ status }: ResourceListProps) => {
         .from('resources')
         .update({ status: 'under_review' })
         .eq('id', resourceId);
-        
+
       if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Resource approved for review. It will now be available for expert evaluation.",
+
+      toast.success("Success", {
+        description: "Resource approved for review. It will now be available for expert evaluation."
       });
-      
+
       // Refresh the resources list
       fetchResources();
     } catch (error) {
       console.error('Error approving resource for review:', error);
-      toast({
-        title: "Error",
-        description: "Failed to approve resource. Please try again.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Failed to approve resource. Please try again."
       });
     }
   };

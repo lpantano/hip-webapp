@@ -9,13 +9,12 @@ import { Users, FileText, MessageSquare, Settings } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 
 const Admin = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Check if user is admin
@@ -58,17 +57,14 @@ const Admin = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Status updated",
+      toast.success("Status updated", {
         description: `Expert status has been updated to ${status}.`
       });
 
       queryClient.invalidateQueries({ queryKey: ['admin-experts'] });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update expert status. Please try again.",
-        variant: "destructive"
+      toast.error("Error", {
+        description: "Failed to update expert status. Please try again."
       });
     }
   };

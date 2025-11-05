@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, X, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string;
@@ -15,17 +15,16 @@ interface AvatarUploadProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export const AvatarUpload = ({ 
-  currentAvatarUrl, 
-  onAvatarChange, 
-  userId, 
+export const AvatarUpload = ({
+  currentAvatarUrl,
+  onAvatarChange,
+  userId,
   displayName,
   size = 'md'
 }: AvatarUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   const sizeClasses = {
     sm: 'w-12 h-12',
@@ -39,20 +38,16 @@ export const AvatarUpload = ({
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image file.",
-        variant: "destructive",
+      toast.error("Invalid file type", {
+        description: "Please select an image file."
       });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB.",
-        variant: "destructive",
+      toast.error("File too large", {
+        description: "Please select an image smaller than 5MB."
       });
       return;
     }
@@ -92,18 +87,15 @@ export const AvatarUpload = ({
 
       onAvatarChange(publicUrl);
       setPreviewUrl(null);
-      
-      toast({
-        title: "Avatar uploaded",
-        description: "Your avatar has been updated successfully.",
+
+      toast.success("Avatar uploaded", {
+        description: "Your avatar has been updated successfully."
       });
 
     } catch (error) {
       console.error('Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload avatar. Please try again.",
-        variant: "destructive",
+      toast.error("Upload failed", {
+        description: "Failed to upload avatar. Please try again."
       });
       setPreviewUrl(null);
     } finally {

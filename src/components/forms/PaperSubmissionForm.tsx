@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { DOIService } from '@/services/DOIService';
+import { logger } from '@/lib/logger';
 
 interface PaperSubmissionFormProps {
   claimId: string;
@@ -87,7 +88,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
         setError('Could not fetch paper information from the provided link. Please fill in the details manually.');
       }
     } catch (err) {
-      console.error('Error fetching publication data:', err);
+      logger.error('Error fetching publication data:', err);
       setError('Failed to fetch paper information. Please fill in the details manually.');
     } finally {
       setFetchingDOI(false);
@@ -109,26 +110,26 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('Form submit handler called');
+    logger.log('Form submit handler called');
     e.preventDefault();
-    
+
     if (!user) {
-      console.log('No user found, cannot submit');
+      logger.log('No user found, cannot submit');
       setError('You must be signed in to submit papers');
       return;
     }
-    
-    console.log('User found:', user.id);
+
+    logger.log('User found:', user.id);
 
     const validationError = validateForm();
-    console.log('Validation result:', validationError);
+    logger.log('Validation result:', validationError);
     if (validationError) {
-      console.log('Validation failed:', validationError);
+      logger.log('Validation failed:', validationError);
       setError(validationError);
       return;
     }
 
-    console.log('Validation passed, starting submission...');
+    logger.log('Validation passed, starting submission...');
     setLoading(true);
     setError(null);
 
@@ -147,30 +148,30 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
         status: 'pending'
       };
       
-      console.log('Attempting to insert paper with data:', insertData);
-      
+      logger.log('Attempting to insert paper with data:', insertData);
+
       // Check current auth session
       const { data: authUser, error: authError } = await supabase.auth.getUser();
-      console.log('Current auth user from supabase:', authUser?.user?.id);
-      console.log('Auth error:', authError);
-      console.log('User ID from context:', user.id);
-      console.log('User IDs match:', authUser?.user?.id === user.id);
-      
+      logger.log('Current auth user from supabase:', authUser?.user?.id);
+      logger.log('Auth error:', authError);
+      logger.log('User ID from context:', user.id);
+      logger.log('User IDs match:', authUser?.user?.id === user.id);
+
       const { data: insertResult, error: insertError } = await supabase
         .from('publications')
         .insert(insertData)
         .select();
 
-      console.log('Insert result:', insertResult);
-      console.log('Insert error:', insertError);
+      logger.log('Insert result:', insertResult);
+      logger.log('Insert error:', insertError);
 
       if (insertError) throw insertError;
 
-      console.log('Paper inserted successfully, calling onSuccess...');
+      logger.log('Paper inserted successfully, calling onSuccess...');
       toast.success('Paper submitted successfully! It will be reviewed by experts before appearing on the claim.');
       onSuccess();
     } catch (err: unknown) {
-      console.error('Error submitting paper:', err);
+      logger.error('Error submitting paper:', err);
       const message = err instanceof Error ? err.message : 'Failed to submit paper. Please try again.';
       setError(message);
     } finally {

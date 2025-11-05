@@ -3,16 +3,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import { getEvidenceClassificationBorder } from '@/lib/classification-colors';
 import { PROBLEMATIC_CATEGORIES } from '@/lib/classification-categories';
+import { getStudyTagColor } from '@/lib/classification-categories';
 
 type Props = {
   classificationOrder: string[];
   labelCounts: Record<string, number>;
   womenNotIncludedCount: number;
+  observationalCount?: number;
+  clinicalTrialCount?: number;
   stance: 'supporting' | 'contradicting';
   aggregatedReasonsForStance: Record<string, string[]>;
 };
 
-export default function ClaimLabelsStack({ classificationOrder, labelCounts, womenNotIncludedCount, stance, aggregatedReasonsForStance }: Props) {
+export default function ClaimLabelsStack({ classificationOrder, labelCounts, womenNotIncludedCount, observationalCount = 0, clinicalTrialCount = 0, stance, aggregatedReasonsForStance }: Props) {
   // Define levels: bottom (1) -> top (5). We'll render top->bottom so top is first in DOM.
     const levelDefs: Array<{
     level: number;
@@ -79,10 +82,10 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
                 return (
                     <div
                         key={`lvl-${lvl.level}`}
-                        className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-3 py-1 text-xs font-semibold overflow-hidden`}
+                        className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden`}
                     >
-                        <span className="break-words sm:truncate">{titleLabel}</span>
-                        <span className="ml-2 flex-shrink-0">({totalCount})</span>
+                        <span className="break-words">{titleLabel}</span>
+                        <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
                     </div>
                 );
     }
@@ -144,14 +147,37 @@ function LevelButton({
   // If any womenNotIncluded flag, append it at the bottom (after level 1)
     if (womenNotIncludedCount > 0) {
         stack.push(
-            <div key={`women-${stance}`} className="mt-1 w-full">
-            <span
-                className="w-full sm:inline-flex sm:w-auto items-center rounded-xl px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 overflow-hidden"
-                style={{ minWidth: 0 }}
+            <div
+                key={`women-${stance}`}
+                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden`}
             >
-                <span className="break-words sm:truncate">♀ Women Not Included</span>
-                <span className="ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
-            </span>
+                <span className="break-words">Women Not Included</span>
+                <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
+            </div>
+        );
+    }
+
+    // Add study type labels if present
+    if (observationalCount > 0) {
+        stack.push(
+            <div
+                key={`observational-${stance}`}
+                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden`}
+            >
+                <span className="break-words">Observational</span>
+                <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
+            </div>
+        );
+    }
+
+    if (clinicalTrialCount > 0) {
+        stack.push(
+            <div
+                key={`clinical-trial-${stance}`}
+                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden`}
+            >
+                <span className="break-words">Clinical Trial</span>
+                <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
             </div>
         );
     }

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -41,7 +41,6 @@ interface CommunityApplicationFormProps {
 const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityApplicationFormProps) => {
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const {
@@ -90,10 +89,8 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
   const onSubmit = async (data: CommunityApplicationForm) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to submit your expert application.",
-        variant: "destructive",
+      toast.error("Authentication Required", {
+        description: "Please sign in to submit your expert application."
       });
       return;
     }
@@ -138,9 +135,8 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
         }
       }
 
-      toast({
-        title: "Application Submitted Successfully!",
-        description: "Thank you for your interest. We'll review your application and get back to you soon.",
+      toast.success("Application Submitted Successfully!", {
+        description: "Thank you for your interest. We'll review your application and get back to you soon."
       });
 
       // Reset form and close dialog
@@ -150,10 +146,8 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
     } catch (error) {
       console.error("Error submitting application:", error);
-      toast({
-        title: "Submission Failed",
-        description: "There was an error submitting your application. Please try again.",
-        variant: "destructive",
+      toast.error("Submission Failed", {
+        description: "There was an error submitting your application. Please try again."
       });
     } finally {
       setIsSubmitting(false);
