@@ -7,7 +7,7 @@ import { ArrowUp, Plus, MessageSquare } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import FeatureRequestForm from '@/components/forms/FeatureRequestForm';
@@ -30,7 +30,6 @@ const priorityColors = {
 
 const FeatureRequests = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [sortBy, setSortBy] = useState<"votes" | "recent" | "comments">("votes");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -80,10 +79,8 @@ const FeatureRequests = () => {
 
   const handleVote = async (requestId: string) => {
     if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "You need to be signed in to vote on features.",
-        variant: "destructive"
+      toast.error("Sign in required", {
+        description: "You need to be signed in to vote on features."
       });
       return;
     }
@@ -100,8 +97,7 @@ const FeatureRequests = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "Vote removed",
+        toast.success("Vote removed", {
           description: "Your vote has been removed."
         });
       } else {
@@ -116,8 +112,7 @@ const FeatureRequests = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "Vote added",
+        toast.success("Vote added", {
           description: "Thank you for voting!"
         });
       }
@@ -126,10 +121,8 @@ const FeatureRequests = () => {
       queryClient.invalidateQueries({ queryKey: ['feature-requests'] });
       queryClient.invalidateQueries({ queryKey: ['user-votes'] });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update vote. Please try again.",
-        variant: "destructive"
+      toast.error("Error", {
+        description: "Failed to update vote. Please try again."
       });
     }
   };

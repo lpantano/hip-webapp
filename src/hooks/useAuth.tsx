@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast, toast as globalToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 // Define your custom error message part from the PostgreSQL trigger
@@ -36,7 +36,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
 
@@ -80,11 +79,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // console.info('[Auth] URL inspection for whitelist error', { href, rawSearch, rawHash, found });
 
         if (found) {
-          // Display the user-friendly message using module-level toast to avoid timing issues
-            globalToast({
-              title: 'Working to open the platform to everybody.',
+          // Display the user-friendly message using toast
+            toast.error('Working to open the platform to everybody.', {
               description: CUSTOM_TOAST_MESSAGE,
-              variant: 'destructive',
             });
 
           // Clean up the URL to prevent the toast on subsequent refreshes
@@ -137,7 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       window.removeEventListener('hashchange', onUrlChange);
       window.removeEventListener('popstate', onUrlChange);
     };
-  }, [toast]); // Dependencies for toast
+  }, []); // No dependencies needed
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -151,20 +148,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         ? CUSTOM_TOAST_MESSAGE
         : error.message;
 
-      // Use local toast if available; fallback to module-level toast
-      try {
-        toast({
-          title: 'Sign In Error',
-          description,
-          variant: 'destructive',
-        });
-      } catch (e) {
-        globalToast({
-          title: 'Sign In Error',
-          description,
-          variant: 'destructive',
-        });
-      }
+      toast.error('Sign In Error', {
+        description,
+      });
     }
 
     return { error };
@@ -187,31 +173,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         ? CUSTOM_TOAST_MESSAGE
         : error.message;
 
-      try {
-        toast({
-          title: 'Sign Up Error',
-          description: description,
-          variant: 'destructive',
-        });
-      } catch (e) {
-        globalToast({
-          title: 'Sign Up Error',
-          description: description,
-          variant: 'destructive',
-        });
-      }
+      toast.error('Sign Up Error', {
+        description: description,
+      });
     } else {
-      try {
-        toast({
-          title: 'Check your email',
-          description: "We've sent you a confirmation link to complete your registration.",
-        });
-      } catch (e) {
-        globalToast({
-          title: 'Check your email',
-          description: "We've sent you a confirmation link to complete your registration.",
-        });
-      }
+      toast.success('Check your email', {
+        description: "We've sent you a confirmation link to complete your registration.",
+      });
     }
 
     return { error };
@@ -228,10 +196,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     if (error) {
-      toast({
-        title: "Google Sign In Error",
+      toast.error("Google Sign In Error", {
         description: error.message,
-        variant: "destructive",
       });
     }
 
@@ -241,10 +207,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast({
-        title: "Sign Out Error",
+      toast.error("Sign Out Error", {
         description: error.message,
-        variant: "destructive",
       });
     }
   };

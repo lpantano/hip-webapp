@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,7 +22,6 @@ const Profile = () => {
   // Dynamically get claim_category options from types
   const claimCategoryOptions = Constants.public.Enums.claim_category;
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Profile form state
@@ -177,9 +176,8 @@ const Profile = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
+      toast.success("Profile updated", {
+        description: "Your profile information has been updated successfully."
       });
       // Invalidate both profile queries and user-profile queries
       queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -187,10 +185,8 @@ const Profile = () => {
     },
     onError: (error: unknown) => {
       console.error('Profile update error', error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Failed to update profile. Please try again."
       });
     }
   });
@@ -247,19 +243,16 @@ const Profile = () => {
       }
      },
      onSuccess: () => {
-       toast({
-         title: "Expert profile updated",
-         description: "Your expert information has been updated successfully.",
+       toast.success("Expert profile updated", {
+         description: "Your expert information has been updated successfully."
        });
        queryClient.invalidateQueries({ queryKey: ['expert-data'] });
        queryClient.invalidateQueries({ queryKey: ['expert-social-links'] });
      },
      onError: (error: unknown) => {
        console.error('Expert update error', error);
-       toast({
-         title: "Error",
-         description: "Failed to update expert profile. Please try again.",
-         variant: "destructive",
+       toast.error("Error", {
+         description: "Failed to update expert profile. Please try again."
        });
      }
    });

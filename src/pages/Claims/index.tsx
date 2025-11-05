@@ -15,7 +15,7 @@ import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -63,7 +63,6 @@ const Claims = () => {
   const [sourceDescription, setSourceDescription] = useState('');
   const [sourceType, setSourceType] = useState('webpage');
   const [sourceSubmitting, setSourceSubmitting] = useState(false);
-  const { toast } = useToast();
 
   // Confirmation dialog state for toggling claim status
   const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
@@ -431,11 +430,11 @@ const Claims = () => {
       if (error) throw error;
       // Refresh data
       await fetchData(currentPage);
-      toast({ title: 'Status updated', description: `Claim status set to ${newStatus}.` });
+      toast.success('Status updated', { description: `Claim status set to ${newStatus}.` });
     } catch (e: unknown) {
       console.error('Failed to update claim status', e);
       const msg = e instanceof Error ? e.message : 'Failed to update status';
-      toast({ title: 'Update failed', description: msg, variant: 'destructive' });
+      toast.error('Update failed', { description: msg });
     } finally {
       setUpdatingStatus(null);
     }
@@ -1111,7 +1110,7 @@ const Claims = () => {
                   const submitSource = async () => {
                     const normalized = normalizeUrl(sourceUrl);
                     if (!normalized) {
-                      toast({ title: 'Invalid URL', description: 'Please enter a valid URL before saving.', variant: 'destructive' });
+                      toast.error('Invalid URL', { description: 'Please enter a valid URL before saving.' });
                       return;
                     }
 
@@ -1134,11 +1133,11 @@ const Claims = () => {
                       // Refresh claims list
                       await fetchData(currentPage);
                       setShowSourceForm(null);
-                      toast({ title: 'Source added', description: 'Your source was added successfully.' });
+                      toast.success('Source added', { description: 'Your source was added successfully.' });
                     } catch (e: unknown) {
                       console.error('Error adding source link:', e);
                       const message = e instanceof Error ? e.message : 'Failed to add source.';
-                      toast({ title: 'Add Source Failed', description: message, variant: 'destructive' });
+                      toast.error('Add Source Failed', { description: message });
                     } finally {
                       setSourceSubmitting(false);
                     }
