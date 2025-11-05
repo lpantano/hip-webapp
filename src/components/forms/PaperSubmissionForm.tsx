@@ -10,8 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { DOIService } from '@/services/DOIService';
 import { logger } from '@/lib/logger';
+import { usePublicationFetch } from '@/hooks/usePublicationFetch';
 
 interface PaperSubmissionFormProps {
   claimId: string;
@@ -34,7 +34,6 @@ interface FormData {
 export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }: PaperSubmissionFormProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [fetchingDOI, setFetchingDOI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetchSuccess, setFetchSuccess] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -46,6 +45,25 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
     abstract: '',
     stance: null,
     source: ''
+  });
+
+  const { fetchPublicationData, isLoading: fetchingDOI } = usePublicationFetch({
+    onSuccess: (data) => {
+      setFormData(prev => ({
+        ...prev,
+        title: data.title || prev.title,
+        journal: data.journal || prev.journal,
+        publicationYear: data.year?.toString() || prev.publicationYear,
+        url: data.url || prev.url,
+        abstract: data.abstract || prev.abstract
+      }));
+      setFetchSuccess(true);
+      setError(null);
+    },
+    onError: (errorMsg) => {
+      setError(errorMsg);
+      setFetchSuccess(false);
+    },
   });
 
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -61,38 +79,8 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
   };
 
   const fetchFromDOI = async () => {
-    if (!formData.doi.trim()) {
-      setError('Please enter a DOI or PubMed link first');
-      return;
-    }
-
-    setFetchingDOI(true);
-    setError(null);
     setFetchSuccess(false);
-
-    try {
-      const publicationData = await DOIService.fetchPublicationData(formData.doi.trim());
-      
-      if (publicationData) {
-        setFormData(prev => ({
-          ...prev,
-          title: publicationData.title || prev.title,
-          journal: publicationData.journal || prev.journal,
-          publicationYear: publicationData.year?.toString() || prev.publicationYear,
-          url: publicationData.url || prev.url,
-          abstract: publicationData.abstract || prev.abstract
-        }));
-        setFetchSuccess(true);
-        toast.success('Paper information fetched successfully!');
-      } else {
-        setError('Could not fetch paper information from the provided link. Please fill in the details manually.');
-      }
-    } catch (err) {
-      logger.error('Error fetching publication data:', err);
-      setError('Failed to fetch paper information. Please fill in the details manually.');
-    } finally {
-      setFetchingDOI(false);
-    }
+    await fetchPublicationData(formData.doi);
   };
 
   const validateForm = (): string | null => {

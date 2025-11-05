@@ -14,8 +14,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { DOIService } from '@/services/DOIService';
 import { CLAIM_CATEGORIES } from '@/constants/categories';
+import { usePublicationFetch } from '@/hooks/usePublicationFetch';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
@@ -82,28 +82,22 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     name: 'sources',
   });
 
+  const { fetchPublicationData: fetchPubData } = usePublicationFetch({
+    onSuccess: (data, index?: number) => {
+      if (index !== undefined) {
+        form.setValue(`publications.${index}.title`, data.title || '');
+        form.setValue(`publications.${index}.journal`, data.journal || '');
+        form.setValue(`publications.${index}.publication_year`, data.year || new Date().getFullYear());
+        form.setValue(`publications.${index}.abstract`, data.abstract || '');
+        form.setValue(`publications.${index}.url`, data.url || '');
+      }
+    },
+  });
+
   const fetchPublicationData = async (doi: string, index: number) => {
-    if (!doi) return;
-    
     setLoadingDOI(index);
     try {
-      const pubData = await DOIService.fetchPublicationData(doi);
-      if (pubData) {
-        form.setValue(`publications.${index}.title`, pubData.title || '');
-        form.setValue(`publications.${index}.journal`, pubData.journal || '');
-        form.setValue(`publications.${index}.publication_year`, pubData.year || new Date().getFullYear());
-        form.setValue(`publications.${index}.abstract`, pubData.abstract || '');
-        form.setValue(`publications.${index}.url`, pubData.url || `https://doi.org/${doi}`);
-        
-        toast.success("Publication Data Retrieved", {
-          description: `Successfully fetched details for: ${pubData.title?.substring(0, 50)}...`,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching publication data:', error);
-      toast.error("Publication Fetch Error", {
-        description: "Could not retrieve publication data. Please enter details manually.",
-      });
+      await fetchPubData(doi, index);
     } finally {
       setLoadingDOI(null);
     }
