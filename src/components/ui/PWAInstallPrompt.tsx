@@ -36,9 +36,9 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
 
   return (
     <>
-      <Button 
-        variant={variant} 
-        size={size} 
+      <Button
+        variant={variant}
+        size={size}
         className={`${className} bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg`}
         onClick={handleInstall}
       >
@@ -58,32 +58,42 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
             <p className="text-muted-foreground">
               Add HealthIntegrityProject to your home screen for quick access and a native app experience!
             </p>
-            
+
             <div className="space-y-3">
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold mb-2">📱 On iPhone/iPad (Safari):</h4>
                 <ol className="text-sm space-y-1 list-decimal list-inside">
-                  <li>Tap the Share button (square with arrow up)</li>
+                  <li>Tap the Share button <span className="inline-block">⎋</span> at the bottom of Safari</li>
+                  <li>Click the ... button</li>
                   <li>Scroll down and tap "Add to Home Screen"</li>
-                  <li>Tap "Add" to confirm</li>
+                  <li>Edit the name if desired, then tap "Add"</li>
                 </ol>
               </div>
-              
+
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold mb-2">🤖 On Android (Chrome):</h4>
                 <ol className="text-sm space-y-1 list-decimal list-inside">
-                  <li>Tap the menu button (three dots)</li>
-                  <li>Tap "Add to Home screen" or "Install app"</li>
-                  <li>Tap "Add" or "Install" to confirm</li>
+                  <li>Tap the menu (⋮) in the top-right corner</li>
+                  <li>Select "Add to Home screen" or "Install app"</li>
+                  <li>Tap "Install" in the popup that appears</li>
                 </ol>
               </div>
-              
+
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold mb-2">💻 On Desktop (Chrome/Edge):</h4>
                 <ol className="text-sm space-y-1 list-decimal list-inside">
-                  <li>Look for the install icon in the address bar</li>
+                  <li>Look for the install icon <span className="inline-block">⊕</span> in the address bar (right side)</li>
                   <li>Click it and select "Install"</li>
-                  <li>Or go to browser menu → "Install HealthIntegrityProject"</li>
+                  <li>Alternatively: Click menu (⋮) → "Save and share" → "Install HealthIntegrityProject"</li>
+                </ol>
+              </div>
+
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold mb-2">🍎 On macOS (Safari):</h4>
+                <ol className="text-sm space-y-1 list-decimal list-inside">
+                  <li>Click the Share button in the toolbar</li>
+                  <li>Select "Add to Dock"</li>
+                  <li>Confirm to add the app to your Dock</li>
                 </ol>
               </div>
             </div>

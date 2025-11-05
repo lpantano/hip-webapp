@@ -724,6 +724,14 @@ const Claims = () => {
               Community-driven claims about products and services for women's health conditions.
               Upvote Claims with strong scientific backing to prioritize them for expert review.
             </p>
+            <div className="mb-1 flex justify-center">
+            <a
+              href="/workflow"
+              className="inline-block px-2 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
+            >
+              Learn how we review information and science
+            </a>
+          </div>
           </div>
 
           {/* Tabs Navigation */}
