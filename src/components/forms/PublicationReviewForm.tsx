@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, User, X, Check, ChevronsUpDown } from 'lucide-react';
+import { FileText, User, X, Check, ChevronsUpDown, HelpCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -32,7 +32,7 @@ import {
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
-import { getEvidenceClassificationColor } from '@/lib/classification-colors';
+import { getEvidenceClassificationColor, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-colors';
 import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
 
@@ -76,6 +76,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [ethnicityOpen, setEthnicityOpen] = useState(false);
   const [ageRangeOpen, setAgeRangeOpen] = useState(false);
+  const [studyTagsHelpOpen, setStudyTagsHelpOpen] = useState(false);
 
   // Fetch existing review for this publication by this expert
   const { data: existingReview } = useQuery({
@@ -140,6 +141,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
             }
             if (typeof loadedData.womenNotIncluded === 'undefined') {
               loadedData.womenNotIncluded = false;
+            }
+            if (!loadedData.studyType) {
+              loadedData.studyType = {
+                observational: false,
+                clinicalTrial: false
+              };
             }
 
             // Recompute isValid based on validation fields
@@ -332,12 +339,18 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
       return 'Inconclusive';
     }
 
-    // 4. If humans not selected in system used, it's Not Tested in Humans
+    // 4. Check if any system is selected
+    const hasSystemSelected = Object.values(data.systemUsed).some(system => system);
+    if (!hasSystemSelected) {
+      return null; // No category yet - nothing selected
+    }
+
+    // 5. If humans not selected in system used, it's Not Tested in Humans
     if (!data.systemUsed.humans) {
       return 'Not Tested in Humans';
     }
 
-    // 5. Based on study size for human studies
+    // 6. Based on study size for human studies
     switch (data.studySize) {
       case 'less_than_100':
         return 'Limited Tested in Humans';
@@ -476,14 +489,22 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
                 <div className="mt-2">
-                  <Badge
-                    className={`text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
-                  >
-                    {reviewData.category}
-                  </Badge>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Category automatically determined based on your responses above.
-                  </p>
+                  {reviewData.category ? (
+                    <>
+                      <Badge
+                        className={`text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
+                      >
+                        {reviewData.category}
+                      </Badge>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Category automatically determined based on your responses above.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">
+                      Category will be computed once you complete the validation and system selection.
+                    </p>
+                  )}
                 </div>
               </div>
               {/* Validation Section */}
@@ -784,22 +805,130 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                         </div>
                       </div>
 
-                      {/* Women Not Included Chip */}
+                      {/* Study Tags Section */}
                       <div className="border-t pt-3">
-                        <button
-                          type="button"
-                          onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
-                          className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
-                            reviewData.womenNotIncluded
-                              ? 'bg-pink-100 text-pink-800 border-pink-400 shadow-sm'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          {reviewData.womenNotIncluded ? '✓ ' : ''}Women Not Included in Study
-                        </button>
-                        <p className="text-xs  mt-1">
-                          Select if women/females were not included as participants in this study
-                        </p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label className="text-xs font-semibold">Study Tags</Label>
+                          <button
+                            type="button"
+                            onClick={() => setStudyTagsHelpOpen(true)}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                            aria-label="Help for study tags"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {/* Women Not Included Chip */}
+                          <button
+                            type="button"
+                            onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.womenNotIncluded
+                                ? `${getStudyTagColor('women_not_included')} ${getStudyTagBorderColor('women_not_included')} shadow-sm`
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {reviewData.womenNotIncluded ? '✓ ' : ''}♀ Women Not Included
+                          </button>
+
+                          {/* Observational Study Chip */}
+                          <button
+                            type="button"
+                            onClick={() => setReviewData(prev => ({
+                              ...prev,
+                              studyType: {
+                                observational: !prev.studyType.observational,
+                                clinicalTrial: false // Turn off clinical trial when observational is selected
+                              }
+                            }))}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.studyType.observational
+                                ? `${getStudyTagColor('observational')} ${getStudyTagBorderColor('observational')} shadow-sm`
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {reviewData.studyType.observational ? '✓ ' : ''}🔬 Observational
+                          </button>
+
+                          {/* Clinical Trial Chip */}
+                          <button
+                            type="button"
+                            onClick={() => setReviewData(prev => ({
+                              ...prev,
+                              studyType: {
+                                observational: false, // Turn off observational when clinical trial is selected
+                                clinicalTrial: !prev.studyType.clinicalTrial
+                              }
+                            }))}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                              reviewData.studyType.clinicalTrial
+                                ? `${getStudyTagColor('clinical_trial')} ${getStudyTagBorderColor('clinical_trial')} shadow-sm`
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {reviewData.studyType.clinicalTrial ? '✓ ' : ''}💊 Clinical Trial
+                          </button>
+                        </div>
+
+                        {/* Study Tags Help Dialog */}
+                        <Dialog open={studyTagsHelpOpen} onOpenChange={setStudyTagsHelpOpen}>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Study Tags Help</DialogTitle>
+                              <DialogDescription>
+                                Explanation of the available study tags
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="flex gap-3">
+                                <span className="text-2xl flex-shrink-0">♀</span>
+                                <div>
+                                  <h4 className="font-semibold text-sm mb-1">Women Not Included</h4>
+                                  <p className="text-sm text-gray-600">
+                                    Select this tag if women or females were not included as participants in this study.
+                                    This is important to track gender representation in research.
+                                  </p>
+                                </div>
+                              </div>
+                              <Separator />
+                              <div className="flex gap-3">
+                                <span className="text-2xl flex-shrink-0">🔬</span>
+                                <div>
+                                  <h4 className="font-semibold text-sm mb-1">Observational Study</h4>
+                                  <p className="text-sm text-gray-600">
+                                    Select this tag if the study is observational, meaning researchers observe participants
+                                    without intervening or manipulating variables. Examples include cohort studies,
+                                    case-control studies, and cross-sectional studies.
+                                  </p>
+                                </div>
+                              </div>
+                              <Separator />
+                              <div className="flex gap-3">
+                                <span className="text-2xl flex-shrink-0">💊</span>
+                                <div>
+                                  <h4 className="font-semibold text-sm mb-1">Clinical Trial</h4>
+                                  <p className="text-sm text-gray-600">
+                                    Select this tag if the study is a clinical trial, meaning it's an experimental study
+                                    with active intervention or treatment. These studies test the effectiveness and safety
+                                    of new treatments, drugs, or medical devices.
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-4">
+                                <p className="text-xs text-blue-800">
+                                  <strong>Note:</strong> Study type (Observational or Clinical Trial) is mutually exclusive -
+                                  only one can be selected. However, "Women Not Included" can be combined with either study type.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex justify-end">
+                              <Button onClick={() => setStudyTagsHelpOpen(false)}>
+                                Got it
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
                   )}
