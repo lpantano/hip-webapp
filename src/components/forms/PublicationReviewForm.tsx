@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   type ReviewCategory,
@@ -462,37 +462,37 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0 pb-4">
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+      <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[90vh] sm:max-h-[95vh] overflow-hidden flex flex-col p-3 sm:p-6">
+        <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
             {isUpdate ? 'Update Publication Review' : 'Review Publication'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Evaluate this research publication with comprehensive review criteria
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-auto">
-          <ScrollArea className="h-full w-full pr-4">
-            <div className="space-y-4 pb-8 px-1">
+          <ScrollArea className="h-full w-full pr-2 sm:pr-4">
+            <div className="space-y-3 sm:space-y-4 pb-6 sm:pb-8 px-1">
               {/* Publication Info */}
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-2 flex flex-col gap-1">
-                <h3 className="font-semibold text-base line-clamp-2">{publication.title}</h3>
-                <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
-                  {publication.authors && <span className="truncate"><strong>Authors:</strong> {publication.authors}</span>}
+              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 flex flex-col gap-2">
+                <h3 className="font-semibold text-sm sm:text-base line-clamp-3 sm:line-clamp-2">{publication.title}</h3>
+                <div className="text-xs text-muted-foreground flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-2">
+                  {publication.authors && <span className="line-clamp-1"><strong>Authors:</strong> {publication.authors}</span>}
                   <span><strong>Journal:</strong> {publication.journal} ({publication.publication_year})</span>
-                  {publication.doi && <span><strong>DOI:</strong> {publication.doi}</span>}
+                  {publication.doi && <span className="break-all"><strong>DOI:</strong> {publication.doi}</span>}
                 </div>
               </div>
               {/* Category Display */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <Label className="text-sm font-semibold text-gray-800">Computed Category</Label>
+                <Label className="text-xs sm:text-sm font-semibold text-gray-800">Computed Category</Label>
                 <div className="mt-2">
                   {reviewData.category ? (
                     <>
                       <Badge
-                        className={`text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
+                        className={`text-xs sm:text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
                       >
                         {reviewData.category}
                       </Badge>
@@ -508,27 +508,28 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                 </div>
               </div>
               {/* Validation Section */}
-              <div className="bg-slate-50  rounded-lg p-3 space-y-3">
+              <div className="bg-slate-50 rounded-lg p-3 space-y-3">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-semibold">Publication Validation</Label>
+                  <Label className="text-xs sm:text-sm font-semibold">Publication Validation</Label>
 
                 </div>
                 <p className="text-xs">
                   Check if any apply. If so, publication will be marked as invalid for evidence assessment.
                 </p>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div className="flex items-start space-x-2">
                     <Checkbox
                       id="conflict-of-interest"
                       checked={reviewData.validation.hasConflictOfInterest}
                       onCheckedChange={(checked) => updateValidation('hasConflictOfInterest', checked === true)}
+                      className="mt-1"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <Label htmlFor="conflict-of-interest" className="text-xs font-medium cursor-pointer">
                         Conflict of Interest
                       </Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Company funding benefits from results
                       </p>
                     </div>
@@ -539,12 +540,13 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       id="is-review"
                       checked={reviewData.validation.isReview}
                       onCheckedChange={(checked) => updateValidation('isReview', checked === true)}
+                      className="mt-1"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <Label htmlFor="is-review" className="text-xs font-medium cursor-pointer">
                         Review Study
                       </Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Review study (not original research)
                       </p>
                     </div>
@@ -555,12 +557,13 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       id="is-categorical-meta"
                       checked={reviewData.validation.isCategoricalMetaAnalysis}
                       onCheckedChange={(checked) => updateValidation('isCategoricalMetaAnalysis', checked === true)}
+                      className="mt-1"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <Label htmlFor="is-categorical-meta" className="text-xs font-medium cursor-pointer">
                         Categorical Meta-Analysis
                       </Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Categorical meta-analysis study
                       </p>
                     </div>
@@ -571,12 +574,13 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                       id="overstates-evidence"
                       checked={reviewData.validation.overstatesEvidence}
                       onCheckedChange={(checked) => updateValidation('overstatesEvidence', checked === true)}
+                      className="mt-1"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <Label htmlFor="overstates-evidence" className="text-xs font-medium cursor-pointer text-red-800">
                         Overstates Evidence
                       </Label>
-                      <p className="text-xs">
+                      <p className="text-xs mt-0.5">
                         Does the claim overstate or misinterpret the evidence?
                       </p>
                     </div>
@@ -594,14 +598,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
               {/* Quality Checks Section - Only show if validation passed */}
               {reviewData.validation.isValid && (
-                <div className="bg-slate-50  rounded-lg p-3 space-y-3">
-                  <Label className="text-sm font-semibold">Quality Assessment</Label>
+                <div className="bg-slate-50 rounded-lg p-3 space-y-3">
+                  <Label className="text-xs sm:text-sm font-semibold">Quality Assessment</Label>
                   <p className="text-xs">
                     Evaluate the study design and methodology. Any "NO" will classify as "Inconclusive".
                   </p>
-                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Study Design */}
-                    <div className="bg-white border rounded-lg p-2">
+                    <div className="bg-white border rounded-lg p-3">
                       <Label className="text-xs font-medium block mb-3 text-gray-700">Study Design</Label>
                       <div className="flex gap-2 flex-wrap">
                         {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
@@ -823,7 +827,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           <button
                             type="button"
                             onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.womenNotIncluded
                                 ? `${getStudyTagColor('women_not_included')} ${getStudyTagBorderColor('women_not_included')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -842,13 +846,13 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                                 clinicalTrial: false // Turn off clinical trial when observational is selected
                               }
                             }))}
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.studyType.observational
                                 ? `${getStudyTagColor('observational')} ${getStudyTagBorderColor('observational')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.studyType.observational ? '✓ ' : ''}🔬 Observational
+                            {reviewData.studyType.observational ? '✓ ' : ''} Observational
                           </button>
 
                           {/* Clinical Trial Chip */}
@@ -861,22 +865,22 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                                 clinicalTrial: !prev.studyType.clinicalTrial
                               }
                             }))}
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.studyType.clinicalTrial
                                 ? `${getStudyTagColor('clinical_trial')} ${getStudyTagBorderColor('clinical_trial')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.studyType.clinicalTrial ? '✓ ' : ''}💊 Clinical Trial
+                            {reviewData.studyType.clinicalTrial ? '✓ ' : ''} Clinical Trial
                           </button>
                         </div>
 
                         {/* Study Tags Help Dialog */}
                         <Dialog open={studyTagsHelpOpen} onOpenChange={setStudyTagsHelpOpen}>
-                          <DialogContent className="max-w-md">
+                          <DialogContent className="max-w-md w-[90vw] max-h-[85vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Study Tags Help</DialogTitle>
-                              <DialogDescription>
+                              <DialogTitle className="text-base">Study Tags Help</DialogTitle>
+                              <DialogDescription className="text-xs sm:text-sm">
                                 Explanation of the available study tags
                               </DialogDescription>
                             </DialogHeader>
@@ -908,7 +912,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                                 <span className="text-2xl flex-shrink-0">💊</span>
                                 <div>
                                   <h4 className="font-semibold text-sm mb-1">Clinical Trial</h4>
-                                  <p className="text-sm text-gray-600">
+                                  <p className="text-xs sm:text-sm text-gray-600">
                                     Select this tag if the study is a clinical trial, meaning it's an experimental study
                                     with active intervention or treatment. These studies test the effectiveness and safety
                                     of new treatments, drugs, or medical devices.
@@ -923,7 +927,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                               </div>
                             </div>
                             <div className="flex justify-end">
-                              <Button onClick={() => setStudyTagsHelpOpen(false)}>
+                              <Button onClick={() => setStudyTagsHelpOpen(false)} className="text-sm">
                                 Got it
                               </Button>
                             </div>
@@ -947,8 +951,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
                 return (
                   <div className="space-y-3">
-                    <Label className="text-base font-semibold">Evidence & Tags</Label>
-                    <div className="space-y-2">
+                    <Label className="text-sm sm:text-base font-semibold">Evidence & Tags</Label>
+                    <div className="space-y-3">
                     {/* Ethnicity & Age - Side by side dropdowns */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* Ethnicity/Population Dropdown */}
@@ -973,7 +977,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full justify-between text-xs h-8"
+                              className="w-full justify-between text-xs h-9 sm:h-8"
                             >
                               {reviewData.tags.ethnicityLabels.length > 0
                                 ? `${reviewData.tags.ethnicityLabels.length} selected`
@@ -982,29 +986,31 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-60 p-0">
-                            <Command>
-                              <CommandInput placeholder="Search ethnicities..." className="h-8 text-xs" />
-                              <CommandEmpty>No ethnicity found.</CommandEmpty>
-                              <CommandGroup className="max-h-48 overflow-auto">
-                                {ETHNICITY_OPTIONS.map((ethnicity) => (
-                                  <CommandItem
-                                    key={ethnicity}
-                                    value={ethnicity}
-                                    onSelect={() => toggleEthnicity(ethnicity)}
-                                    className="text-xs"
-                                  >
-                                    <Check
-                                      className={`mr-2 h-3 w-3 ${
-                                        reviewData.tags.ethnicityLabels.includes(ethnicity)
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      }`}
-                                    />
-                                    {ethnicity}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                          <PopoverContent className="w-[280px] sm:w-60 p-0" align="start">
+                            <Command shouldFilter={true}>
+                              <CommandInput placeholder="Search ethnicities..." className="h-9 text-xs" />
+                              <CommandList className="max-h-[200px] overflow-y-scroll">
+                                <CommandEmpty>No ethnicity found.</CommandEmpty>
+                                <CommandGroup>
+                                  {ETHNICITY_OPTIONS.map((ethnicity) => (
+                                    <CommandItem
+                                      key={ethnicity}
+                                      value={ethnicity}
+                                      onSelect={() => toggleEthnicity(ethnicity)}
+                                      className="text-xs"
+                                    >
+                                      <Check
+                                        className={`mr-2 h-3 w-3 ${
+                                          reviewData.tags.ethnicityLabels.includes(ethnicity)
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }`}
+                                      />
+                                      {ethnicity}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
                             </Command>
                           </PopoverContent>
                         </Popover>
@@ -1017,14 +1023,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             value={customEthnicity}
                             onChange={(e) => setCustomEthnicity(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())}
-                            className="flex-1 rounded border px-2 py-1 text-xs h-6"
+                            className="flex-1 rounded border px-2 py-1 text-xs h-7"
                           />
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={addCustomEthnicity}
                             disabled={!customEthnicity.trim()}
-                            className="text-xs px-2 py-1 h-6"
+                            className="text-xs px-2 py-1 h-7"
                           >
                             +
                           </Button>
@@ -1045,13 +1051,13 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
                       {/* Age Ranges Dropdown */}
                       <div>
-                        <Label className="text-xs font-medium">Age Ranges</Label>
+                        <Label className="text-xs font-medium mb-1 block">Age Ranges</Label>
                         <Popover open={ageRangeOpen} onOpenChange={setAgeRangeOpen}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full justify-between text-xs h-8"
+                              className="w-full justify-between text-xs h-9 sm:h-8"
                             >
                               {reviewData.tags.ageRanges.length > 0
                                 ? `${reviewData.tags.ageRanges.length} selected`
@@ -1060,31 +1066,33 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-48 p-0">
-                            <Command>
-                              <CommandInput placeholder="Search ranges..." className="h-8 text-xs" />
-                              <CommandEmpty>No age range found.</CommandEmpty>
-                              <CommandGroup className="max-h-48 overflow-auto">
-                                {AGE_RANGES.map((range) => (
-                                  <CommandItem
-                                    key={range}
-                                    value={range}
-                                    onSelect={() => toggleAgeRange(range)}
-                                    className="text-xs"
-                                  >
-                                    <Check
-                                      className={`mr-2 h-3 w-3 ${
-                                        reviewData.tags.ageRanges.includes(range)
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      }`}
-                                    />
-                                    {range}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </Command>
-                        </PopoverContent>
+                          <PopoverContent className="w-[200px] p-0" align="start">
+                            <Command shouldFilter={true}>
+                              <CommandInput placeholder="Search ranges..." className="h-9 text-xs" />
+                              <CommandList className="max-h-[240px] overflow-y-scroll">
+                                <CommandEmpty>No age range found.</CommandEmpty>
+                                <CommandGroup>
+                                  {AGE_RANGES.map((range) => (
+                                    <CommandItem
+                                      key={range}
+                                      value={range}
+                                      onSelect={() => toggleAgeRange(range)}
+                                      className="text-xs py-2.5"
+                                    >
+                                      <Check
+                                        className={`mr-2 h-3 w-3 flex-shrink-0 ${
+                                          reviewData.tags.ageRanges.includes(range)
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }`}
+                                      />
+                                      {range}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
                       </Popover>
 
                       {/* Selected badges */}
@@ -1116,12 +1124,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               {/* Validation Errors */}
               {validationErrors.length > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
-                  <div className="text-red-800 text-sm font-medium mb-1">Please fix the following issues:</div>
-                  <ul className="text-red-700 text-sm space-y-1">
+                  <div className="text-red-800 text-xs sm:text-sm font-medium mb-1">Please fix the following issues:</div>
+                  <ul className="text-red-700 text-xs sm:text-sm space-y-1">
                     {validationErrors.map((error, index) => (
-                      <li key={index} className="flex items-center gap-1">
-                        <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                        {error}
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="w-1 h-1 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></span>
+                        <span>{error}</span>
                       </li>
                     ))}
                   </ul>
@@ -1130,12 +1138,18 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
               {/* Comments & Review Status */}
               <div className="space-y-2 mt-2">
-                <Label className="text-sm font-medium">Comments</Label>
-                <Textarea placeholder="Additional notes or assessment..." value={comment} onChange={(e) => setComment(e.target.value)} rows={3} className="text-sm" />
+                <Label className="text-xs sm:text-sm font-medium">Comments</Label>
+                <Textarea
+                  placeholder="Additional notes or assessment..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={3}
+                  className="text-xs sm:text-sm resize-none"
+                />
                 {existingReview && (
-                  <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    <User className="w-3 h-3 inline mr-1" />
-                    Review exists (updated: {new Date(existingReview.updated_at).toLocaleDateString()})
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300 mt-1 flex items-center gap-1">
+                    <User className="w-3 h-3 flex-shrink-0" />
+                    <span>Review exists (updated: {new Date(existingReview.updated_at).toLocaleDateString()})</span>
                   </div>
                 )}
               </div>
@@ -1144,14 +1158,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
         </div>
 
         {/* Action Buttons - Fixed Footer */}
-        <div className="flex gap-2 pt-4 border-t bg-background flex-shrink-0">
-          <Button variant="outline" onClick={onClose} className="px-4">
+        <div className="flex gap-2 pt-3 sm:pt-4 border-t bg-background flex-shrink-0">
+          <Button variant="outline" onClick={onClose} className="px-3 sm:px-4 text-xs sm:text-sm flex-1 sm:flex-initial">
             Cancel
           </Button>
           <Button
             onClick={() => submitReviewMutation.mutate()}
             disabled={submitReviewMutation.isPending}
-            className="px-6"
+            className="px-4 sm:px-6 text-xs sm:text-sm flex-1 sm:flex-initial"
           >
             {submitReviewMutation.isPending
               ? (isUpdate ? 'Updating...' : 'Submitting...')

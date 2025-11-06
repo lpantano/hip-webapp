@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
 import { getEvidenceClassificationBorder } from '@/lib/classification-colors';
 import { PROBLEMATIC_CATEGORIES } from '@/lib/classification-categories';
-import { getStudyTagColor } from '@/lib/classification-categories';
+import { getStudyTagColor, getStudyTagDescription } from '@/lib/classification-categories';
 
 type Props = {
   classificationOrder: string[];
@@ -145,42 +145,60 @@ function LevelButton({
 }
 
   // If any womenNotIncluded flag, append it at the bottom (after level 1)
-    if (womenNotIncludedCount > 0) {
-        stack.push(
-            <div
-                key={`women-${stance}`}
-                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden`}
-            >
-                <span className="break-words">Women Not Included</span>
-                <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
-            </div>
-        );
-    }
+        if (womenNotIncludedCount > 0) {
+                stack.push(
+                        <Popover key={`women-pop-${stance}`}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden cursor-pointer`}
+                                >
+                                    <span className="break-words">Women Not Included</span>
+                                    <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {getStudyTagDescription('women_not_included')}
+                            </PopoverContent>
+                        </Popover>
+                );
+        }
 
     // Add study type labels if present
-    if (observationalCount > 0) {
-        stack.push(
-            <div
-                key={`observational-${stance}`}
-                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden`}
-            >
-                <span className="break-words">Observational</span>
-                <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
-            </div>
-        );
-    }
+        if (observationalCount > 0) {
+                stack.push(
+                        <Popover key={`observational-pop-${stance}`}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden cursor-pointer`}
+                                >
+                                    <span className="break-words">Observational</span>
+                                    <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {getStudyTagDescription('observational')}
+                            </PopoverContent>
+                        </Popover>
+                );
+        }
 
-    if (clinicalTrialCount > 0) {
-        stack.push(
-            <div
-                key={`clinical-trial-${stance}`}
-                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden`}
-            >
-                <span className="break-words">Clinical Trial</span>
-                <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
-            </div>
-        );
-    }
+        if (clinicalTrialCount > 0) {
+                stack.push(
+                        <Popover key={`clinical-pop-${stance}`}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden cursor-pointer`}
+                                >
+                                    <span className="break-words">Clinical Trial</span>
+                                    <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {getStudyTagDescription('clinical_trial')}
+                            </PopoverContent>
+                        </Popover>
+                );
+        }
 
     if (stack.length === 0) {
         stack.push(<span className='text-xs text-gray-500'>No labels</span>);

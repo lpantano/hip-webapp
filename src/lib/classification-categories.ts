@@ -88,6 +88,22 @@ export const STUDY_TAG_BORDER_COLORS: Record<string, string> = {
   'clinical_trial': 'border-purple-400',
 } as const;
 
+/**
+ * Descriptions for study tags (used by UI tooltips/help)
+ */
+export const STUDY_TAG_DESCRIPTIONS: Record<'women_not_included' | 'observational' | 'clinical_trial', string> = {
+  'women_not_included': 'Indicates that women or female participants were not included in the study population, which limits generalizability to female populations.',
+  'observational': 'An observational study observes participants without intervening — examples include cohort, case-control, and cross-sectional designs. Limitations: cannot prove causality and is susceptible to confounding, selection bias, and measurement error.',
+  'clinical_trial': 'An experimental study where participants receive an intervention or treatment to evaluate its effectiveness and safety. Typically randomized and controlled to reduce bias when well-designed.'
+} as const;
+
+/**
+ * Get a human-readable description for a study tag
+ */
+export function getStudyTagDescription(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
+  return STUDY_TAG_DESCRIPTIONS[tag] || '';
+}
+
 // ============================================================================
 // CATEGORY EXPLANATIONS
 // ============================================================================

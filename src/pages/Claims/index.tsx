@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
-import { isProblematicCategory } from '@/lib/classification-categories';
+import { isProblematicCategory, getStudyTagDescription } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
@@ -614,11 +614,18 @@ const Claims = () => {
                   )}
 
                   {reviewCard.expert.womenNotIncluded && (
-                    <div className="mb-2">
-                      <Badge className="text-xs bg-red-100 text-red-800">
-                        ♀ Women Not Included
-                      </Badge>
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div className="mb-2 cursor-pointer">
+                          <Badge className="text-xs bg-red-100 text-red-800">
+                            ♀ Women Not Included
+                          </Badge>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        {getStudyTagDescription('women_not_included')}
+                      </PopoverContent>
+                    </Popover>
                   )}
                   </div>
 
