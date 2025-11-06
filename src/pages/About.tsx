@@ -20,7 +20,7 @@ const About = () => {
       <section className="pt-24 pb-12 overflow-visible">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               About Health Integrity Project
             </h1>
             <p className="text-xl text-muted-foreground mb-5 leading-relaxed">

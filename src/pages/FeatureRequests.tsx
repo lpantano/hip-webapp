@@ -155,7 +155,7 @@ const FeatureRequests = () => {
       <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
 
         <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               Feature Requests
             </h1>
             <p className="text-muted-foreground">
