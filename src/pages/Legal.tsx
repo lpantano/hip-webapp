@@ -5,9 +5,10 @@ const Legal = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
       <Header />
-      <main className="container mx-auto px-6 pt-32 pb-20">
+      <main className="container mx-auto px-6 pt-24 pb-20">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl text-center font-bold bg-hero-gradient bg-clip-text text-transparent mb-8">Legal Information</h1>
+            <h1 className="text-3xl text-center sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
+            Legal Information</h1>
 
           <Tabs defaultValue="terms" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-card/60 border border-border">

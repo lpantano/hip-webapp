@@ -2,6 +2,7 @@
 const CACHE_NAME = `healthintegrityproject-${self.registration.scope}-v${new Date().getTime()}`;
 const urlsToCache = [
   '/',
+  '/workflow',
   '/claims',
   '/community',
   '/logo-hi2-tr.png',

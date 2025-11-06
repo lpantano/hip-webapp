@@ -16,8 +16,9 @@ import Roadmap from "./pages/Roadmap";
 import FeatureRequests from "./pages/FeatureRequests";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
-import Games from "./pages/Games";
+// import Games from "./pages/Games";
 import NotFound from "./pages/NotFound";
+import ResearchWorkflow from "./pages/ResearchWorkflow";
 import Footer from "./components/layout/Footer";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             {/* <Route path="/games" element={<Games />} /> */}
             <Route path="/admin" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/workflow" element={<ResearchWorkflow />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
