@@ -198,7 +198,7 @@ const EducationSection = () => {
         </div>
 
         <div className="mb-1 flex justify-center">
-            <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+            <a href="/workflow" className="inline-flex items-center gap-2 text-xl text-primary hover:underline">
                 Learn how we review information and science
                 <ExternalLink className="w-4 h-4" />
               </a>

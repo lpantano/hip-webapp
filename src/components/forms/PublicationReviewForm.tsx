@@ -32,7 +32,7 @@ import {
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
-import { getEvidenceClassificationColor, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-colors';
+import { getCategoryBackgroundColor, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-categories';
 import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
 
@@ -492,7 +492,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                   {reviewData.category ? (
                     <>
                       <Badge
-                        className={`text-xs sm:text-sm ${getEvidenceClassificationColor(reviewData.category)}`}
+                        className={`text-xs sm:text-sm ${getCategoryBackgroundColor(reviewData.category)}`}
                       >
                         {reviewData.category}
                       </Badge>

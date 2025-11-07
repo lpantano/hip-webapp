@@ -4,13 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
 // Dialog and DialogTitle already imported above (with DialogTitle). Removed duplicate import.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn, FileWarning, ThumbsDown, ThumbsUp, Link, Unlink2, Link2 } from 'lucide-react';
+import { ChevronUp, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, Unlink2, Link2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -18,21 +17,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ResourcesSection } from '@/components/resources/ResourcesSection';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { getClassificationReasons } from '@/types/review';
-import { getEvidenceClassificationColor } from '@/lib/classification-colors';
-import { isProblematicCategory, getStudyTagDescription, CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
+import { getCategoryBackgroundColor } from '@/lib/classification-categories';
+import { isProblematicCategory, CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
+import { getStudyTagDescription, STUDY_TAG, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
-import ClaimLinksSection from './components/ClaimLinksSection';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-import { getStudyTagColor } from '@/lib/classification-colors';
 
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
@@ -568,7 +565,7 @@ const Claims = () => {
                     <br></br>
                     {reviewCard.expert.classification && (
                     <div className="flex items-start gap-3 mb-2">
-                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))} pointer-events-none transition-none`}>
+                      <Badge className={`text-xs ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} pointer-events-none transition-none`}>
                         {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
                       </Badge>
 
@@ -740,7 +737,7 @@ const Claims = () => {
 
             {/* Workflow Button and Legend */}
             <div className="mb-4 flex flex-col items-center gap-4">
-              <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+              <a href="/workflow" className="inline-flex items-center gap-2 text-lg text-primary hover:underline">
                 Learn how we review information and science
                 <ExternalLink className="w-4 h-4" />
               </a>
@@ -758,7 +755,7 @@ const Claims = () => {
                       <Popover key={category}>
                         <PopoverTrigger asChild>
                           <div
-                            className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getEvidenceClassificationColor(category)} hover:opacity-80 transition-opacity`}
+                            className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getCategoryBackgroundColor(category)} hover:opacity-80 transition-opacity`}
                           >
                             {category}
                           </div>
@@ -769,8 +766,23 @@ const Claims = () => {
                         </PopoverContent>
                       </Popover>
                     ))}
+                    {STUDY_TAG.map((tag) => (
+                      <Popover key={tag}>
+                        <PopoverTrigger asChild>
+                          <div
+                            className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getStudyTagColor(tag)} hover:opacity-80 transition-opacity`}
+                          >
+                            {tag}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                          <div className="font-semibold mb-1">{tag}</div>
+                          <div>{getStudyTagDescription(tag)}</div>
+                        </PopoverContent>
+                      </Popover>
+                    ))}
 
-                    <Popover>
+                    {/* <Popover>
                       <PopoverTrigger asChild>
                         <div
                           className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('women_not_included')} hover:opacity-80 transition-opacity`}
@@ -810,7 +822,7 @@ const Claims = () => {
                         <div className="font-semibold mb-1">Clinical Trial</div>
                         <div>{getStudyTagDescription('clinical_trial')}</div>
                       </PopoverContent>
-                    </Popover>
+                    </Popover> */}
                   </div>
                 </div>
               </div>

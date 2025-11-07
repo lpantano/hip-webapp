@@ -10,6 +10,13 @@ export type ReviewCategory =
   | 'Widely Tested in Humans'
   | null; // null when no selections have been made yet
 
+
+export type TagStudy =
+  | 'Women Not Included'
+  | 'Observational'
+  | 'Clinical Trial'
+  | null; // null when no selections have been made yet
+
 export type ReviewAnswer = 'PASS' | 'NO' | 'NA';
 
 export interface ReviewTags {

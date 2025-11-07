@@ -48,7 +48,7 @@ const JoinSection = () => {
               <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>Create account with Gmail, email, or LinkedIn</span>
+                  <span>Create account with Gmail, or email</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -62,10 +62,10 @@ const JoinSection = () => {
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Access educational materials</span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Voting rights</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Learn how we review science</span>
@@ -98,10 +98,10 @@ const JoinSection = () => {
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Invitation-based exclusive access</span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Review research across 4 key criteria</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Free membership</span>
@@ -116,11 +116,7 @@ const JoinSection = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Voting rights</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Distribution profit</span>
+                  <span>Voting rights and Distribution profit</span>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">

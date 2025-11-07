@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, ExternalLink } from 'lucide-react';
 import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
-import { getEvidenceClassificationColor, getStudyTagColor } from '@/lib/classification-colors';
+import { getCategoryBackgroundColor, getStudyTagColor } from '@/lib/classification-categories';
 import ClaimLinksSection from './ClaimLinksSection';
 import type { PublicationScoreRow } from '../types';
 
@@ -88,12 +88,12 @@ const ClaimPublicationsExpanded: React.FC<{
                       {/* Badges: inline on desktop, stacked on mobile */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-1.5">
                         {Object.entries(agg.classificationCounts).map(([label, count]) => (
-                          <Badge key={label} className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getEvidenceClassificationColor(label)} pointer-events-none transition-none`}>
+                          <Badge key={label} className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getCategoryBackgroundColor(label)} pointer-events-none transition-none`}>
                             {label} ({count})
                           </Badge>
                         ))}
                         {agg.womenNotIncludedCount > 0 && (
-                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('women_not_included')} pointer-events-none transition-none`}>
+                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('women not included')} pointer-events-none transition-none`}>
                             Women Not Included ({agg.womenNotIncludedCount})
                           </Badge>
                         )}
@@ -103,7 +103,7 @@ const ClaimPublicationsExpanded: React.FC<{
                           </Badge>
                         )}
                         {agg.clinicalTrialCount > 0 && (
-                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('clinical_trial')} pointer-events-none transition-none`}>
+                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('clinical trial')} pointer-events-none transition-none`}>
                             Clinical Trial ({agg.clinicalTrialCount})
                           </Badge>
                         )}

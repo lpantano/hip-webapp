@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { getEvidenceClassificationColor } from '@/lib/classification-colors';
-import { getEvidenceClassificationBorder } from '@/lib/classification-colors';
+import { getCategoryBackgroundColor, getCategoryBorderColor } from '@/lib/classification-categories';
 import { PROBLEMATIC_CATEGORIES } from '@/lib/classification-categories';
 import { getStudyTagColor, getStudyTagDescription } from '@/lib/classification-categories';
 
@@ -52,7 +51,7 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
         else repLabel = labels[0];
     }
 
-    const color = getEvidenceClassificationColor(repLabel);
+    const color = getCategoryBackgroundColor(repLabel);
     // split into parts so we can prefer a darker text-derived border and also use bg/text when expanding
     // const borderClass = getEvidenceClassificationBorder(repLabel);
 
@@ -157,7 +156,7 @@ function LevelButton({
                                 </div>
                             </PopoverTrigger>
                             <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                {getStudyTagDescription('women_not_included')}
+                                {getStudyTagDescription('Women Not Included')}
                             </PopoverContent>
                         </Popover>
                 );
@@ -176,7 +175,7 @@ function LevelButton({
                                 </div>
                             </PopoverTrigger>
                             <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                {getStudyTagDescription('observational')}
+                                {getStudyTagDescription('Observational')}
                             </PopoverContent>
                         </Popover>
                 );
@@ -187,14 +186,14 @@ function LevelButton({
                         <Popover key={`clinical-pop-${stance}`}>
                             <PopoverTrigger asChild>
                                 <div
-                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden cursor-pointer`}
+                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical trial')} overflow-hidden cursor-pointer`}
                                 >
                                     <span className="break-words">Clinical Trial</span>
                                     <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
                                 </div>
                             </PopoverTrigger>
                             <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                {getStudyTagDescription('clinical_trial')}
+                                {getStudyTagDescription('Clinical Trial')}
                             </PopoverContent>
                         </Popover>
                 );

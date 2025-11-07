@@ -4,7 +4,7 @@
  * to ensure consistency across the application.
  */
 
-import type { ReviewCategory } from '@/types/review';
+import type { ReviewCategory, TagStudy } from '@/types/review';
 
 // ============================================================================
 // CATEGORY DEFINITIONS
@@ -68,38 +68,43 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
 // ============================================================================
 // STUDY TAG COLORS
 // ============================================================================
+export const STUDY_TAG: readonly TagStudy[] = [
+  'Women Not Included',
+  'Observational',
+  'Clinical Trial'
+] as const;
 
 /**
  * Background color classes for study tags (used in badges)
  */
 export const STUDY_TAG_COLORS: Record<string, string> = {
-  'women_not_included': 'bg-orange-200 text-grey-700',
+  'women not included': 'bg-orange-200 text-grey-700',
   'observational': 'bg-evidence-observational text-blue-800',
-  'clinical_trial': 'bg-evidence-clinical text-white',
+  'clinical trial': 'bg-evidence-clinical text-white',
 } as const;
 
 /**
  * Border color classes for study tags (used in form buttons/chips with selected state)
  */
 export const STUDY_TAG_BORDER_COLORS: Record<string, string> = {
-  'women_not_included': 'border-pink-400',
+  'women not included': 'border-pink-400',
   'observational': 'border-blue-200 text-blue-800',
-  'clinical_trial': 'border-green-300 text-green-900',
+  'clinical trial': 'border-green-300 text-green-900',
 } as const;
 
 /**
  * Descriptions for study tags (used by UI tooltips/help)
  */
-export const STUDY_TAG_DESCRIPTIONS: Record<'women_not_included' | 'observational' | 'clinical_trial', string> = {
-  'women_not_included': 'Indicates that women or female participants were not included in the study population, which limits generalizability to female populations.',
-  'observational': 'An observational study observes participants without intervening — examples include cohort, case-control, and cross-sectional designs. Limitations: cannot prove causality and is susceptible to confounding, selection bias, and measurement error.',
-  'clinical_trial': 'An experimental study where participants receive an intervention or treatment to evaluate its effectiveness and safety. Typically randomized and controlled to reduce bias when well-designed.'
+export const STUDY_TAG_DESCRIPTIONS: Record<string, string> = {
+  'Women Not Included': 'Indicates that women or female participants were not included in the study population, which limits generalizability to female populations.',
+  'Observational': 'An observational study observes participants without intervening — examples include cohort, case-control, and cross-sectional designs. Limitations: cannot prove causality and is susceptible to confounding, selection bias, and measurement error.',
+  'Clinical Trial': 'An experimental study where participants receive an intervention or treatment to evaluate its effectiveness and safety. Typically randomized and controlled to reduce bias when well-designed.'
 } as const;
 
 /**
  * Get a human-readable description for a study tag
  */
-export function getStudyTagDescription(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
+export function getStudyTagDescription(tag: string): string {
   return STUDY_TAG_DESCRIPTIONS[tag] || '';
 }
 
@@ -197,15 +202,18 @@ export function isHumanTestingCategory(category: string): boolean {
 /**
  * Get background color classes for a study tag
  */
-export function getStudyTagColor(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
-  return STUDY_TAG_COLORS[tag] || 'bg-gray-100 text-gray-800';
+export function getStudyTagColor(tag: string): string {
+  const key = normalizeCategoryKey(tag);
+  console.log('getStudyTagColor key:', key);
+  return STUDY_TAG_COLORS[key] || 'bg-gray-100 text-gray-800';
 }
 
 /**
  * Get border color classes for a study tag (used in form buttons/chips)
  */
-export function getStudyTagBorderColor(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
-  return STUDY_TAG_BORDER_COLORS[tag] || 'border-gray-400';
+export function getStudyTagBorderColor(tag: string): string {
+  const key = normalizeCategoryKey(tag);
+  return STUDY_TAG_BORDER_COLORS[key] || 'border-gray-400';
 }
 
 // ============================================================================
