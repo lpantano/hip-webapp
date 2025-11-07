@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import ResearchQualityScale from './ResearchQualityScale';
 import SampleSizeCard from './EducationSection/SampleSizeCard';
 import PopulationDiversityCard from './EducationSection/PopulationDiversityCard';
@@ -198,11 +198,10 @@ const EducationSection = () => {
         </div>
 
         <div className="mb-1 flex justify-center">
-            <Button asChild variant="outline" size="sm" className="px-4 py-2  bg-accent">
-                <a href="/workflow" className="inline-flex items-center">
-                  Learn how we review information and science
-                </a>
-              </Button>
+            <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                Learn how we review information and science
+                <ExternalLink className="w-4 h-4" />
+              </a>
         </div>
         { /* Education cards carousel - continuous horizontal rolling with controls */}
         <div className="relative max-w-4xl mx-auto my-4">

@@ -740,11 +740,10 @@ const Claims = () => {
 
             {/* Workflow Button and Legend */}
             <div className="mb-4 flex flex-col items-center gap-4">
-              <Button asChild variant="outline" size="sm" className="px-4 py-2 bg-accent">
-                <a href="/workflow" className="inline-flex items-center">
-                  Learn how we review information and science
-                </a>
-              </Button>
+              <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                Learn how we review information and science
+                <ExternalLink className="w-4 h-4" />
+              </a>
 
               {/* Legend Section */}
               <div className="w-full max-w-3xl">
