@@ -740,7 +740,7 @@ const Claims = () => {
 
             {/* Workflow Button and Legend */}
             <div className="mb-4 flex flex-col items-center gap-4">
-              <Button asChild variant="outline" size="sm" className="px-4 py-2">
+              <Button asChild variant="outline" size="sm" className="px-4 py-2 bg-accent">
                 <a href="/workflow" className="inline-flex items-center">
                   Learn how we review information and science
                 </a>
