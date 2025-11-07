@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { getCategoryBackgroundColor, getCategoryBorderColor } from '@/lib/classification-categories';
 import { PROBLEMATIC_CATEGORIES } from '@/lib/classification-categories';
-import { getStudyTagColor, getStudyTagDescription } from '@/lib/classification-categories';
+import { getStudyTagColor, getStudyTagDescription, getCategoryDescription } from '@/lib/classification-categories';
+import type { ReviewCategory } from '@/types/review';
 
 type Props = {
   classificationOrder: string[];
@@ -62,49 +63,26 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
         ? repLabel
         : repLabel;
 
-                // Filled bar: expand in-place to show text inside the bar when clicked
-                // return (
-                //     <LevelButton
-                //         key={`lvl-${lvl.level}`}
-                //         level={lvl.level}
-                //         closedNode={<div className={`h-2 rounded ${color}`} />}
-                //         openNode={
-                //             <div className={`rounded ${color} px-3 py-1 text-xs font-semibold flex items-center`}>
-                //                 <span className="truncate">{titleLabel}</span>
-                //                 <span className="ml-2">({totalCount})</span>
-                //             </div>
-                //         }
-                //         closedStyle={{ width: '20%', minWidth: 80 }}
-                //         openStyle={{ minWidth: 120 }}
-                //         />
-                // );
+
                 return (
-                    <div
-                        key={`lvl-${lvl.level}`}
-                        className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden`}
-                    >
-                        <span className="break-words">{titleLabel}</span>
-                        <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
-                    </div>
+                    <Popover key={`lvl-${lvl.level}-${stance}`}>
+                        <PopoverTrigger asChild>
+                            <div
+                                className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
+                            >
+                                <span className="break-words">{titleLabel}</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
+                            </div>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                            <div className="font-semibold mb-1">{titleLabel}</div>
+                            <div>{getCategoryDescription(titleLabel as ReviewCategory)}</div>
+                        </PopoverContent>
+                    </Popover>
                 );
     }
 
-    // absent -> thin colored line (20% width, centered) with colored border and transparent background
-        // Absent: show bordered thin bar, but when opened we'll fill it with bg/text and show label inside
-        // return (
-        //     <LevelButton
-        //         key={`lvl-line-${lvl.level}`}
-        //         level={lvl.level}
-        //         closedNode={<div className={`h-2 rounded border-2 ${borderClass} bg-transparent`} />}
-        //         openNode={
-        //             <div className={`rounded ${borderClass} bg-opacity-50 px-3 py-1 text-xs font-semibold flex items-center`}>
-        //                 <span className="truncate">{labels.join(', ')}</span>
-        //             </div>
-        //         }
-        //         closedStyle={{ width: '20%', minWidth: 80 }}
-        //         openStyle={{ minWidth: 120 }}
-        //     />
-        // );
+
 });
 
 

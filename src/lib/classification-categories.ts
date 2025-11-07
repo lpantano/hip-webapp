@@ -109,6 +109,27 @@ export function getStudyTagDescription(tag: string): string {
 }
 
 // ============================================================================
+// QUALITY CHECK DESCRIPTIONS
+// ============================================================================
+
+/**
+ * Descriptions for quality check questions (used by UI tooltips/help)
+ */
+export const QUALITY_CHECK_DESCRIPTIONS: Record<string, string> = {
+  'studyDesign': 'Was the study designed to answer this claim? The research question and methodology should directly address the claim being evaluated.',
+  'controlGroup': 'Was there a proper control group? This could be wildtype, baseline, placebo, standard of care, or matched cohort depending on the study type.',
+  'biasAddressed': 'Were confounding variables identified and tracked? Important factors like time, age, sex, comorbidities, and socioeconomic factors should be considered and controlled for.',
+  'statistics': 'Were statistical tests appropriate for the study design and data type? The analysis should use proper methods for the research question and data structure.'
+} as const;
+
+/**
+ * Get a human-readable description for a quality check
+ */
+export function getQualityCheckDescription(check: string): string {
+  return QUALITY_CHECK_DESCRIPTIONS[check] || '';
+}
+
+// ============================================================================
 // CATEGORY EXPLANATIONS
 // ============================================================================
 
@@ -204,7 +225,6 @@ export function isHumanTestingCategory(category: string): boolean {
  */
 export function getStudyTagColor(tag: string): string {
   const key = normalizeCategoryKey(tag);
-  console.log('getStudyTagColor key:', key);
   return STUDY_TAG_COLORS[key] || 'bg-gray-100 text-gray-800';
 }
 

@@ -32,7 +32,7 @@ import {
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
-import { getCategoryBackgroundColor, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-categories';
+import { getCategoryBackgroundColor, getStudyTagColor, getStudyTagBorderColor, getQualityCheckDescription } from '@/lib/classification-categories';
 import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
 
@@ -606,14 +606,26 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                   <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Study Design */}
                     <div className="bg-white border rounded-lg p-3">
-                      <Label className="text-xs font-medium block mb-3 text-gray-700">Study Design</Label>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Label className="text-xs font-medium text-gray-700">Study Design</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors">
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                            {getQualityCheckDescription('studyDesign')}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                       <div className="flex gap-2 flex-wrap">
                         {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
                           <button
                             key={option}
                             type="button"
                             onClick={() => updateQualityCheck('studyDesign', option)}
-                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`px-1 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.studyDesign === option
                                 ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -629,14 +641,26 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
                     {/* Control Group */}
                     <div className="bg-white border rounded-lg p-3">
-                      <Label className="text-xs font-medium block mb-3 text-gray-700">Control Group</Label>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Label className="text-xs font-medium text-gray-700">Control Group</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors">
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                            {getQualityCheckDescription('controlGroup')}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                       <div className="flex gap-2 flex-wrap">
                         {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
                           <button
                             key={option}
                             type="button"
                             onClick={() => updateQualityCheck('controlGroup', option)}
-                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`px-1 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.controlGroup === option
                                 ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -650,14 +674,26 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
                     {/* Bias Addressed */}
                     <div className="bg-white border rounded-lg p-3">
-                      <Label className="text-xs font-medium block mb-3 text-gray-700">Bias Addressed</Label>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Label className="text-xs font-medium text-gray-700">Bias Addressed</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors">
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                            {getQualityCheckDescription('biasAddressed')}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                       <div className="flex gap-2 flex-wrap">
                         {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
                           <button
                             key={option}
                             type="button"
                             onClick={() => updateQualityCheck('biasAddressed', option)}
-                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`px-1 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.biasAddressed === option
                                 ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -671,14 +707,26 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
                     {/* Statistics */}
                     <div className="bg-white border rounded-lg p-3">
-                      <Label className="text-xs font-medium block mb-3 text-gray-700">Statistics</Label>
+                      <div className="flex items-center gap-1 mb-1">
+                        <Label className="text-xs font-medium text-gray-700">Statistics</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors">
+                              <HelpCircle className="w-3 h-3" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                            {getQualityCheckDescription('statistics')}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                       <div className="flex gap-2 flex-wrap">
                         {(['PASS', 'NO', 'NA'] as ReviewAnswer[]).map((option) => (
                           <button
                             key={option}
                             type="button"
                             onClick={() => updateQualityCheck('statistics', option)}
-                            className={`px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
+                            className={`px-1 py-1 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm ${
                               reviewData.qualityChecks.statistics === option
                                 ? quality.buttonActive(option)
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -833,7 +881,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.womenNotIncluded ? '✓ ' : ''}♀ Women Not Included
+                            {reviewData.womenNotIncluded ? '✓ ' : ''} Women Not Included
                           </button>
 
                           {/* Observational Study Chip */}

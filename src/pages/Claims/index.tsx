@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
-// Dialog and DialogTitle already imported above (with DialogTitle). Removed duplicate import.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-import { ChevronUp, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, Unlink2, Link2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, Unlink2, Link2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -18,15 +17,14 @@ import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { getClassificationReasons } from '@/types/review';
 import { getCategoryBackgroundColor } from '@/lib/classification-categories';
-import { isProblematicCategory, CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
-import { getStudyTagDescription, STUDY_TAG, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-categories';
+import { CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
+import { getStudyTagDescription, STUDY_TAG, getStudyTagColor } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
-import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
+import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
@@ -89,6 +87,7 @@ const Claims = () => {
 
   // Check if user is expert or researcher
   const [isExpert, setIsExpert] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   useEffect(() => {
     const checkExpertStatus = async () => {
       if (!user) {
@@ -457,254 +456,6 @@ const Claims = () => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
-
-
-  // Individual expert review cards
-  type ExpertReviewCard = {
-    publication: {
-      id: string;
-      title: string;
-      journal: string;
-      year: number;
-      authors: string;
-      source?: string | null;
-    };
-    expert: {
-      expert_user_id: string;
-      display_name?: string | null;
-      avatar_url?: string | null;
-      // Show the current scores for each category; score may be null when not provided
-      scores: Array<{
-        category: string;
-        score?: 'PASS' | 'NO' | 'NA' | null;
-      }>;
-      comments: Array<{
-        content: string;
-        created_at: string;
-      }>;
-      classification?: string | null;
-      tags?: {
-        testedInHuman?: boolean;
-        ethnicityLabels?: string[];
-        ageRanges?: string[];
-      } | null;
-      womenNotIncluded?: boolean;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      reviewData?: any;
-    };
-  };
-
-  const ExpertReviewsReel: React.FC<{ reviewCards: ExpertReviewCard[] }> = ({ reviewCards }) => {
-    const containerRef = useRef<HTMLDivElement | null>(null);
-
-    if (!reviewCards || reviewCards.length === 0) {
-      return <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>;
-    }
-
-    return (
-      <div className="relative">
-        <div
-          ref={containerRef}
-          className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-2"
-          role="list"
-          aria-label=""
-        >
-            {reviewCards.map((reviewCard) => {
-            // Extract tags from the reviewCard (if present)
-            // The tags are not currently passed in the reviewCard, so we need to get them from classification or add them to the reviewCard in the parent if possible.
-            // For now, try to get them from the expert.classification if it is an object (future-proofing), else skip.
-            // But the correct way is to pass tags in the reviewCard.expert, so let's check if they exist.
-            const tags = reviewCard.expert.tags || null;
-            return (
-              <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-3 sm:p-4 shadow-sm">
-                {/* Top row: Avatar + Publication info */}
-                <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-3">
-                  <div className="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-24">
-                    {reviewCard.expert.avatar_url ? (
-                      <img
-                        src={reviewCard.expert.avatar_url}
-                        alt={reviewCard.expert.display_name || 'Expert'}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          if (target.nextElementSibling) {
-                            (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
-                      style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
-                    >
-                      {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
-                    </div>
-                    <div className="font-semibold text-sm text-center sm:text-center flex-1 sm:flex-none">{reviewCard.expert.display_name || 'Expert'}</div>
-                  </div>
-
-                  <div className="flex-1 w-full">
-                    <h4 className="font-semibold text-sm mb-1 break-words">{reviewCard.publication.title}</h4>
-                    <p className="text-xs text-muted-foreground break-words">
-                      {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
-                      {reviewCard.publication.source && (
-                        <>
-                          {' • '}
-                          <a
-                            href={reviewCard.publication.source}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                            title="View source"
-                          >
-                            Source <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </>
-                      )}
-                    </p>
-                    <br></br>
-                    {reviewCard.expert.classification && (
-                    <div className="flex items-start gap-3 mb-2">
-                      <Badge className={`text-xs ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} pointer-events-none transition-none`}>
-                        {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
-                      </Badge>
-
-                      {reviewCard.expert.reviewData &&
-                        isProblematicCategory(String(reviewCard.expert.classification)) && (
-                          <div className="flex-1">
-                            {(() => {
-                              const reasons = getClassificationReasons(reviewCard.expert.reviewData);
-                              if (reasons.length > 0) {
-                                return (
-                                  <div className="text-xs text-muted-foreground list-disc list-inside space-y-1">
-                                    {reasons.map((reason, i) => (
-                                      <div key={i}>{reason}</div>
-                                    ))}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-                        )}
-                    </div>
-                  )}
-
-                  {tags && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && (
-                        <span className="text-xs flex flex-wrap items-center gap-1">
-                          <span className="font-medium">Ethnicities:</span>
-                          {tags.ethnicityLabels.map((eth: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
-                          ))}
-                        </span>
-                      )}
-                      {Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && (
-                        <span className="text-xs flex flex-wrap items-center gap-1">
-                          <span className="font-medium">Ages:</span>
-                          {tags.ageRanges.map((age: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
-                          ))}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {reviewCard.expert.womenNotIncluded && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <div className="mb-2 cursor-pointer">
-                          <Badge className="text-xs bg-red-100 text-red-800">
-                            ♀ Women Not Included
-                          </Badge>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                        {getStudyTagDescription('women_not_included')}
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                  </div>
-
-                </div>
-
-                {/* Bottom row: Review content (classification, tags, scores, comments) */}
-                <div className="mt-2">
-
-
-                  {(() => {
-                    // Only show NO scores if any exist
-                    const noScores = reviewCard.expert.scores.filter(s => s.score === 'NO');
-
-                    return noScores.length > 0 && (
-                      <div className="mb-2">
-                        <div className="flex flex-row flex-wrap gap-2 sm:gap-3 items-center">
-                          {noScores.map((scoreItem, idx) => (
-                            <div key={idx} className="flex items-center gap-1">
-                              {(() => {
-                                const explanations: Record<string, string> = {
-                                  studyDesign: 'Was the study designed to answer this claim?',
-                                  // representation removed from UI/labels — kept in DB for backward compatibility but not surfaced
-                                  controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
-                                  biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
-                                  statistics: 'Were statistical tests appropriate for the study design and data type?'
-                                };
-                                const humanLabels: Record<string, string> = {
-                                  studyDesign: 'Study Design',
-                                  controlGroup: 'Control Group',
-                                  biasAddressed: 'Bias Addressed',
-                                  statistics: 'Statistics'
-                                };
-                                const label = humanLabels[scoreItem.category] || scoreItem.category;
-                                const explanation = explanations[scoreItem.category] || '';
-                                return explanation ? (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
-                                    </PopoverTrigger>
-                                    <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                      {explanation}
-                                    </PopoverContent>
-                                  </Popover>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">{label}:</span>
-                                );
-                              })()}
-                              <Badge className={`text-xs px-1 py-1 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
-                                {scoreItem.score ?? 'No score'}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {reviewCard.expert.comments.length > 0 && (
-                    <div>
-                      {/* <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div> */}
-                      <div className="space-y-2">
-                        {reviewCard.expert.comments.map((comment, idx) => (
-                          <div key={idx} className="bg-muted/20 p-3 rounded-md">
-                            <div className="text-xs text-muted-foreground mb-1">
-                              {new Date(comment.created_at).toLocaleDateString()}
-                            </div>
-                            <div className="text-sm">"{comment.content}"</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
   // Claims are now filtered and sorted by the database query
@@ -732,99 +483,70 @@ const Claims = () => {
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
-              Upvote Claims to prioritize them for expert review.
-            </p>
-
-            {/* Workflow Button and Legend */}
-            <div className="mb-4 flex flex-col items-center gap-4">
-              <a href="/workflow" className="inline-flex items-center gap-2 text-lg text-primary hover:underline">
+              Upvote Claims to prioritize them for expert review. <a href="/workflow" className="inline-flex items-center gap-2 text-md sm:text-lg text-primary hover:underline">
                 Learn how we review information and science
                 <ExternalLink className="w-4 h-4" />
               </a>
+            </p>
 
-              {/* Legend Section */}
-              <div className="w-full max-w-3xl">
-                <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3 text-center">
-                  Legend: Click labels to learn more
-                </div>
+            {/*Legend (collapsible) */}
+            <div className="mb-4 flex flex-col items-center gap-4">
 
-                {/* Categories */}
-                <div className="mb-3">
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {CLASSIFICATION_CATEGORIES.map((category) => (
-                      <Popover key={category}>
-                        <PopoverTrigger asChild>
-                          <div
-                            className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getCategoryBackgroundColor(category)} hover:opacity-80 transition-opacity`}
-                          >
-                            {category}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                          <div className="font-semibold mb-1">{category}</div>
-                          <div>{getCategoryDescription(category)}</div>
-                        </PopoverContent>
-                      </Popover>
-                    ))}
-                    {STUDY_TAG.map((tag) => (
-                      <Popover key={tag}>
-                        <PopoverTrigger asChild>
-                          <div
-                            className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getStudyTagColor(tag)} hover:opacity-80 transition-opacity`}
-                          >
-                            {tag}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                          <div className="font-semibold mb-1">{tag}</div>
-                          <div>{getStudyTagDescription(tag)}</div>
-                        </PopoverContent>
-                      </Popover>
-                    ))}
 
-                    {/* <Popover>
-                      <PopoverTrigger asChild>
-                        <div
-                          className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('women_not_included')} hover:opacity-80 transition-opacity`}
-                        >
-                          Women Not Included
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                        <div className="font-semibold mb-1">Women Not Included</div>
-                        <div>{getStudyTagDescription('women_not_included')}</div>
-                      </PopoverContent>
-                    </Popover>
+              <div className="w-full max-w-3xl text-center">
+                <button
+                  type="button"
+                  onClick={() => setLegendOpen(!legendOpen)}
+                  aria-expanded={legendOpen}
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary focus:outline-none"
+                >
+                  <span className="font-medium">{legendOpen ? 'Hide legend' : 'Show legend'}</span>
+                  {legendOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
 
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <div
-                          className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('observational')} hover:opacity-80 transition-opacity`}
-                        >
-                          Observational
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                        <div className="font-semibold mb-1">Observational Study</div>
-                        <div>{getStudyTagDescription('observational')}</div>
-                      </PopoverContent>
-                    </Popover>
+                {legendOpen && (
+                  <div className="mt-3">
+                    <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">
+                      Legend: Click labels to learn more
+                    </div>
 
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <div
-                          className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('clinical_trial')} hover:opacity-80 transition-opacity`}
-                        >
-                          Clinical Trial
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                        <div className="font-semibold mb-1">Clinical Trial</div>
-                        <div>{getStudyTagDescription('clinical_trial')}</div>
-                      </PopoverContent>
-                    </Popover> */}
+                    {/* Categories */}
+                    <div className="mb-3">
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {CLASSIFICATION_CATEGORIES.map((category) => (
+                          <Popover key={category}>
+                            <PopoverTrigger asChild>
+                              <div
+                                className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getCategoryBackgroundColor(category)} hover:opacity-80 transition-opacity`}
+                              >
+                                {category}
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                              <div className="font-semibold mb-1">{category}</div>
+                              <div>{getCategoryDescription(category)}</div>
+                            </PopoverContent>
+                          </Popover>
+                        ))}
+                        {STUDY_TAG.map((tag) => (
+                          <Popover key={tag}>
+                            <PopoverTrigger asChild>
+                              <div
+                                className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getStudyTagColor(tag)} hover:opacity-80 transition-opacity`}
+                              >
+                                {tag}
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                              <div className="font-semibold mb-1">{tag}</div>
+                              <div>{getStudyTagDescription(tag)}</div>
+                            </PopoverContent>
+                          </Popover>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
