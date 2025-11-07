@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, Check, X } from 'lucide-react';
 
 const SampleSizeCard = () => {
   const [sampleSizeOpen, setSampleSizeOpen] = React.useState(false);
@@ -31,41 +31,19 @@ const SampleSizeCard = () => {
           <DialogDescription className="text-base">
             Understanding how the number of study participants affects research reliability
           </DialogDescription>
+          <br />
+          <img
+          src="/images/holding_hands.png"
+          alt="Illustration showing effect size and sample size comparison"
+          className="w-full max-w-3xl mx-auto mt-4 rounded-lg shadow-sm object-cover"
+            />
         </DialogHeader>
         <div className="space-y-6 mt-6">
           {/* Introduction */}
           <div>
             <p className="text-muted-foreground">
-              Sample size refers to the essential count of experimental or observational units necessary for conducting reliable, reproducible research. Generally speaking, a study is not conclusive if the group being sampled is not large enough. Larger sample sizes increase the power to find true changes.
+              When a study is conducted with too few participants or samples, the results can be unreliable—either missing real effects (a false negative) or overstating weak ones (a false positive). Larger sample sizes increase statistical power, making it easier to detect genuine patterns and relationships rather than random noise. A sufficiently large sample also helps account for natural variability within populations, ensuring that the findings are more generalizable to real-world conditions.
             </p>
-          </div>
-
-          {/* Visual Example */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              {/* BarChart3 icon can be imported if needed */}
-              Visual Example: Coin Flip Study
-            </h3>
-            <div className="grid md:grid-cols-3 gap-4 text-center">
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-red-500 mb-2">Small Study</div>
-                <div className="text-sm text-muted-foreground mb-2">10 participants</div>
-                <div className="text-lg">7 heads, 3 tails</div>
-                <div className="text-sm text-red-600 mt-2">70% heads - Seems biased!</div>
-              </div>
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-500 mb-2">Medium Study</div>
-                <div className="text-sm text-muted-foreground mb-2">100 participants</div>
-                <div className="text-lg">52 heads, 48 tails</div>
-                <div className="text-sm text-yellow-600 mt-2">52% heads - Getting closer</div>
-              </div>
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-green-500 mb-2">Large Study</div>
-                <div className="text-sm text-muted-foreground mb-2">1,000 participants</div>
-                <div className="text-lg">501 heads, 499 tails</div>
-                <div className="text-sm text-green-600 mt-2">50.1% heads - True result!</div>
-              </div>
-            </div>
           </div>
 
           {/* Key Points */}
@@ -74,17 +52,17 @@ const SampleSizeCard = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
                   {/* <CheckCircle className="w-5 h-5" /> */}
-                  Large Sample Benefits
+                  Large Sample Size Benefits
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  <span>More reliable results</span>
+                  <span>Generates high confidence results</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  <span>Better represents population</span>
+                  <span>Allows for better population representation</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -92,7 +70,7 @@ const SampleSizeCard = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  <span>Detects smaller but real effects</span>
+                  <span>Detection of smaller but real effects</span>
                 </div>
               </CardContent>
             </Card>
@@ -107,15 +85,15 @@ const SampleSizeCard = () => {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  <span>Results may be due to chance</span>
+                  <span>Results may be found due to chance</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  <span>May not apply to everyone</span>
+                  <span>Evidence may not apply to everyone</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  <span>Can miss important effects</span>
+                  <span>Can miss small but important effects</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
@@ -125,56 +103,101 @@ const SampleSizeCard = () => {
             </Card>
           </div>
 
-          {/* Guidelines */}
-          <div className="bg-primary/5 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              {/* <TrendingUp className="w-5 h-5" /> */}
-              Study Size Guidelines for Women's Health
-            </h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <span className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 mb-2 inline-block rounded px-2 py-1">Small (10-50)</span>
-                <div className="text-sm text-muted-foreground">
-                  Preliminary findings only. Results should be confirmed in larger studies.
-                </div>
+          {/* Real World Example: large */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-sm">
+                <Check className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
-              <div className="text-center">
-                <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 mb-2 inline-block rounded px-2 py-1">Medium (100-500)</span>
-                <div className="text-sm text-muted-foreground">
-                  More reliable, but may still miss important effects or subgroups.
-                </div>
+              <h3 className="text-lg font-semibold m-0">The Women's Health Inititiative (WHI)</h3>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div>
+                <div className="font-medium">This was a massive set of clinical trials and observational studies in the U.S., enrolling over 160,000 women. Large study, with increased statistical power.</div>
+                <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
+                  <li>Detection of modest effects of hormone replacement therapy (HRT), diet, and supplements on health outcomes.</li>
+                  <li>Results revealed important risks of HRT (like increased breast cancer and cardiovascular disease) that smaller earlier studies had missed.</li>
+                </ul>
               </div>
-              <div className="text-center">
-                <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 mb-2 inline-block rounded px-2 py-1">Large (1000+)</span>
-                <div className="text-sm text-muted-foreground">
-                  Most reliable for detecting real effects and applying to broader populations.
+            </div>
+          </div>
+
+          {/* Real World Example: small (duplicated formatting with red X) */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+            <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-sm">
+                    <X className="w-6 h-6 text-white" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-lg font-semibold m-0">The Andrew Wakefield MMR–Autism Study</h3>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <div className="font-medium">This now-retracted study claimed a link between the measles, mumps, and rubella (MMR) vaccine and autism.</div>
+                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
+                      <li>Sample size was only 12 children.</li>
+                      <li>No real statistical power and could not reliably detect population-level effects.</li>
+                      <li>Later proven false in much larger studies.</li>
+                    </ul>
+
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Real World Example */}
+          {/* How we score study size */}
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3">Real-World Example: Turmeric for Joint Pain</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                <div>
-                  <div className="font-medium">Small study (45 women):</div>
-                  <div className="text-muted-foreground">"Turmeric reduced joint pain in 80% of participants"</div>
-                  <div className="text-red-600 text-xs mt-1">⚠️ Could be chance - only 36 women showed improvement</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                <div>
-                  <div className="font-medium">Large study (1,200 women):</div>
-                  <div className="text-muted-foreground">"Turmeric reduced joint pain in 65% of participants"</div>
-                  <div className="text-green-600 text-xs mt-1">✓ More reliable - 780 women showed improvement</div>
-                </div>
-              </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
+              <DialogTitle className="text-2xl m-0">How do we score Study Size?</DialogTitle>
+              <img
+                src="/images/score-meter.png"
+                alt="Study size scoring meter"
+                className="w-24 h-24 sm:w-32 sm:h-32 object-contain mt-4 sm:mt-0 ml-auto"
+                loading="lazy"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              The Health Integrity Project limits study size scoring to human studies (see Evaluation Workflow). The number of samples required is highly dependent on the type of study being performed. Below we provide the criteria and the associated labels when evaluating study size.
             </div>
           </div>
+
+        {/* Scoring guidelines */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="border-black-200 dark:border-black-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-black-700 dark:text-black-400">
+                  {/* <CheckCircle className="w-5 h-5" /> */}
+                  Single study analyses
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <ul className="list-disc list-outside pl-6 space-y-2 text-sm text-black dark:text-white">
+                  <li>&lt; 100 → Limited Tested in Humans (First Human Tests).</li>
+                  <li>&gt; 100 → Tested in Humans</li>
+                  <li>&gt; 500,000 → Widely tested in humans</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-black-200 dark:border-black-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-black-700 dark:text-black-400">
+                  {/* <CheckCircle className="w-5 h-5" /> */}
+                  Meta-analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <ul className="list-disc list-outside pl-6 space-y-2 text-sm text-black dark:text-white">
+                  <li> If &lt; 10 studies; and samples &lt; 500,000  → Widely Tested in Humans </li>
+                  <li>&gt; 2 studies, any number of samples per study → Tested in Humans</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+       
+
         </div>
       </DialogContent>
     </Dialog>
