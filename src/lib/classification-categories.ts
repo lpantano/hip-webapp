@@ -42,14 +42,14 @@ export const PROBLEMATIC_CATEGORIES: readonly ReviewCategory[] = [
  * Background color classes for each category (used in badges)
  */
 export const CATEGORY_BACKGROUND_COLORS: Record<string, string> = {
-  'misinformation': 'bg-orange-200 text-gray-700',
-  'invalid': 'bg-gray-200 text-gray-700',
-  'inconclusive': 'bg-gray-200 text-gray-700',
-  'not tested in humans': 'bg-yellow-300 text-yellow-700',
-  'limited tested in humans': 'bg-blue-200 text-blue-800',
-  'tested in humans': 'bg-teal-300 text-gray-700',
-  'tested in human': 'bg-teal-300 text-gray-200', // singular form fallback
-  'widely tested in humans': 'bg-green-300 text-green-900',
+  'misinformation': 'bg-evidence-misinformation text-white',
+  'invalid': 'bg-evidence-invalid text-gray-700',
+  'inconclusive': 'bg-evidence-invalid text-gray-700',
+  'not tested in humans': 'bg-evidence-not-tested text-grey-700',
+  'limited tested in humans': 'bg-evidence-limited text-blue-800',
+  'tested in humans': 'bg-evidence-tested text-white',
+  // 'widely tested in humans': 'bg-green-300 text-green-900',
+  'widely tested in humans': 'bg-evidence-widely-tested text-white',
 } as const;
 
 /**
@@ -61,8 +61,7 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
   'inconclusive': 'border-gray-200 text-gray-700',
   'not tested in humans': 'border-yellow-300 text-yellow-700',
   'limited tested in humans': 'border-blue-200 text-blue-800',
-  'tested in humans': 'border-teal-300 text-gray-700',
-  'tested in human': 'border-teal-300 text-gray-200', // singular form fallback
+  'tested in humans': 'border-teal-300 text-green-900',
   'widely tested in humans': 'border-green-300 text-green-900',
 } as const;
 
@@ -74,9 +73,9 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
  * Background color classes for study tags (used in badges)
  */
 export const STUDY_TAG_COLORS: Record<string, string> = {
-  'women_not_included': 'bg-pink-100 text-pink-800',
-  'observational': 'bg-blue-100 text-blue-800',
-  'clinical_trial': 'bg-purple-100 text-purple-800',
+  'women_not_included': 'bg-orange-200 text-grey-700',
+  'observational': 'bg-evidence-observational text-blue-800',
+  'clinical_trial': 'bg-evidence-clinical text-white',
 } as const;
 
 /**
@@ -84,8 +83,8 @@ export const STUDY_TAG_COLORS: Record<string, string> = {
  */
 export const STUDY_TAG_BORDER_COLORS: Record<string, string> = {
   'women_not_included': 'border-pink-400',
-  'observational': 'border-blue-400',
-  'clinical_trial': 'border-purple-400',
+  'observational': 'border-blue-200 text-blue-800',
+  'clinical_trial': 'border-green-300 text-green-900',
 } as const;
 
 /**

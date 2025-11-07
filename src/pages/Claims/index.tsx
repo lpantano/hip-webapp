@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResourcesSection } from '@/components/resources/ResourcesSection';
 import { getClassificationReasons } from '@/types/review';
 import { getEvidenceClassificationColor } from '@/lib/classification-colors';
-import { isProblematicCategory, getStudyTagDescription } from '@/lib/classification-categories';
+import { isProblematicCategory, getStudyTagDescription, CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
@@ -32,6 +32,7 @@ import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
+import { getStudyTagColor } from '@/lib/classification-colors';
 
 
 // We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
@@ -635,52 +636,57 @@ const Claims = () => {
                 <div className="mt-2">
 
 
-                  {reviewCard.expert.scores.length > 0 && (
-                    <div className="mb-2">
-                      <div className="flex flex-row flex-wrap gap-2 sm:gap-3 items-center">
-                        {reviewCard.expert.scores.map((scoreItem, idx) => (
-                          <div key={idx} className="flex items-center gap-1">
-                            {(() => {
-                              const explanations: Record<string, string> = {
-                                studyDesign: 'Was the study designed to answer this claim?',
-                                // representation removed from UI/labels — kept in DB for backward compatibility but not surfaced
-                                controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
-                                biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
-                                statistics: 'Were statistical tests appropriate for the study design and data type?'
-                              };
-                              const humanLabels: Record<string, string> = {
-                                studyDesign: 'Study Design',
-                                controlGroup: 'Control Group',
-                                biasAddressed: 'Bias Addressed',
-                                statistics: 'Statistics'
-                              };
-                              const label = humanLabels[scoreItem.category] || scoreItem.category;
-                              const explanation = explanations[scoreItem.category] || '';
-                              return explanation ? (
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
-                                  </PopoverTrigger>
-                                  <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                    {explanation}
-                                  </PopoverContent>
-                                </Popover>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">{label}:</span>
-                              );
-                            })()}
-                            <Badge className={`text-xs px-1 py-1 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
-                              {scoreItem.score ?? 'No score'}
-                            </Badge>
-                          </div>
-                        ))}
+                  {(() => {
+                    // Only show NO scores if any exist
+                    const noScores = reviewCard.expert.scores.filter(s => s.score === 'NO');
+
+                    return noScores.length > 0 && (
+                      <div className="mb-2">
+                        <div className="flex flex-row flex-wrap gap-2 sm:gap-3 items-center">
+                          {noScores.map((scoreItem, idx) => (
+                            <div key={idx} className="flex items-center gap-1">
+                              {(() => {
+                                const explanations: Record<string, string> = {
+                                  studyDesign: 'Was the study designed to answer this claim?',
+                                  // representation removed from UI/labels — kept in DB for backward compatibility but not surfaced
+                                  controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
+                                  biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
+                                  statistics: 'Were statistical tests appropriate for the study design and data type?'
+                                };
+                                const humanLabels: Record<string, string> = {
+                                  studyDesign: 'Study Design',
+                                  controlGroup: 'Control Group',
+                                  biasAddressed: 'Bias Addressed',
+                                  statistics: 'Statistics'
+                                };
+                                const label = humanLabels[scoreItem.category] || scoreItem.category;
+                                const explanation = explanations[scoreItem.category] || '';
+                                return explanation ? (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
+                                    </PopoverTrigger>
+                                    <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                      {explanation}
+                                    </PopoverContent>
+                                  </Popover>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">{label}:</span>
+                                );
+                              })()}
+                              <Badge className={`text-xs px-1 py-1 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
+                                {scoreItem.score ?? 'No score'}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {reviewCard.expert.comments.length > 0 && (
                     <div>
-                      <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
+                      {/* <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div> */}
                       <div className="space-y-2">
                         {reviewCard.expert.comments.map((comment, idx) => (
                           <div key={idx} className="bg-muted/20 p-3 rounded-md">
@@ -729,16 +735,87 @@ const Claims = () => {
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
-              Upvote Claims with strong scientific backing to prioritize them for expert review.
+              Upvote Claims to prioritize them for expert review.
             </p>
-            <div className="mb-1 flex justify-center">
-            <a
-              href="/workflow"
-              className="inline-block px-2 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
-            >
-              Learn how we review information and science
-            </a>
-          </div>
+
+            {/* Workflow Button and Legend */}
+            <div className="mb-4 flex flex-col items-center gap-4">
+              <Button asChild variant="outline" size="sm" className="px-4 py-2">
+                <a href="/workflow" className="inline-flex items-center">
+                  Learn how we review information and science
+                </a>
+              </Button>
+
+              {/* Legend Section */}
+              <div className="w-full max-w-3xl">
+                <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3 text-center">
+                  Legend: Click labels to learn more
+                </div>
+
+                {/* Categories */}
+                <div className="mb-3">
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {CLASSIFICATION_CATEGORIES.map((category) => (
+                      <Popover key={category}>
+                        <PopoverTrigger asChild>
+                          <div
+                            className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getEvidenceClassificationColor(category)} hover:opacity-80 transition-opacity`}
+                          >
+                            {category}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                          <div className="font-semibold mb-1">{category}</div>
+                          <div>{getCategoryDescription(category)}</div>
+                        </PopoverContent>
+                      </Popover>
+                    ))}
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div
+                          className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('women_not_included')} hover:opacity-80 transition-opacity`}
+                        >
+                          Women Not Included
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                        <div className="font-semibold mb-1">Women Not Included</div>
+                        <div>{getStudyTagDescription('women_not_included')}</div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div
+                          className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('observational')} hover:opacity-80 transition-opacity`}
+                        >
+                          Observational
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                        <div className="font-semibold mb-1">Observational Study</div>
+                        <div>{getStudyTagDescription('observational')}</div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div
+                          className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-semibold ${getStudyTagColor('clinical_trial')} hover:opacity-80 transition-opacity`}
+                        >
+                          Clinical Trial
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                        <div className="font-semibold mb-1">Clinical Trial</div>
+                        <div>{getStudyTagDescription('clinical_trial')}</div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tabs Navigation */}
@@ -934,7 +1011,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Supporting Papers</span>
+                              <span className="font-semibold text-xs">Alleged Support</span>
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -951,7 +1028,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Contradicting Papers</span>
+                              <span className="font-semibold text-xs">Alleged Disproof</span>
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
@@ -997,7 +1074,7 @@ const Claims = () => {
                           className="flex items-center gap-2 shadow-md whitespace-nowrap"
                         >
                           <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">Review Reel</span>
+                          <span className="hidden sm:inline">Review</span>
                           <span className="sm:hidden">Reviews</span>
                         </Button>
                         <Button
