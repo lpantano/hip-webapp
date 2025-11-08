@@ -26,3 +26,6 @@ supabase/.temp*
 *.sln
 *.sw?
 *.pr**
+
+# Local Netlify folder
+.netlify
