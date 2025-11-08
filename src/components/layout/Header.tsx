@@ -44,7 +44,7 @@ const Header = () => {
           </nav>
 
           {/* Desktop Navigation - Show all items */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden text-lg md:flex items-center gap-6">
             <Link to="/" className="text-white/80 hover:text-white transition-colors">
               Home
             </Link>

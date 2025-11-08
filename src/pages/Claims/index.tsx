@@ -5,10 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
-import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, Unlink2, Link2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -25,14 +23,14 @@ import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
+import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-
-
-// We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
-
-const CLAIMS_PER_PAGE = 20;
+import { humanize, getStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { useOptimisticVote } from './hooks/useOptimisticVote';
+import { useReviewCards } from './hooks/useReviewCards';
+import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS } from './constants';
 
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
@@ -50,37 +48,20 @@ const Claims = () => {
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-  const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
-  // Source dialog form state
-  const [sourceUrl, setSourceUrl] = useState('');
-  const [sourceTitle, setSourceTitle] = useState('');
-  const [sourceDescription, setSourceDescription] = useState('');
-  const [sourceType, setSourceType] = useState('webpage');
-  const [sourceSubmitting, setSourceSubmitting] = useState(false);
+  // Use custom hook for optimistic vote updates
+  const {
+    userVotes,
+    optimisticallyAddVote,
+    optimisticallyRemoveVote,
+    revertVote,
+    setUserVotes
+  } = useOptimisticVote(setClaims);
 
   // Confirmation dialog state for toggling claim status
   const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
   const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
-
-  // Normalize and validate URL client-side. Returns normalized URL string or null if invalid.
-  const normalizeUrl = (raw: string) => {
-    if (!raw) return null;
-    let s = raw.trim();
-    // If scheme is missing, default to https://
-    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) {
-      s = `https://${s}`;
-    }
-    try {
-      const parsed = new URL(s);
-      // Basic check: must have hostname
-      if (!parsed.hostname) return null;
-      return parsed.toString();
-    } catch (e) {
-      return null;
-    }
-  };
 
   // component-scoped Supabase client
   const sb = supabase;
@@ -119,6 +100,7 @@ const Claims = () => {
 
 
 
+  // Use the groupBy helper for cleaner data grouping
   const fetchClaimsData = useCallback(async (page: number = 0) => {
     try {
       // Build the claims query with pagination, filtering, and sorting
@@ -170,30 +152,10 @@ const Claims = () => {
       if (publicationsError) throw publicationsError;
       if (commentsError) throw commentsError;
 
-      // Group publications by claim_id
-      const publicationsByClaim: Record<string, PublicationRow[]> = {};
-      (publicationsData || []).forEach((pub: PublicationRow) => {
-        if (!publicationsByClaim[pub.claim_id]) {
-          publicationsByClaim[pub.claim_id] = [];
-        }
-        publicationsByClaim[pub.claim_id].push(pub);
-      });
-
-      // Group comments by claim_id
-      const commentsByClaim: Record<string, ClaimCommentRow[]> = {};
-      (commentsData || []).forEach((comment: ClaimCommentRow) => {
-        if (!commentsByClaim[comment.claim_id]) {
-          commentsByClaim[comment.claim_id] = [];
-        }
-        commentsByClaim[comment.claim_id].push(comment);
-      });
-
-      // Group claim_links by claim_id
-      const linksByClaim: Record<string, ClaimLinkRow[]> = {};
-      ((linksData || []) as ClaimLinkRow[]).forEach((link) => {
-        if (!linksByClaim[link.claim_id]) linksByClaim[link.claim_id] = [];
-        linksByClaim[link.claim_id].push(link);
-      });
+      // Use groupBy helper for cleaner data organization
+      const publicationsByClaim = groupBy(publicationsData || [], (pub: PublicationRow) => pub.claim_id);
+      const commentsByClaim = groupBy(commentsData || [], (comment: ClaimCommentRow) => comment.claim_id);
+      const linksByClaim = groupBy((linksData || []) as ClaimLinkRow[], (link) => link.claim_id);
 
 
 
@@ -307,7 +269,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, sortBy]);
+  }, [sb, user, filterByCategory, sortBy, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -343,84 +305,34 @@ const Claims = () => {
 
     const hasVoted = userVotes.has(id);
 
-    // Optimistic UI update
+    // Optimistic UI update using custom hook
     if (hasVoted) {
-      // Remove vote
-      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
-      setUserVotes(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
+      optimisticallyRemoveVote(id);
     } else {
-      // Add vote
-      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
-      setUserVotes(prev => new Set(prev).add(id));
+      optimisticallyAddVote(id);
     }
 
     try {
       if (hasVoted) {
-        // Remove vote from database
         const { error: delError } = await sb.from('claim_votes').delete().eq('claim_id', id).eq('user_id', user.id);
         if (delError) throw delError;
       } else {
-        // Add vote to database
         const { error: insertError } = await sb.from('claim_votes').insert({ claim_id: id, user_id: user.id });
         if (insertError) throw insertError;
       }
     } catch (err) {
       console.error('Vote failed:', err);
       // Revert optimistic update on error
-      if (hasVoted) {
-        // Restore vote
-        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
-        setUserVotes(prev => new Set(prev).add(id));
-      } else {
-        // Remove vote
-        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
-        setUserVotes(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-      }
-    }
-  };
-
-  const humanize = (s?: string) => (s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
-
-  // moved getCategoryColor to src/lib/getCategoryColor.ts for reuse across the app
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      'under review': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined) => {
-    switch (stance) {
-      case 'supporting':
-        return <div title="Supporting evidence"><Link2 className="w-4 h-4 text-grey-600" /></div>;
-      case 'contradicting':
-        return <div title="Contradicting evidence"><Unlink2 className="w-4 h-4 text-grey-600" /></div>;
-      case 'neutral':
-        return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
-      case 'mixed':
-        return <div className="w-4 h-4 rounded-full bg-orange-400" title="Mixed evidence" />;
-      default:
-        return null;
+      revertVote(id, !hasVoted);
     }
   };
 
   const toggleClaimStatus = async (claimId: string, rawStatus?: string) => {
     if (!user) return;
-    // Only allow toggle between 'proposed' and 'pending' ('under review')
-    if (rawStatus !== 'proposed' && rawStatus !== 'under review') return;
+    // Only allow toggle between 'proposed' and 'under review'
+    if (rawStatus !== CLAIM_STATUS.PROPOSED && rawStatus !== CLAIM_STATUS.UNDER_REVIEW) return;
 
-    const newStatus = rawStatus === 'proposed' ? 'under review' : 'proposed';
+    const newStatus = rawStatus === CLAIM_STATUS.PROPOSED ? CLAIM_STATUS.UNDER_REVIEW : CLAIM_STATUS.PROPOSED;
     try {
       setUpdatingStatus(claimId);
       const { error } = await sb.from('claims').update({ status: newStatus }).eq('id', claimId);
@@ -459,16 +371,16 @@ const Claims = () => {
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
   // Claims are now filtered and sorted by the database query
-    // Only show claim 913322f9-6d96-49fa-ace9-9587e8952a80 if running on localhost
-    let filteredAndSortedClaims = claims;
-    const specialClaimId = '913322f9-6d96-49fa-ace9-9587e8952a80';
-    if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-      // On localhost, show all claims
-      filteredAndSortedClaims = claims;
-    } else {
-      // On production, filter out the special claim
-      filteredAndSortedClaims = claims.filter(c => c.id !== specialClaimId);
-    }
+  // Only show special claim if running on localhost
+  let filteredAndSortedClaims = claims;
+  if (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost') {
+    // On production, filter out the special claim
+    filteredAndSortedClaims = claims.filter(c => c.id !== SPECIAL_CLAIM_ID);
+  }
+
+  // Use custom hook for review cards generation
+  const currentReelClaim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
+  const reviewCards = useReviewCards(currentReelClaim, expertProfiles);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
@@ -828,14 +740,7 @@ const Claims = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
-                                    setShowSourceForm(claim.id);
-                                    // prefill some fields if desired
-                                    setSourceUrl('');
-                                    setSourceTitle('');
-                                    setSourceDescription('');
-                                    setSourceType('webpage');
-                                  }}
+                                  onClick={() => setShowSourceForm(claim.id)}
                                   className="flex items-center gap-2 whitespace-nowrap"
                                 >
                                   <Link className="w-4 h-4" />
@@ -926,76 +831,13 @@ const Claims = () => {
 
           {/* Source Submission Dialog */}
           {user && showSourceForm && (
-            <Dialog open={!!showSourceForm} onOpenChange={() => setShowSourceForm(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[80vh] overflow-y-auto">
-                {(() => {
-                  const claim = filteredAndSortedClaims.find(c => c.id === showSourceForm);
-                  if (!claim) return null;
-
-                  const submitSource = async () => {
-                    const normalized = normalizeUrl(sourceUrl);
-                    if (!normalized) {
-                      toast.error('Invalid URL', { description: 'Please enter a valid URL before saving.' });
-                      return;
-                    }
-
-                    setSourceSubmitting(true);
-                    try {
-                      const payload = {
-                        claim_id: claim.id,
-                        expert_user_id: user.id,
-                        title: sourceTitle || null,
-                        url: normalized,
-                        description: sourceDescription || null,
-                        link_type: sourceType || 'webpage'
-                      };
-
-                      const { error } = await sb.from('claim_links').insert(payload);
-                      if (error) {
-                        throw error;
-                      }
-
-                      // Refresh claims list
-                      await fetchData(currentPage);
-                      setShowSourceForm(null);
-                      toast.success('Source added', { description: 'Your source was added successfully.' });
-                    } catch (e: unknown) {
-                      console.error('Error adding source link:', e);
-                      const message = e instanceof Error ? e.message : 'Failed to add source.';
-                      toast.error('Add Source Failed', { description: message });
-                    } finally {
-                      setSourceSubmitting(false);
-                    }
-                  };
-
-                  return (
-                    <div>
-                      <DialogTitle>Add Source to claim</DialogTitle>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium mb-1 block">URL</label>
-                          <Input value={sourceUrl} onChange={(e) => setSourceUrl((e.target as HTMLInputElement).value)} placeholder="https://..." />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium mb-1 block">Title (optional)</label>
-                          <Input value={sourceTitle} onChange={(e) => setSourceTitle((e.target as HTMLInputElement).value)} placeholder="Optional title" />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium mb-1 block">Description (optional)</label>
-                          <Textarea value={sourceDescription} onChange={(e) => setSourceDescription((e.target as HTMLTextAreaElement).value)} placeholder="Short description" />
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" size="sm" onClick={() => setShowSourceForm(null)}>Cancel</Button>
-                          <Button size="sm" onClick={submitSource} disabled={!sourceUrl || sourceSubmitting}>
-                            {sourceSubmitting ? 'Saving...' : 'Save Source'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </DialogContent>
-            </Dialog>
+            <SourceFormDialog
+              isOpen={!!showSourceForm}
+              onClose={() => setShowSourceForm(null)}
+              claimId={showSourceForm}
+              userId={user.id}
+              onSuccess={() => fetchData(currentPage)}
+            />
           )}
 
           {/* Confirmation Dialog for toggling claim status */}
@@ -1020,84 +862,14 @@ const Claims = () => {
           {user && (
             <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
               <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-5xl max-h-[90vh] overflow-y-auto">
-                {(() => {
-                  const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
-                  if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-
-                  // Create individual cards for each expert review on each publication
-                  const reviewCards: ExpertReviewCard[] = [];
-
-                  claim.publications.forEach(pub => {
-                    // Group scores by expert
-                    const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
-                    (pub.rawScores || []).forEach(score => {
-                      if (!scoresByExpert[score.expert_user_id]) {
-                        scoresByExpert[score.expert_user_id] = [];
-                      }
-                      scoresByExpert[score.expert_user_id].push(score);
-                    });
-
-                    // Get comments for this claim
-                    const claimCommentsForClaim = claim.comments || [];
-
-                    // Create individual cards for each expert who reviewed this publication
-                    Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
-                      const expertProfile = expertProfiles[expertUserId];
-                      const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
-
-                      // For consolidated schema, pick the latest row for this expert (there should be one)
-                      const latestRow = (scores || []).reduce((a, b) => {
-                        const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
-                        const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
-                        return bTime >= aTime ? b : a;
-                      }, scores[0]);
-
-                      // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
-                      const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
-                        { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
-                        { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
-                        { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
-                        { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
-                      ];
-
-                      // Merge comments: claim-level expert comments + the review's comments (if present)
-                      const mergedComments = [
-                        ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
-                      ];
-                      if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
-                      // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
-
-                      reviewCards.push({
-                        publication: {
-                          id: pub.id,
-                          title: pub.title,
-                          journal: pub.journal,
-                          year: pub.year,
-                          authors: pub.authors,
-                          source: pub.source || null
-                        },
-                        expert: {
-                          expert_user_id: expertUserId,
-                          display_name: expertProfile?.display_name,
-                          avatar_url: expertProfile?.avatar_url,
-                          scores: expertScores,
-                          comments: mergedComments,
-                          classification: latestRow?.review_data?.category ?? null,
-                          tags: latestRow?.review_data?.tags ?? null,
-                          womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
-                          reviewData: latestRow?.review_data ?? null
-                        }
-                      });
-                    });
-                  });
-
-                  return (
-                    <div>
-                      <DialogTitle>{claim.claim} — Individual Expert Reviews</DialogTitle>
-                      <ExpertReviewsReel reviewCards={reviewCards} />
-                    </div>
-                  );
-                })()}
+                {currentReelClaim ? (
+                  <div>
+                    <DialogTitle>{currentReelClaim.claim} — Individual Expert Reviews</DialogTitle>
+                    <ExpertReviewsReel reviewCards={reviewCards} />
+                  </div>
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground">No reviews available.</div>
+                )}
               </DialogContent>
             </Dialog>
           )}

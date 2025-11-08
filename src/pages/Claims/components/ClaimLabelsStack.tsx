@@ -68,7 +68,7 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
                     <Popover key={`lvl-${lvl.level}-${stance}`}>
                         <PopoverTrigger asChild>
                             <div
-                                className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
+                                className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
                             >
                                 <span className="break-words">{titleLabel}</span>
                                 <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
@@ -127,7 +127,7 @@ function LevelButton({
                         <Popover key={`women-pop-${stance}`}>
                             <PopoverTrigger asChild>
                                 <div
-                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden cursor-pointer`}
+                                    className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden cursor-pointer`}
                                 >
                                     <span className="break-words">Women Not Included</span>
                                     <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
@@ -146,7 +146,7 @@ function LevelButton({
                         <Popover key={`observational-pop-${stance}`}>
                             <PopoverTrigger asChild>
                                 <div
-                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden cursor-pointer`}
+                                    className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden cursor-pointer`}
                                 >
                                     <span className="break-words">Observational</span>
                                     <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
