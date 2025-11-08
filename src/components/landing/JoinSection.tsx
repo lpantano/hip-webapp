@@ -31,8 +31,8 @@ const JoinSection = () => {
             Join the Movement
           </Badge> */}
           <h2 className="text-2xl md:text-4xl font-bold mb-8">
-            Ready to Make a
-            <span className="text-accent"> Difference?</span>
+            Join us and See the
+            <span className="text-accent"> Evidence for Yourself</span>
           </h2>
         </div>
 

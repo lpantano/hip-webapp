@@ -158,8 +158,9 @@ const EducationSection = () => {
     <section className="py-12 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-hero-gradient bg-clip-text text-transparent">
-            Understanding Research Quality
+          <h2 className="text-2xl md:text-4xl font-bold mb-8">
+            Understanding
+            <span className="text-accent"> Research Quality</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Learn why certain factors make research more trustworthy when evaluating health claims

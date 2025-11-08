@@ -11,7 +11,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-sm border-b border-white/10">
+    <header className="absolute top-0 left-0 right-0 mb-2 z-50 bg-primary/80 backdrop-blur-sm border-b border-white/10">
       <div className="container mx-auto px-4 py-2 md:px-6 md:py-4">
         <div className="flex items-center justify-between">
           <Link
@@ -19,7 +19,7 @@ const Header = () => {
             className="flex items-center gap-3 hover:text-accent transition-colors"
             aria-label="The Health Integrity Project home"
           >
-            <img src="/logo-hi2-tr.png" alt="The Health Integrity Project logo" className="w-7 h-7 md:w-14 md:h-14 object-contain" />
+            <img src="/logo-hi2-tr.png" alt="The Health Integrity Project logo" className="w-7 h-7 md:w-12 md:h-12 object-contain" />
             {/* <div className="leading-none">
               <span className="text-3xl md:text-4xl font-extrabold text-white/80 -mt-1">W</span>
             </div> */}
@@ -32,7 +32,7 @@ const Header = () => {
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Health"
             >
-              Claims
+              Health
             </Link>
             <Link
               to="/community"

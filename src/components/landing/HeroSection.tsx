@@ -21,7 +21,7 @@ const HeroSection = () => {
 
           </div>
           <div className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 ">
-            evidence-based insights for health claims
+            Evidence-based Insights for Health Claims
           </div>
           <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 leading-relaxed">
           Building trust through transparency. Learn how to evaluate and trust health products

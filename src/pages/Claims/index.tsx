@@ -719,7 +719,7 @@ const Claims = () => {
                           className="flex items-center gap-2 shadow-md whitespace-nowrap"
                         >
                           <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">Review</span>
+                          <span className="hidden sm:inline">Full Review</span>
                           <span className="sm:hidden">Reviews</span>
                         </Button>
                         <Button
