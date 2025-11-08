@@ -74,7 +74,7 @@ const JoinSection = () => {
               <Button
                 asChild={!user}
                 disabled={!!user}
-                className="w-full mt-6 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-6 hover:bg-primary/50 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {user ? (
                   <span>Welcome Back!</span>

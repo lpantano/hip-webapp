@@ -60,12 +60,12 @@ const Header = () => {
             {/* <Link to="/games" className="text-white/80 hover:text-white transition-colors">
               Games
             </Link> */}
-            <Link to="/features" className="text-white/80 hover:text-white transition-colors">
+            {/* <Link to="/features" className="text-white/80 hover:text-white transition-colors">
               Features
             </Link>
             <Link to="/legal" className="text-white/80 hover:text-white transition-colors">
               Legal
-            </Link>
+            </Link> */}
           </nav>
 
           <div className="flex items-center gap-4">

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const FeaturesSection = () => {
@@ -16,11 +16,16 @@ const FeaturesSection = () => {
           <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">
             From health conditions to wellness products and digital apps - we evaluate everything that matters for women's health decisions.
           </p>
+          <a href="/claims" className="inline-flex items-center mt-4 text-black font-bold hover:text-primary transition-colors">
+          <span className="mt-2 inline-block text-base md:text-lg">
+            Browser all health claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
+          </span>
+          </a>
         </div>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl sm:max-w-6xl mx-auto">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 max-w-4xl sm:max-w-4xl mx-auto justify-items-center place-items-center">
           {/* Health Issues */}
-          <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3">
+          <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3 w-full max-w-xs sm:max-w-sm">
             <CardHeader>
               <CardTitle className="text-primary text-lg sm:text-xl md:text-2xl">Health Issues</CardTitle>
             </CardHeader>
@@ -50,7 +55,7 @@ const FeaturesSection = () => {
           </Card>
 
           {/* Wellness */}
-          <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3">
+          <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3 w-full max-w-xs sm:max-w-sm">
             <CardHeader>
               <CardTitle className="text-accent text-lg sm:text-xl md:text-2xl">Wellness</CardTitle>
             </CardHeader>
@@ -80,7 +85,7 @@ const FeaturesSection = () => {
           </Card>
 
           {/* Mental Health */}
-          <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3">
+          <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3 w-full max-w-xs sm:max-w-sm">
             <CardHeader>
               <CardTitle className="text-primary text-lg sm:text-xl md:text-2xl">Mental Health</CardTitle>
             </CardHeader>

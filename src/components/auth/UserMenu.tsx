@@ -1,4 +1,4 @@
-import { User, LogOut, Settings, Shield } from 'lucide-react';
+import { User, LogOut, Settings, Shield, Scale, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { OptimizedAvatar } from '@/components/ui/optimized-avatar';
 
 const UserMenu = () => {
@@ -94,10 +94,14 @@ const UserMenu = () => {
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        {/* <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem> */}
+        <DropdownMenuItem onClick={() => navigate('/legal')}>
+          <Scale className="mr-2 h-4 w-4" />
+          <span>Legal</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/features')}>
+          <Zap className="mr-2 h-4 w-4" />
+          <span>Features</span>
+        </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem onClick={() => navigate('/admin')}>
             <Shield className="mr-2 h-4 w-4" />

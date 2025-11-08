@@ -155,12 +155,12 @@ const EducationSection = () => {
   const [selectedPitfall, setSelectedPitfall] = useState<string | null>(null);
 
   return (
-    <section className="py-12 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+    <section className="py-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center mb-12">
           <h2 className="text-2xl md:text-4xl font-bold mb-8">
             Understanding
-            <span className="text-accent"> Research Quality</span>
+            <span className="text-primary"> Research Quality</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Learn why certain factors make research more trustworthy when evaluating health claims
@@ -170,17 +170,15 @@ const EducationSection = () => {
         {/* Callout section with 75% statistic */}
         <div className="max-w-2xl mx-auto mb-8">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-6">
-            <div className="border-accent text-accent-foreground rounded-full px-4 py-3 shadow-lg">
+            {/* <div className="border-accent text-accent-foreground rounded-full px-4 py-3 shadow-lg">
               <div className="text-3xl font-bold">75%</div>
-            </div>
+            </div> */}
             <div className="text-center md:text-left max-w-lg">
               <p className="text-lg font-medium text-foreground">
-                Agree that scientific research methods are the best way to find out whether something is true or false
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                <a href="https://www.nature.com/articles/s41562-024-02090-5.pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-                  Nature Human Behaviour
-                </a> volume 9, pages 713–730 (2025)
+                75% agree that scientific research methods are the best way to find out whether something is true or false
+                <a href="https://www.nature.com/articles/s41562-024-02090-5.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center ml-1 hover:text-primary" aria-label="Nature Human Behaviour volume 9, pages 713–730 (2025)">
+                  <ExternalLink className="h-4 w-4" />
+                </a>
               </p>
             </div>
           </div>

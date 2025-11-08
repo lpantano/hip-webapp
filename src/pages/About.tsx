@@ -35,7 +35,7 @@ const About = () => {
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-3 gap-6">
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
+              <Card className="cursor-pointer transition-all duration-300 border-primary/20">
                 <CardHeader className="text-center">
                   <Users className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <CardTitle>Our Team</CardTitle>
@@ -50,7 +50,7 @@ const About = () => {
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
+              <Card className="cursor-pointer transition-all duration-300 border-primary/20">
                 <CardHeader className="text-center">
                   <Eye className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <CardTitle>Our Vision</CardTitle>
@@ -68,7 +68,7 @@ const About = () => {
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
+              <Card className="cursor-pointer transition-all duration-300 border-primary/20">
                 <CardHeader className="text-center">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <CardTitle>Business Model</CardTitle>
