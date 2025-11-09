@@ -112,6 +112,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // 2. Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        logger.log('[Auth] State change event:', event);
+
+        // Log token refresh attempts and failures
+        if (event === 'TOKEN_REFRESHED') {
+          logger.log('✅ Auth token refreshed successfully');
+        } else if (event === 'SIGNED_OUT') {
+          logger.log('⚠️ User signed out (could be automatic due to token expiry)');
+        } else if (event === 'USER_UPDATED') {
+          logger.log('ℹ️ User data updated');
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -123,7 +134,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     );
 
     // 3. THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        logger.error('[Auth] Error getting session:', error);
+      }
+      if (session) {
+        logger.log('[Auth] Session loaded from storage:', {
+          expiresAt: session.expires_at,
+          expiresIn: session.expires_at ? Math.floor((session.expires_at * 1000 - Date.now()) / 1000 / 60) + ' minutes' : 'unknown'
+        });
+      } else {
+        logger.log('[Auth] No session found in storage');
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false); // Ensure loading is false after checking session

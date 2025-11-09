@@ -33,9 +33,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip caching for API calls
+  // Skip caching for API calls and auth-related URLs
   if (event.request.url.includes('/api/') ||
-      event.request.url.includes('supabase.co')) {
+      event.request.url.includes('supabase.co') ||
+      event.request.url.includes('/auth/') ||
+      event.request.url.includes('accounts.google.com') ||
+      event.request.url.includes('#access_token') ||
+      event.request.url.includes('?code=') ||
+      event.request.url.includes('&code=')) {
     event.respondWith(fetch(event.request));
     return;
   }
