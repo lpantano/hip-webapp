@@ -23,7 +23,9 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%; /* white */
 
     --secondary: 211 66% 87.3%; /* #c9def4 */
+    /* --secondary: 222 44% 47%; */
     --secondary-foreground: 204.6 41.9% 44.5%; /* ocean blue */
+    /* --secondary-foreground: 222 44% 95%; ocean blue */
 
     --muted: 220 20% 95%; /* very light gray */
     --muted-foreground: 220 15% 45%; /* medium gray */

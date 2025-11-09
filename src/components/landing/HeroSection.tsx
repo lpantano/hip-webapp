@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
 import MailingListSignup from "./MailingListSignup";
+import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -21,7 +19,9 @@ const HeroSection = () => {
 
           </div>
           <div className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 ">
-            Evidence-based Insights for Health Claims
+            Evidence-based Insights for <a href="/claims" className="inline-flex items-center mt-4 text-primary underline font-bold hover:text-primary transition-colors">
+              Health Claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
+          </a>
           </div>
           <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 leading-relaxed">
           Building trust through transparency. Learn how to evaluate and trust health products

@@ -18,7 +18,7 @@ const FeaturesSection = () => {
           </p>
           <a href="/claims" className="inline-flex items-center mt-4 text-black font-bold hover:text-primary transition-colors">
           <span className="mt-2 inline-block text-base md:text-lg">
-            Browser all health claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
+            Browse all health claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
           </span>
           </a>
         </div>
