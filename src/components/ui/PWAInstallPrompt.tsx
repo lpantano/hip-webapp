@@ -27,7 +27,7 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
 
   if (isInstalled) {
     return (
-      <Button variant="outline" size={size} className={`${className} cursor-default`} disabled>
+      <Button variant="outline" size={size} className={`${className} cursor-default min-h-[44px] flex items-center`} disabled>
         <Smartphone className="w-4 h-4 mr-2" />
         App Installed ✓
       </Button>
@@ -39,11 +39,11 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
       <Button
         variant={variant}
         size={size}
-        className={`${className} bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg`}
+        className={`${className} px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg`}
         onClick={handleInstall}
       >
         <Download className="w-4 h-4 mr-2" />
-        Install App
+        <span className="hidden sm:inline">Install App</span>
       </Button>
 
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
