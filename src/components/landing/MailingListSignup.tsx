@@ -50,7 +50,7 @@ const MailingListSignup = () => {
           disabled={loading}
         />
         <Button type="submit" className="bg-white text-primary hover:bg-white/90 px-6 min-h-[44px]" disabled={loading}>
-          <Mail className="w-4 h-4" mr-2/>
+          <Mail className="w-4 h-4"/>
           <span className="hidden sm:inline">{loading ? "Submitting..." : "Subscribe"}</span>
         </Button>
         <PWAInstallPrompt size="sm" className="shadow-xl mt-1 min-h-[44px] flex items-center" />

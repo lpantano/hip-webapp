@@ -90,6 +90,7 @@ export function aggregateLabelsForClaim(claim: ClaimMinimal): LabelAggregation {
   const supportingReasonsRaw: Record<string, string[]> = {};
   const contradictingReasonsRaw: Record<string, string[]> = {};
 
+  // Count all reviews - each reviewer's label is counted separately
   claim.publications.forEach((pub: PublicationMinimal) => {
     (pub.rawScores || []).forEach((score) => {
       const rd = score.review_data as Record<string, unknown> | undefined;

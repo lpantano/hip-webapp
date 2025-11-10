@@ -30,59 +30,75 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
     ];
 
   // Build stack from top (5) to bottom (1)
-    const stack = levelDefs.map((lvl) => {
-    // For level 1 we aggregate counts across its labels
+    const stack: React.ReactNode[] = [];
+
+    levelDefs.forEach((lvl) => {
     const labels = lvl.labels;
-    const counts = labels.map(l => labelCounts[l] || 0);
-    const totalCount = counts.reduce((a,b) => a + b, 0);
 
-    // Determine representative label for coloring and title when multiple labels exist at level 1
-    let repLabel = labels[0];
-    if (labels.length > 1) {
-        // pick the label with highest count if any; fallback to first
-        let maxIdx = 0;
-        let maxVal = counts[0] || 0;
-        for (let i = 1; i < counts.length; i++) {
-        if ((counts[i] || 0) > maxVal) {
-            maxVal = counts[i] || 0;
-            maxIdx = i;
-        }
-        }
-        if (maxVal > 0) repLabel = labels[maxIdx];
-        else repLabel = labels[0];
-    }
-
-    const color = getCategoryBackgroundColor(repLabel);
-    // split into parts so we can prefer a darker text-derived border and also use bg/text when expanding
-    // const borderClass = getEvidenceClassificationBorder(repLabel);
-
-    // If present, render a full badge; if absent, render thin colored line
-    if (totalCount > 0) {
-        // For level1 with multiple labels present, if more than one present we show the chosen repLabel name
-        const titleLabel = (labels.length > 1 && counts.filter(c => c>0).length > 1)
-        ? repLabel
-        : repLabel;
-
-
-                return (
-                    <Popover key={`lvl-${lvl.level}-${stance}`}>
+    // For level 1 (PROBLEMATIC_CATEGORIES), render each category separately if it has a count
+    if (lvl.level === 1) {
+        labels.forEach((label) => {
+            const count = labelCounts[label] || 0;
+            if (count > 0) {
+                const color = getCategoryBackgroundColor(label);
+                stack.push(
+                    <Popover key={`${label}-${stance}`}>
                         <PopoverTrigger asChild>
                             <div
                                 className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
                             >
-                                <span className="break-words">{titleLabel}</span>
-                                <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
+                                <span className="break-words">{label}</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({count})</span>
                             </div>
                         </PopoverTrigger>
                         <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                            <div className="font-semibold mb-1">{titleLabel}</div>
-                            <div>{getCategoryDescription(titleLabel as ReviewCategory)}</div>
+                            <div className="font-semibold mb-1">{label}</div>
+                            <div>{getCategoryDescription(label as ReviewCategory)}</div>
                         </PopoverContent>
                     </Popover>
                 );
+            }
+        });
+    } else {
+        // For other levels, aggregate as before
+        const counts = labels.map(l => labelCounts[l] || 0);
+        const totalCount = counts.reduce((a,b) => a + b, 0);
+
+        if (totalCount > 0) {
+            // Determine representative label
+            let repLabel = labels[0];
+            if (labels.length > 1) {
+                let maxIdx = 0;
+                let maxVal = counts[0] || 0;
+                for (let i = 1; i < counts.length; i++) {
+                    if ((counts[i] || 0) > maxVal) {
+                        maxVal = counts[i] || 0;
+                        maxIdx = i;
+                    }
+                }
+                if (maxVal > 0) repLabel = labels[maxIdx];
+            }
+
+            const color = getCategoryBackgroundColor(repLabel);
+
+            stack.push(
+                <Popover key={`lvl-${lvl.level}-${stance}`}>
+                    <PopoverTrigger asChild>
+                        <div
+                            className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
+                        >
+                            <span className="break-words">{repLabel}</span>
+                            <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
+                        </div>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        <div className="font-semibold mb-1">{repLabel}</div>
+                        <div>{getCategoryDescription(repLabel as ReviewCategory)}</div>
+                    </PopoverContent>
+                </Popover>
+            );
+        }
     }
-
-
 });
 
 
@@ -178,7 +194,7 @@ function LevelButton({
         }
 
     if (stack.length === 0) {
-        stack.push(<span className='text-xs text-gray-500'>No labels</span>);
+        stack.push(<span key={`no-labels-${stance}`} className='text-xs text-gray-500'>No labels</span>);
     }
     return (
         <div className="flex flex-col w-auto items-start">
