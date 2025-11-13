@@ -3,13 +3,13 @@ import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight, ArrowDo
 import { Arrow } from '../components/ui/arrow';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CATEGORY_DESCRIPTIONS } from '@/lib/classification-categories';
+import { CATEGORY_DESCRIPTIONS, STUDY_TAG, getStudyTagDescription } from '@/lib/classification-categories';
 import Header from '../components/layout/Header';
 
 const ResearchWorkflow = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeNode, setActiveNode] = useState<'validation' | 'qualityCheck' | 'human' | 'sample' | null>(null);
+  const [activeNode, setActiveNode] = useState<'validation' | 'qualityCheck' | 'human' | 'studyTag' | 'sample' | null>(null);
   const [validationAnswers, setValidationAnswers] = useState({
     hasConflict: false,
     isReview: false,
@@ -31,6 +31,7 @@ const ResearchWorkflow = () => {
   const validationRef = useRef(null);
   const qualityCheckRef = useRef(null);
   const humanRef = useRef(null);
+  const studyTagRef = useRef(null);
   const sampleRef = useRef(null);
 
   const validationQuestions = [
@@ -52,8 +53,16 @@ const ResearchWorkflow = () => {
       id: 'human',
       question: 'Is the study conducted in humans?',
       options: [
-        { value: 'yes', label: 'Yes', next: 'sample' },
+        { value: 'yes', label: 'Yes', next: 'studyTag' },
         { value: 'no', label: 'No', result: 'Not Tested in Humans' }
+      ]
+    },
+    {
+      id: 'studyTag',
+      question: 'What type of human study is this?',
+      options: [
+        { value: 'Observational', label: 'Observational', next: 'sample' },
+        { value: 'Clinical Trial', label: 'Clinical Trial', next: 'sample' }
       ]
     },
     {
@@ -164,6 +173,11 @@ const ResearchWorkflow = () => {
     setActiveNode(node);
     setDialogOpen(true);
   };
+  // extend typed handler for studyTag
+  const handleNodeClickExtended = (node: 'validation' | 'qualityCheck' | 'human' | 'studyTag' | 'sample') => {
+    setActiveNode(node);
+    setDialogOpen(true);
+  };
 
   const getClassificationColor = (classification) => {
     switch(classification) {
@@ -212,7 +226,8 @@ const ResearchWorkflow = () => {
       return highlightPath.includes(nodeId);
     }
     if (nodeId === 'human' && currentStep === 2) return true;
-    if (nodeId === 'sample' && currentStep === 3) return true;
+    if (nodeId === 'studyTag' && currentStep === 3) return true;
+    if (nodeId === 'sample' && currentStep === 4) return true;
     return false;
   };
 
@@ -220,7 +235,7 @@ const ResearchWorkflow = () => {
     return highlightPath.includes(pathId);
   };
 
-  const getTotalSteps = () => 4;
+  const getTotalSteps = () => 5;
   const getCurrentStepNumber = () => {
     if (currentStep === 0) return 1;
     return currentStep + 1;
@@ -231,11 +246,12 @@ const ResearchWorkflow = () => {
     const container = visualRef.current;
     let targetEl = null;
 
-    // Map currentStep to node ref: 0 => validation, 1 => qualityCheck, 2 => human, 3 => sample
-    if (currentStep === 0) targetEl = validationRef.current;
-    else if (currentStep === 1) targetEl = qualityCheckRef.current;
-    else if (currentStep === 2) targetEl = humanRef.current;
-    else if (currentStep === 3) targetEl = sampleRef.current;
+  // Map currentStep to node ref: 0 => validation, 1 => qualityCheck, 2 => human, 3 => studyTag, 4 => sample
+  if (currentStep === 0) targetEl = validationRef.current;
+  else if (currentStep === 1) targetEl = qualityCheckRef.current;
+  else if (currentStep === 2) targetEl = humanRef.current;
+  else if (currentStep === 3) targetEl = studyTagRef.current;
+  else if (currentStep === 4) targetEl = sampleRef.current;
 
     if (container && targetEl && typeof container.scrollTo === 'function') {
       // Use bounding rects to compute the target center relative to the container
@@ -492,7 +508,70 @@ const ResearchWorkflow = () => {
                 </div>
               </div>
 
-              {/* Column 4: Sample Size */}
+              {/* Column 4: Sample Size (moved to column 5 below - placeholder kept for layout) */}
+              <div className="hidden md:block md:w-0" />
+              {/* Column 4: Study Type (Observational vs Clinical Trial) */}
+              <div className="flex flex-col items-center flex-1">
+                <button
+                  onClick={() => handleNodeClickExtended('studyTag')}
+                  ref={studyTagRef}
+                  className={`w-[140px] h-[140px] p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('studyTag')
+                    ? 'border-blue-500 bg-blue-50 shadow-lg scale-105 cursor-pointer hover:shadow-xl'
+                    : 'border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 opacity-60 hover:opacity-80'
+                }`}>
+                  <div className="text-center h-full flex flex-col justify-center">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 mx-auto ${
+                      isNodeActive('studyTag') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">4</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Study Type</p>
+                    {isNodeActive('studyTag') && (
+                      <p className="text-xs text-blue-600 mt-1">Click to specify</p>
+                    )}
+                    {!isNodeActive('studyTag') && (
+                      <p className="text-xs text-gray-500 mt-1">Click to view</p>
+                    )}
+                  </div>
+                </button>
+
+                {/* Outcomes from Study Type */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex items-center justify-center pr-2">
+                      <Arrow length={40} label="Type" direction="vertical" isActive={isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial')}  />
+                    </div>
+                  </div>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
+                        isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                      }`}>
+                        <div className="flex items-center justify-center gap-1">
+                          <p className="text-xs font-semibold text-gray-700">Observational / Trial</p>
+                          <Info className="w-3 h-3 text-gray-500" />
+                        </div>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-2">
+                        <p className="text-sm"><strong>Observational:</strong> {getStudyTagDescription('Observational')}</p>
+                        <p className="text-sm"><strong>Clinical Trial:</strong> {getStudyTagDescription('Clinical Trial')}</p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Column 5: Sample Size */}
+              {/* Arrow between Study Type and Sample Size */}
+              <div className="flex flex-col items-center justify-start pt-16">
+                <div className="flex items-center">
+                  <Arrow length={40} label="Then" isActive={isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial')}  />
+                </div>
+              </div>
               <div className="flex flex-col items-center flex-1">
                 <button
                   onClick={() => handleNodeClick('sample')}
@@ -506,7 +585,7 @@ const ResearchWorkflow = () => {
                     <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 mx-auto ${
                       isNodeActive('sample') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
                     }`}>
-                      <span className="font-bold">4</span>
+                      <span className="font-bold">5</span>
                     </div>
                     <p className="text-sm font-medium text-gray-700">Sample Size</p>
                     {isNodeActive('sample') && (
@@ -609,19 +688,22 @@ const ResearchWorkflow = () => {
                   {activeNode === 'validation' && 'Validation Screen'}
                   {activeNode === 'qualityCheck' && 'Quality Assessment'}
                   {activeNode === 'human' && 'Human Study Assessment'}
+                  {activeNode === 'studyTag' && 'Study Type'}
                   {activeNode === 'sample' && 'Sample Size Classification'}
                 </DialogTitle>
                 <DialogDescription>
                   {activeNode === 'validation' && 'Check if any validation issues apply'}
                   {activeNode === 'qualityCheck' && 'Evaluate the study quality (all should pass)'}
                   {activeNode === 'human' && 'Determine if the study was conducted in humans'}
+                  {activeNode === 'studyTag' && 'Is this an observational study or a clinical trial?'}
                   {activeNode === 'sample' && 'Select the appropriate sample size range'}
                 </DialogDescription>
                 {/* Show read-only indicator */}
                 {((activeNode === 'validation' && currentStep !== 0) ||
                   (activeNode === 'qualityCheck' && currentStep !== 1) ||
                   (activeNode === 'human' && currentStep !== 2) ||
-                  (activeNode === 'sample' && currentStep !== 3)) && !classification && (
+                  (activeNode === 'studyTag' && currentStep !== 3) ||
+                  (activeNode === 'sample' && currentStep !== 4)) && !classification && (
                   <div className="mt-2 p-2 bg-gray-100 rounded-lg text-center">
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Preview Mode:</span> You can view the questions but cannot answer them yet.
@@ -804,7 +886,7 @@ const ResearchWorkflow = () => {
                   </div>
                 )}
 
-                {activeNode === 'sample' && (
+                {activeNode === 'studyTag' && (
                   <div>
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 text-center">
                       {steps[1].question}
@@ -836,6 +918,48 @@ const ResearchWorkflow = () => {
                             </span>
                             <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
                               currentStep === 3 && !classification
+                                ? 'border-gray-300 group-hover:border-blue-500 group-hover:bg-blue-500'
+                                : 'border-gray-200 bg-gray-100'
+                            }`}></div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeNode === 'sample' && (
+                  <div>
+                    <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 text-center">
+                      {steps[2].question}
+                    </h3>
+                    <div className="space-y-3">
+                      {steps[2].options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            if (currentStep === 4 && !classification) {
+                              handleAnswer(option);
+                              setDialogOpen(false);
+                            }
+                          }}
+                          disabled={currentStep !== 4 || classification !== null}
+                          className={`w-full p-4 text-left border-2 border-gray-200 rounded-xl transition-all duration-200 group ${
+                            currentStep === 4 && !classification
+                              ? 'hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
+                              : 'cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-base md:text-lg font-medium ${
+                              currentStep === 4 && !classification
+                                ? 'text-gray-800 group-hover:text-blue-600'
+                                : 'text-gray-500'
+                            }`}>
+                              {option.label}
+                            </span>
+                            <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                              currentStep === 4 && !classification
                                 ? 'border-gray-300 group-hover:border-blue-500 group-hover:bg-blue-500'
                                 : 'border-gray-200 bg-gray-100'
                             }`}></div>
@@ -898,12 +1022,13 @@ const ResearchWorkflow = () => {
           </h3>
           <div className="space-y-3 text-gray-600">
             <p>
-              Our four-step workflow ensures consistent and transparent evaluation of research publications:
+              Our five-step workflow ensures consistent and transparent evaluation of research publications:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li><strong>Validation:</strong> Screens for fundamental issues like conflicts of interest, review studies, categorical meta-analyses, and evidence overstatement</li>
               <li><strong>Quality Checks:</strong> Evaluates study design, control groups, bias management, and statistical methods</li>
               <li><strong>Human Study Verification:</strong> Confirms findings are applicable to human populations</li>
+              <li><strong>Study Type:</strong> Distinguishes observational studies from clinical trials (affects interpretation and downstream tagging)</li>
               <li><strong>Sample Size Classification:</strong> Assesses the robustness and generalizability based on participant numbers</li>
             </ul>
           </div>
