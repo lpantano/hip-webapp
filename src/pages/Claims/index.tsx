@@ -18,6 +18,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { getCategoryBackgroundColor } from '@/lib/classification-categories';
 import { CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
 import { getStudyTagDescription, STUDY_TAG, getStudyTagColor } from '@/lib/classification-categories';
+import type { ReviewCategory, TagStudy } from '@/types/review';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
@@ -370,6 +371,28 @@ const Claims = () => {
 
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
+  // LEGEND_ITEMS controls the order of items shown in the legend.
+  // It's a single merged array that may contain both classification categories
+  // and study tags in any order you want. Edit this array to change the legend
+  // order (e.g. interleave categories and tags).
+  const LEGEND_ITEMS: (ReviewCategory | TagStudy)[] = [
+    'Invalid',
+    'Inconclusive',
+    'Misinformation',
+    'Not Tested in Humans',
+    'Women Not Included',
+    'Observational',
+    'Limited Tested in Humans',
+    'Clinical Trial',
+    'Tested in Humans',
+    'Widely Tested in Humans'
+  ];
+
+  // Type guard to narrow an item to a study tag (TagStudy)
+  const isStudyTag = (x: unknown): x is TagStudy => {
+    return typeof x === 'string' && (STUDY_TAG as readonly string[]).includes(x);
+  };
+
   // Claims are now filtered and sorted by the database query
   // Only show special claim if running on localhost
   let filteredAndSortedClaims = claims;
@@ -425,36 +448,27 @@ const Claims = () => {
                     {/* Categories */}
                     <div className="mb-3">
                       <div className="flex flex-wrap justify-center gap-2">
-                        {CLASSIFICATION_CATEGORIES.map((category) => (
-                          <Popover key={category}>
-                            <PopoverTrigger asChild>
-                              <div
-                                className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getCategoryBackgroundColor(category)} hover:opacity-80 transition-opacity`}
-                              >
-                                {category}
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                              <div className="font-semibold mb-1">{category}</div>
-                              <div>{getCategoryDescription(category)}</div>
-                            </PopoverContent>
-                          </Popover>
-                        ))}
-                        {STUDY_TAG.map((tag) => (
-                          <Popover key={tag}>
-                            <PopoverTrigger asChild>
-                              <div
-                                className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getStudyTagColor(tag)} hover:opacity-80 transition-opacity`}
-                              >
-                                {tag}
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                              <div className="font-semibold mb-1">{tag}</div>
-                              <div>{getStudyTagDescription(tag)}</div>
-                            </PopoverContent>
-                          </Popover>
-                        ))}
+                        {LEGEND_ITEMS.map((item) => {
+                          const isTag = isStudyTag(item);
+                          const bgClass = isTag ? getStudyTagColor(item as TagStudy) : getCategoryBackgroundColor(item as ReviewCategory);
+                          const description = isTag ? getStudyTagDescription(item as TagStudy) : getCategoryDescription(item as ReviewCategory);
+
+                          return (
+                            <Popover key={item}>
+                              <PopoverTrigger asChild>
+                                <div
+                                  className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${bgClass} hover:opacity-80 transition-opacity`}
+                                >
+                                  {item}
+                                </div>
+                              </PopoverTrigger>
+                              <PopoverContent side="top" className="max-w-xs text-xs p-3">
+                                <div className="font-semibold mb-1">{item}</div>
+                                <div>{description}</div>
+                              </PopoverContent>
+                            </Popover>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
