@@ -22,6 +22,7 @@ import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
+import CategoriesLegend from './components/Legend';
 import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -370,6 +371,7 @@ const Claims = () => {
 
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
+
   // Claims are now filtered and sorted by the database query
   // Only show special claim if running on localhost
   let filteredAndSortedClaims = claims;
@@ -422,40 +424,9 @@ const Claims = () => {
                       Legend: Click labels to learn more
                     </div>
 
-                    {/* Categories */}
+                    {/* Categories Legend (moved to component) */}
                     <div className="mb-3">
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {CLASSIFICATION_CATEGORIES.map((category) => (
-                          <Popover key={category}>
-                            <PopoverTrigger asChild>
-                              <div
-                                className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getCategoryBackgroundColor(category)} hover:opacity-80 transition-opacity`}
-                              >
-                                {category}
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                              <div className="font-semibold mb-1">{category}</div>
-                              <div>{getCategoryDescription(category)}</div>
-                            </PopoverContent>
-                          </Popover>
-                        ))}
-                        {STUDY_TAG.map((tag) => (
-                          <Popover key={tag}>
-                            <PopoverTrigger asChild>
-                              <div
-                                className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${getStudyTagColor(tag)} hover:opacity-80 transition-opacity`}
-                              >
-                                {tag}
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                              <div className="font-semibold mb-1">{tag}</div>
-                              <div>{getStudyTagDescription(tag)}</div>
-                            </PopoverContent>
-                          </Popover>
-                        ))}
-                      </div>
+                      <CategoriesLegend />
                     </div>
                   </div>
                 )}
@@ -656,7 +627,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Alleged Support</span>
+                              <span className="font-semibold text-xs">Reported to Support</span>
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -673,7 +644,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Alleged Disproof</span>
+                              <span className="font-semibold text-xs">Reported to Disproof</span>
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>

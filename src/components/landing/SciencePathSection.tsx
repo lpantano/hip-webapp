@@ -103,143 +103,11 @@ const SciencePathSection = () => {
           </p>
         </div>
 
-        {/* Three-step pathway */}
-        <div className="max-w-2xl mx-auto">
-          <div className="space-y-6 relative">
-            {/* Top row: Observational (centered) */}
-            <div className="flex justify-center">
-              <div className="w-full max-w-md">
-                {(() => {
-                  const step = researchSteps[0]; // Observational
-                  const Icon = step.icon;
-                  return (
-                    <Dialog key={step.id} open={openDialog === step.id} onOpenChange={(open) => setOpenDialog(open ? step.id : null)}>
-                      <DialogTrigger asChild>
-                        <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 w-full">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-3">
-                              {/* Icon on left */}
-                              <div className={`p-2 ${step.bgColor} rounded-lg flex-shrink-0`}>
-                                <Icon className={`h-6 w-6 ${step.color}`} />
-                              </div>
-
-                              {/* Title and subtitle in center */}
-                              <div className="flex-1">
-                                <h3 className="font-semibold md:text-lg text-base text-foreground">
-                                  {step.title}
-                                  {/* Learn more icon on right */}
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
-                                </h3>
-                                <p className={`text-xs ${step.color}`}>
-                                  {step.subtitle}
-                                </p>
-                              </div>
-
-
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </DialogTrigger>
-
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-3 text-2xl">
-                          <div className={`p-2 ${step.bgColor} rounded-lg`}>
-                            <Icon className={`h-6 w-6 ${step.color}`} />
-                          </div>
-                          {step.title}
-                        </DialogTitle>
-                        <DialogDescription className={`text-lg font-medium ${step.color}`}>
-                          {step.subtitle}
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      <div className="space-y-6 mt-4">
-                        {/* What is it */}
-                        <div>
-                          <h3 className="font-semibold text-lg mb-2 text-foreground">What is it?</h3>
-                          <p className="text-muted-foreground leading-relaxed">
-                            {step.detailedContent.whatIsIt}
-                          </p>
-                        </div>
-
-                        {/* Example */}
-                        <div className={`${step.bgColor} p-4 rounded-lg border-l-4 ${step.color.replace('text-', 'border-')}`}>
-                          <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
-                            <span>💡</span> Real Example
-                          </h3>
-                          <p className="text-sm text-foreground/90 leading-relaxed">
-                            {step.detailedContent.example}
-                          </p>
-                        </div>
-
-                        {/* Strengths */}
-                        <div>
-                          <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
-                            <span className="text-green-600">✓</span> Strengths
-                          </h3>
-                          <ul className="space-y-2">
-                            {step.detailedContent.strengths.map((strength, i) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <span className="text-green-600 mt-1">•</span>
-                                <span className="text-muted-foreground text-sm">{strength}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Limitations */}
-                        <div>
-                          <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
-                            <span className="text-amber-600">⚠</span> Limitations
-                          </h3>
-                          <ul className="space-y-2">
-                            {step.detailedContent.limitations.map((limitation, i) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <span className="text-amber-600 mt-1">•</span>
-                                <span className="text-muted-foreground text-sm">{limitation}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Real-world impact */}
-                        <div className="bg-muted/50 p-4 rounded-lg">
-                          <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
-                            <span>🌍</span> Real-World Impact
-                          </h3>
-                          <p className="text-sm text-foreground/90 leading-relaxed">
-                            {step.detailedContent.realWorld}
-                          </p>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                );
-              })()}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6 relative">
-              {/* Arrow from Preclinical to Clinical */}
-              <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 pointer-events-none hidden md:block z-10">
-                <ChevronDown className="h-6 w-6 text-primary/50" />
-              </div>
-              <div className="absolute top-1/2 left-2/3 -translate-x-1/2 -translate-y-1/2 pointer-events-none hidden md:block z-10">
-                <ChevronDown className="h-6 w-6 text-primary/50" />
-              </div>
-              </div>
-
-            {/* Bottom row: Preclinical (left) and Clinical (right) */}
-            <div className="grid grid-cols-2 gap-6 relative">
-              {/* Arrow from Preclinical to Clinical */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none hidden md:block z-10">
-                <ChevronRight className="h-6 w-6 text-primary/50" />
-              </div>
-
-              {[researchSteps[1], researchSteps[2]].map((step) => {
+        {/* Three-step pathway (single row: Preclinical -> Observational -> Clinical) */}
+        <div className="max-w-4xl mx-auto">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+              {[researchSteps[1], researchSteps[0], researchSteps[2]].map((step) => {
                 const Icon = step.icon;
                 return (
                   <Dialog key={step.id} open={openDialog === step.id} onOpenChange={(open) => setOpenDialog(open ? step.id : null)}>
@@ -254,19 +122,16 @@ const SciencePathSection = () => {
 
                             {/* Title and subtitle in center */}
                             <div className="flex-1">
-                              <h3 className="font-semibold md:text-lg text-base text-foreground">
+                              <h3 className="font-semibold md:text-me text-base text-foreground">
                                 {step.title}
-                                {/* Learn more icon on right */}
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
+                                <Button variant="ghost" size="sm" className="h-12 w-18 p-0 flex-shrink-0 ml-2">
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
                               </h3>
                               <p className={`text-xs ${step.color}`}>
                                 {step.subtitle}
                               </p>
                             </div>
-
-
                           </div>
                         </CardContent>
                       </Card>

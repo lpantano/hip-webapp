@@ -11,36 +11,6 @@ import ResearchConsensusCard from './EducationSection/ResearchConsensusCard';
 import { CATEGORY_DESCRIPTIONS } from '@/lib/classification-categories';
 
 const EducationSection = () => {
-  // interactive research path state
-  const [selectedStep, setSelectedStep] = useState<string>('Basic Research');
-  const [pitfallOpen, setPitfallOpen] = useState(false);
-
-  const steps = useMemo(() => [
-    { id: 'inconclusive', label: 'Inconclusive' , step: 1},
-    { id: 'notTestedInHuman', label: 'No Tested in Humans', step: 2 },
-    { id: 'limitedTestedInHuman', label: 'Limited Tested in Humans', step: 3 },
-    { id: 'testedInHuman', label: 'Tested in Humans', step: 4 },
-    { id: 'widelyTestedInHuman', label: 'Widely Tested in Humans', step: 5 },
-
-  ], []);
-
-  // auto-advance the selected step every 3 seconds
-  const [isHoveringPath, setIsHoveringPath] = useState(false);
-  // dragging state for pointer/touch support
-  const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    if (isHoveringPath) return; // pause when hovering
-    const interval = setInterval(() => {
-      setSelectedStep((prev) => {
-        const idx = steps.findIndex((s) => s.id === prev);
-        const next = steps[(idx + 1) % steps.length];
-        return next.id;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [steps, isHoveringPath]);
 
   // Carousel refs
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -73,7 +43,7 @@ const EducationSection = () => {
     // capture the pointer so we keep receiving events
     (e.target as Element).setPointerCapture?.(e.pointerId);
     isDraggingRef.current = true;
-    setIsDragging(true);
+    // setIsDragging(true);
     startXRef.current = e.clientX;
     scrollLeftStartRef.current = scroller.scrollLeft;
   }, []);
@@ -97,62 +67,8 @@ const EducationSection = () => {
     }
 
     isDraggingRef.current = false;
-    setIsDragging(false);
+    // setIsDragging(false);
   }, []);
-
-  type StandardPhase = { title: string; desc: string; time: string };
-  type CustomPhase = { title: string; desc: string; threshold: number };
-  const PHASE_INFO: Record<string, StandardPhase | CustomPhase> = {
-
-    'inconclusive': {
-      title: 'Inconclusive Research',
-      desc: 'Fails to pass at least one of the five quality checks (such as peer review, control group, blinding, randomization, or preregistration).',
-      threshold: 0
-    },
-    'notTestedInHuman': {
-      title: 'Not Tested in Humans',
-      desc: 'Research focused only on cells or animals, with no human participants.',
-      threshold: 1
-    },
-    'limitedTestedInHuman': {
-      title: 'Limited Human Testing',
-      desc: 'Tested in humans, but with fewer than 100 participants in total.',
-      threshold: 2
-    },
-    'testedInHuman': {
-      title: 'Tested in Humans',
-      desc: 'Tested in humans with more than 100 participants.',
-      threshold: 3
-    },
-    'widelyTestedInHuman': {
-      title: 'Widely Tested in Humans',
-      desc: 'Tested in humans with more than 500,000 participants across studies.',
-      threshold: 4
-    }
-  };
-
-  const PITFALLS = [
-    {
-      id: 'Placebo Effect',
-      title: 'Placebo Effect',
-      description: 'When participants experience a perceived improvement in symptoms simply because they believe they are receiving treatment.',
-      example: 'In a trial for pain relief, patients given sugar pills reported reduced pain despite no active ingredient.'
-    },
-    {
-      id: 'Nocebo Effect',
-      title: 'Nocebo Effect',
-      description: 'When participants experience negative effects due to their expectations of harm from a treatment.',
-      example: 'Patients warned about side effects of a drug reported headaches, even when given a harmless placebo.'
-    },
-    {
-      id: 'Confounding Effect',
-      title: 'Confounding Effect',
-      description: 'When an outside factor influences both the treatment and outcome, making it hard to determine the true cause.',
-      example: 'A study linking coffee to heart disease didn’t account for the fact that coffee drinkers were more likely to smoke.'
-    }
-  ];
-
-  const [selectedPitfall, setSelectedPitfall] = useState<string | null>(null);
 
   return (
     <section className="py-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
@@ -183,8 +99,8 @@ const EducationSection = () => {
             </div>
           </div>
 
-          <div className="text-primary rounded-lg py-3 px-4 text-center mb-6">
-            <h3 className="text-xl md:text-xl font-semibold">
+          <div className="text-accent rounded-lg py-3 px-4 text-center mb-6">
+            <h3 className="text-xl md:text-2xl font-semibold">
               Trust science when it's rigorous and reported honestly.
             </h3>
           </div>
@@ -217,27 +133,7 @@ const EducationSection = () => {
             <ChevronLeft size={20} />
           </button>
 
-          <div
-            ref={scrollerRef}
-            className={`overflow-x-auto overflow-y-visible rounded-md py-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-            onPointerLeave={endDrag}
-            style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
-          >
-            <div className="flex gap-3 items-stretch px-8">
-              {/* first group (measured) */}
-              <div ref={firstGroupRef} className="flex gap-3 items-stretch">
-                {cardComponents.map((C, i) => (
-                  <div key={`card-${i}`} className="min-w-[260px] md:min-w-[300px] flex-shrink-0">
-                    <C />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+
 
           {/* right arrow */}
           <button
@@ -262,41 +158,8 @@ const EducationSection = () => {
           PHASE_INFO={PHASE_INFO}
         /> */}
 
-        {/* Dialog for pitfall details */}
-        <Dialog open={pitfallOpen} onOpenChange={(open) => { setPitfallOpen(open); if (!open) setSelectedPitfall(null); }}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.title : 'Common Pitfalls in Research Analysis'}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedPitfall ? PITFALLS.find((p) => p.id === selectedPitfall)?.description : 'These are common pitfalls to watch for when analyzing research.'}
-              </DialogDescription>
-            </DialogHeader>
 
-            {selectedPitfall ? (
-              <div className="mt-4 text-sm text-muted-foreground">
-                <div className="font-medium mb-2">What this means</div>
-                <div className="mb-3">{PITFALLS.find((p) => p.id === selectedPitfall)?.description}</div>
-                <div className="font-medium mb-2">Example</div>
-                <div className="mb-4">{PITFALLS.find((p) => p.id === selectedPitfall)?.example}</div>
-              </div>
-            ) : (
-              <div className="mt-4 text-sm text-muted-foreground">
-                <div className="font-medium mb-2">Common Pitfalls</div>
-                <ul className="list-disc pl-5 space-y-2">
-                  {PITFALLS.map((pitfall) => (
-                    <li key={pitfall.id}><span className="font-medium">{pitfall.title}:</span> {pitfall.description}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
-            <div className="flex justify-end mt-4">
-              <Button onClick={() => setPitfallOpen(false)}>Done</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </section>
   );
