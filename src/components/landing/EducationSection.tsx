@@ -100,7 +100,7 @@ const EducationSection = () => {
           </div>
 
           <div className="text-accent rounded-lg py-3 px-4 text-center mb-6">
-            <h3 className="text-xl md:text-xl font-semibold">
+            <h3 className="text-xl md:text-2xl font-semibold">
               Trust science when it's rigorous and reported honestly.
             </h3>
           </div>

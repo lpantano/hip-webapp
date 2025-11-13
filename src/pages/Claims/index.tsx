@@ -18,11 +18,11 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { getCategoryBackgroundColor } from '@/lib/classification-categories';
 import { CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
 import { getStudyTagDescription, STUDY_TAG, getStudyTagColor } from '@/lib/classification-categories';
-import type { ReviewCategory, TagStudy } from '@/types/review';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
+import CategoriesLegend from './components/Legend';
 import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -371,27 +371,6 @@ const Claims = () => {
 
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
-  // LEGEND_ITEMS controls the order of items shown in the legend.
-  // It's a single merged array that may contain both classification categories
-  // and study tags in any order you want. Edit this array to change the legend
-  // order (e.g. interleave categories and tags).
-  const LEGEND_ITEMS: (ReviewCategory | TagStudy)[] = [
-    'Invalid',
-    'Inconclusive',
-    'Misinformation',
-    'Not Tested in Humans',
-    'Women Not Included',
-    'Observational',
-    'Limited Tested in Humans',
-    'Clinical Trial',
-    'Tested in Humans',
-    'Widely Tested in Humans'
-  ];
-
-  // Type guard to narrow an item to a study tag (TagStudy)
-  const isStudyTag = (x: unknown): x is TagStudy => {
-    return typeof x === 'string' && (STUDY_TAG as readonly string[]).includes(x);
-  };
 
   // Claims are now filtered and sorted by the database query
   // Only show special claim if running on localhost
@@ -445,31 +424,9 @@ const Claims = () => {
                       Legend: Click labels to learn more
                     </div>
 
-                    {/* Categories */}
+                    {/* Categories Legend (moved to component) */}
                     <div className="mb-3">
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {LEGEND_ITEMS.map((item) => {
-                          const isTag = isStudyTag(item);
-                          const bgClass = isTag ? getStudyTagColor(item as TagStudy) : getCategoryBackgroundColor(item as ReviewCategory);
-                          const description = isTag ? getStudyTagDescription(item as TagStudy) : getCategoryDescription(item as ReviewCategory);
-
-                          return (
-                            <Popover key={item}>
-                              <PopoverTrigger asChild>
-                                <div
-                                  className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold ${bgClass} hover:opacity-80 transition-opacity`}
-                                >
-                                  {item}
-                                </div>
-                              </PopoverTrigger>
-                              <PopoverContent side="top" className="max-w-xs text-xs p-3">
-                                <div className="font-semibold mb-1">{item}</div>
-                                <div>{description}</div>
-                              </PopoverContent>
-                            </Popover>
-                          );
-                        })}
-                      </div>
+                      <CategoriesLegend />
                     </div>
                   </div>
                 )}
@@ -670,7 +627,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Alleged Support</span>
+                              <span className="font-semibold text-xs">Reported to Support</span>
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -687,7 +644,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Alleged Disproof</span>
+                              <span className="font-semibold text-xs">Reported to Disproof</span>
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
