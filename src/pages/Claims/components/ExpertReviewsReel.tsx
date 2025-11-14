@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ExternalLink, HelpCircle, Info } from 'lucide-react';
 import { getCategoryBackgroundColor, getStudyTagDescription, getQualityCheckDescription, getStudyTagColor } from '@/lib/classification-categories';
@@ -143,40 +142,38 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) =>
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Classification */}
                       {reviewCard.expert.classification && (
-                        <div className="inline-flex items-center">
-                          <Badge className={`text-xs inline-flex items-center gap-2 ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} transition-none`}>
-                            <span>{String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}</span>
+                        <div className={`inline-flex items-center gap-2 rounded-lg ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} px-2 py-1 text-xs font-semibold`}>
+                          <span>{String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}</span>
 
-                            {/* Put the Info trigger inside the badge so the icon is visually inside it */}
-                            {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                                    aria-label="Classification reasons"
-                                  >
-                                    <Info className="w-3.5 h-3.5" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                  {(() => {
-                                    const reasons = getClassificationReasons(reviewCard.expert.reviewData);
-                                    if (reasons.length > 0) {
-                                      return (
-                                        <div className="text-xs text-muted-foreground list-disc list-inside space-y-1">
-                                          {reasons.map((reason, i) => (
-                                            <div key={i}>{reason}</div>
-                                          ))}
-                                        </div>
-                                      );
-                                    }
-                                    return <div className="text-xs text-muted-foreground">No reasons provided.</div>;
-                                  })()}
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </Badge>
+                          {/* Put the Info trigger inside the badge so the icon is visually inside it */}
+                          {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                                  aria-label="Classification reasons"
+                                >
+                                  <Info className="w-3.5 h-3.5" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {(() => {
+                                  const reasons = getClassificationReasons(reviewCard.expert.reviewData);
+                                  if (reasons.length > 0) {
+                                    return (
+                                      <div className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                                        {reasons.map((reason, i) => (
+                                          <div key={i}>{reason}</div>
+                                        ))}
+                                      </div>
+                                    );
+                                  }
+                                  return <div className="text-xs text-muted-foreground">No reasons provided.</div>;
+                                })()}
+                              </PopoverContent>
+                            </Popover>
+                          )}
                         </div>
                       )}
 
@@ -184,24 +181,14 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) =>
                       {studyTags.length > 0 && studyTags.map((tag, i) => (
                         <Popover key={i}>
                           <PopoverTrigger asChild>
-                            <div className="cursor-pointer">
-                              <Badge className={`text-xs ${getStudyTagColor(tag)}`}>{tag}</Badge>
+                            <div className={`cursor-pointer inline-flex items-center rounded-lg ${getStudyTagColor(tag)} px-2 py-1 text-xs font-semibold`}>
+                              {tag}
                             </div>
                           </PopoverTrigger>
                           <PopoverContent side="top" className="max-w-xs text-xs p-2">
                             {getStudyTagDescription(tag)}
                           </PopoverContent>
                         </Popover>
-                      ))}
-
-                      {/* Ethnicity Labels */}
-                      {tags && Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && tags.ethnicityLabels.map((eth: string, i: number) => (
-                        <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
-                      ))}
-
-                      {/* Age Ranges */}
-                      {tags && Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && tags.ageRanges.map((age: string, i: number) => (
-                        <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
                       ))}
 
                       {/* Study Quality Checks */}
@@ -215,32 +202,37 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) =>
                         const label = studycheck[scoreItem.category] || scoreItem.category;
 
                         return (
-                          <div key={idx} className="flex items-center gap-1.5">
-                            {/* Show label inside the colored badge with an info icon inside it. */}
-                            <Badge className={`text-xs px-2 py-0.5 inline-flex items-center gap-2 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
-                              <span className="font-medium">{label}</span>
+                          <div key={idx} className={`inline-flex items-center gap-2 rounded-lg ${scoreItem.score ? quality.badge(scoreItem.score) : ''} px-2 py-1 text-xs font-semibold`}>
+                            <span className="font-medium">{label}</span>
 
-                              {/* Info popover trigger inside the badge */}
-                              {(
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                                      aria-label={`Help for ${label}`}
-                                    >
-                                      <HelpCircle className="w-3.5 h-3.5" />
-                                    </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                    {"This didn't pass: " + getQualityCheckDescription(scoreItem.category)}
-                                  </PopoverContent>
-                                </Popover>
-                              )}
-                            </Badge>
+                            {/* Info popover trigger inside the badge */}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                                  aria-label={`Help for ${label}`}
+                                >
+                                  <HelpCircle className="w-3.5 h-3.5" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {"This didn't pass: " + getQualityCheckDescription(scoreItem.category)}
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         );
                       })}
+                      {/* Ethnicity Labels */}
+                      {tags && Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && tags.ethnicityLabels.map((eth: string, i: number) => (
+                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{eth}</div>
+                      ))}
+
+                      {/* Age Ranges */}
+                      {tags && Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && tags.ageRanges.map((age: string, i: number) => (
+                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{age}</div>
+                      ))}
+
                     </div>
                   );
                 })()}
