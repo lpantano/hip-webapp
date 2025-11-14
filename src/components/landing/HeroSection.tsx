@@ -9,12 +9,13 @@ const HeroSection = () => {
         <div className="max-w-4xl mx-auto animate-fade-in">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3">
             <div className="flex flex-col items-center">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight m-2 p-2">
+              <div className="w-full flex justify-end">
+                <span className="text-sm sm:text-base md:text-xl text-primary font-bold m-3 sm:m-2">Women Edition</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight m-1 p-2">
                 The Health Integrity Project
               </h1>
-              <div className="w-full flex justify-end">
-                <span className="text-sm sm:text-base md:text-xl text-primary">Women Edition</span>
-              </div>
+
             </div>
 
           </div>
