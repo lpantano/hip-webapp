@@ -5,7 +5,6 @@ const urlsToCache = [
   '/workflow',
   '/claims',
   '/community',
-  '/logo-hi2-tr.png',
 ];
 
 // Listen for skip waiting message
@@ -20,7 +19,18 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        return cache.addAll(urlsToCache);
+        // Use Promise.allSettled to avoid installation failure if some URLs fail
+        return Promise.allSettled(
+          urlsToCache.map(url =>
+            cache.add(url).catch(err => {
+              console.log('Failed to cache:', url, err);
+              return null;
+            })
+          )
+        );
+      })
+      .catch((error) => {
+        console.error('Service worker installation failed:', error);
       })
   );
 });
