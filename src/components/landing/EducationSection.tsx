@@ -15,6 +15,12 @@ const EducationSection = () => {
   // Carousel refs
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const firstGroupRef = useRef<HTMLDivElement | null>(null);
+  // pointer drag refs
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftStartRef = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+
 
   // define card component list
   const cardComponents = useMemo(() => [
@@ -25,17 +31,6 @@ const EducationSection = () => {
     ResearchConsensusCard,
   ], []);
 
-  // pointer drag refs
-  const isDraggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const scrollLeftStartRef = useRef(0);
-
-  const scrollByAmount = useCallback((distance: number) => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    scroller.scrollBy({ left: distance, behavior: 'smooth' });
-  }, []);
-
   // pointer/touch handlers for dragging
   const onPointerDown = useCallback((e) => {
     const scroller = scrollerRef.current;
@@ -43,11 +38,11 @@ const EducationSection = () => {
     // capture the pointer so we keep receiving events
     (e.target as Element).setPointerCapture?.(e.pointerId);
     isDraggingRef.current = true;
+    setIsDragging(true);
     // setIsDragging(true);
     startXRef.current = e.clientX;
     scrollLeftStartRef.current = scroller.scrollLeft;
   }, []);
-
   const onPointerMove = useCallback((e) => {
     const scroller = scrollerRef.current;
     if (!scroller || !isDraggingRef.current) return;
@@ -55,20 +50,27 @@ const EducationSection = () => {
     const dx = e.clientX - startXRef.current;
     scroller.scrollLeft = scrollLeftStartRef.current - dx;
   }, []);
-
   const endDrag = useCallback((e) => {
-    try {
-      (e.target as Element).releasePointerCapture?.(e.pointerId);
-    } catch (err) {
-      // In some environments or older browsers releasePointerCapture may fail.
-      // Log a warning so we can debug if this happens in the wild.
-      // Avoid throwing so the UI remains responsive.
-      console.warn('releasePointerCapture failed in EducationSection endDrag', err);
-    }
+  try {
+    (e.target as Element).releasePointerCapture?.(e.pointerId);
+  } catch (err) {
+    // In some environments or older browsers releasePointerCapture may fail.
+    // Log a warning so we can debug if this happens in the wild.
+    // Avoid throwing so the UI remains responsive.
+    console.warn('releasePointerCapture failed in EducationSection endDrag', err);
+  }
 
     isDraggingRef.current = false;
-    // setIsDragging(false);
+    setIsDragging(false);
   }, []);
+
+  const scrollByAmount = useCallback((distance: number) => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    scroller.scrollBy({ left: distance, behavior: 'smooth' });
+  }, []);
+
+
 
   return (
     <section className="py-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
@@ -133,7 +135,27 @@ const EducationSection = () => {
             <ChevronLeft size={20} />
           </button>
 
-
+                      <div
+            ref={scrollerRef}
+            className={`overflow-x-auto overflow-y-visible rounded-md py-6 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onPointerLeave={endDrag}
+            style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="flex gap-3 items-stretch px-8">
+              {/* first group (measured) */}
+              <div ref={firstGroupRef} className="flex gap-3 items-stretch">
+                {cardComponents.map((C, i) => (
+                  <div key={`card-${i}`} className="min-w-[260px] md:min-w-[300px] flex-shrink-0">
+                    <C />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* right arrow */}
           <button
