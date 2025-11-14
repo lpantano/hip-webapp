@@ -832,10 +832,10 @@ const Claims = () => {
           {/* Expert Reviews Reel Dialog */}
           {user && (
             <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl max-h-[90vh] overflow-y-auto p-0">
                 {currentReelClaim ? (
                   <div>
-                    <DialogTitle>{currentReelClaim.claim} — Individual Expert Reviews</DialogTitle>
+                    {/* <DialogTitle>Individual Expert Reviews</DialogTitle> */}
                     <ExpertReviewsReel reviewCards={reviewCards} />
                   </div>
                 ) : (
