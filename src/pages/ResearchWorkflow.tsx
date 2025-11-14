@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight, ArrowDo
 import { Arrow } from '../components/ui/arrow';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CATEGORY_DESCRIPTIONS, STUDY_TAG, getStudyTagDescription } from '@/lib/classification-categories';
+import { CATEGORY_DESCRIPTIONS, STUDY_TAG, getStudyTagDescription, STUDY_TAG_COLORS } from '@/lib/classification-categories';
 import Header from '../components/layout/Header';
 
 const ResearchWorkflow = () => {
@@ -25,6 +25,7 @@ const ResearchWorkflow = () => {
   const [answers, setAnswers] = useState({});
   const [classification, setClassification] = useState(null);
   const [highlightPath, setHighlightPath] = useState([]);
+  const [selectedStudyType, setSelectedStudyType] = useState<'Observational' | 'Clinical Trial' | null>(null);
 
   // refs to center the visual workflow on the active node
   const visualRef = useRef(null);
@@ -139,6 +140,11 @@ const ResearchWorkflow = () => {
     const newPath = [...highlightPath, steps[stepIndex].id + '-' + option.value];
     setHighlightPath(newPath);
 
+    // Track selected study type
+    if (steps[stepIndex].id === 'studyTag') {
+      setSelectedStudyType(option.value as 'Observational' | 'Clinical Trial');
+    }
+
     if (option.result) {
       setClassification(option.result);
     } else if (option.next) {
@@ -166,6 +172,7 @@ const ResearchWorkflow = () => {
     setHighlightPath([]);
     setDialogOpen(false);
     setActiveNode(null);
+    setSelectedStudyType(null);
   };
 
   const handleNodeClick = (node: 'validation' | 'qualityCheck' | 'human' | 'sample') => {
@@ -198,6 +205,11 @@ const ResearchWorkflow = () => {
       default:
         return 'bg-gray-100 border-gray-300 text-gray-800';
     }
+  };
+
+  const getStudyTypeColor = (studyType: 'Observational' | 'Clinical Trial') => {
+    const colorKey = studyType.toLowerCase();
+    return STUDY_TAG_COLORS[colorKey] || 'bg-gray-100 text-gray-700';
   };
 
   const getClassificationIcon = (classification) => {
@@ -547,11 +559,17 @@ const ResearchWorkflow = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                        isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                        selectedStudyType
+                          ? `${getStudyTypeColor(selectedStudyType)} border-blue-400 shadow-md`
+                          : isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial')
+                          ? 'border-gray-400 bg-gray-100 shadow-md'
+                          : 'border-gray-200 bg-gray-50'
                       }`}>
                         <div className="flex items-center justify-center gap-1">
-                          <p className="text-xs font-semibold text-gray-700">Observational / Trial</p>
-                          <Info className="w-3 h-3 text-gray-500" />
+                          <p className={`text-xs font-semibold ${selectedStudyType ? '' : 'text-gray-700'}`}>
+                            {selectedStudyType || 'Observational / Trial'}
+                          </p>
+                          <Info className={`w-3 h-3 ${selectedStudyType ? '' : 'text-gray-500'}`} />
                         </div>
                       </div>
                     </PopoverTrigger>
@@ -891,6 +909,14 @@ const ResearchWorkflow = () => {
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 text-center">
                       {steps[1].question}
                     </h3>
+                    {selectedStudyType && (
+                      <div className="mb-4 text-center">
+                        <span className="text-sm text-gray-600">Selected: </span>
+                        <span className={`inline-block px-3 py-1 rounded-lg text-sm font-semibold ${getStudyTypeColor(selectedStudyType)}`}>
+                          {selectedStudyType}
+                        </span>
+                      </div>
+                    )}
                     <div className="space-y-3">
                       {steps[1].options.map((option, index) => (
                         <button
@@ -902,22 +928,30 @@ const ResearchWorkflow = () => {
                             }
                           }}
                           disabled={currentStep !== 3 || classification !== null}
-                          className={`w-full p-4 text-left border-2 border-gray-200 rounded-xl transition-all duration-200 group ${
+                          className={`w-full p-4 text-left border-2 rounded-xl transition-all duration-200 group ${
                             currentStep === 3 && !classification
                               ? 'hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
                               : 'cursor-not-allowed opacity-60'
+                          } ${
+                            selectedStudyType === option.value
+                              ? `${getStudyTypeColor(option.value as 'Observational' | 'Clinical Trial')} border-blue-500`
+                              : 'border-gray-200'
                           }`}
                         >
                           <div className="flex items-center justify-between">
                             <span className={`text-base md:text-lg font-medium ${
-                              currentStep === 3 && !classification
+                              selectedStudyType === option.value
+                                ? ''
+                                : currentStep === 3 && !classification
                                 ? 'text-gray-800 group-hover:text-blue-600'
                                 : 'text-gray-500'
                             }`}>
                               {option.label}
                             </span>
                             <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
-                              currentStep === 3 && !classification
+                              selectedStudyType === option.value
+                                ? 'border-blue-500 bg-blue-500'
+                                : currentStep === 3 && !classification
                                 ? 'border-gray-300 group-hover:border-blue-500 group-hover:bg-blue-500'
                                 : 'border-gray-200 bg-gray-100'
                             }`}></div>
@@ -986,6 +1020,17 @@ const ResearchWorkflow = () => {
                     {classification}
                   </p>
                 </div>
+
+                {selectedStudyType && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">Study Type:</p>
+                    <div className={`inline-block px-6 py-2 rounded-lg ${getStudyTypeColor(selectedStudyType)}`}>
+                      <p className="text-base font-semibold">
+                        {selectedStudyType}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-gray-600 mt-6 max-w-md mx-auto">
                   {classification === 'Misinformation' &&

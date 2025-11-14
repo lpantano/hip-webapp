@@ -30,7 +30,7 @@ const JoinSection = () => {
           {/* <Badge variant="outline" className="mb-4 text-accent border-accent">
             Join the Movement
           </Badge> */}
-          <h2 className="text-2xl md:text-4xl font-bold mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
             Join us and See the
             <span className="text-accent"> Evidence for Yourself</span>
           </h2>
