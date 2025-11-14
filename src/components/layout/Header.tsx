@@ -11,7 +11,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="absolute top-0 left-0 right-0 mb-2 z-50 bg-primary/80 backdrop-blur-sm border-b border-white/10">
+    <header className="absolute top-0 left-0 right-0 mb-2 z-50 bg-primary/70 backdrop-blur-sm border-b border-white/10">
       <div className="container mx-auto px-4 py-2 md:px-6 md:py-4">
         <div className="flex items-center justify-between">
           <Link
