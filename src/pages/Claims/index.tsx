@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link } from 'lucide-react';
@@ -835,7 +836,9 @@ const Claims = () => {
               <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl max-h-[90vh] overflow-y-auto p-0">
                 {currentReelClaim ? (
                   <div>
-                    {/* <DialogTitle>Individual Expert Reviews</DialogTitle> */}
+                    <VisuallyHidden>
+                      <DialogTitle>Individual Expert Reviews</DialogTitle>
+                    </VisuallyHidden>
                     <ExpertReviewsReel reviewCards={reviewCards} />
                   </div>
                 ) : (

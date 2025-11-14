@@ -23,7 +23,7 @@ const HeroSection = () => {
               Health Claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
           </a>
           </div>
-          <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-white mb-8 leading-relaxed">
           Building trust through transparency. Learn how to evaluate and trust health products
             with confidence through expert-backed scientific insights and community wisdom.
           </p>

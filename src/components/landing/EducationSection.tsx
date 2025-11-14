@@ -74,7 +74,7 @@ const EducationSection = () => {
     <section className="py-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center mb-12">
-          <h2 className="text-2xl md:text-4xl font-bold mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
             Understanding
             <span className="text-primary"> Research Quality</span>
           </h2>

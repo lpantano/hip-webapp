@@ -94,7 +94,7 @@ const SciencePathSection = () => {
     <section className="py-12 sm:py-16 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
-          <h2 className="text-lg sm:text-2xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
             The Research
             <span className="text-primary"> Journey</span>
           </h2>

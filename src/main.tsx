@@ -32,7 +32,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('SW registered: ', registration);
+        logger.log('SW registered: ', registration);
         swRegistration = registration;
 
         // Check for updates immediately
@@ -47,7 +47,7 @@ if ('serviceWorker' in navigator) {
         renderApp();
       })
       .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
+        logger.log('SW registration failed: ', registrationError);
       });
   });
 }
