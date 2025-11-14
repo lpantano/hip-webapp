@@ -140,7 +140,7 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Misinformation': 'The claim overstates what the evidence actually shows',
   'Invalid': 'The study has fundamental issues (conflict of interest, is a review/meta-analysis, etc.)',
   'Inconclusive': 'The study has quality issues in design, control group, bias handling, or statistics',
-  'Not Tested in Humans': 'The study was conducted on cells, animals, or other non-human systems',
+  'Not Tested in Humans': 'The study was conducted on cells, animals, primates or other non-human systems',
   'Limited Tested in Humans': 'The study has fewer than 100 human participants',
   'Tested in Humans': 'The study has 100-500,000 human participants',
   'Widely Tested in Humans': 'The study has more than 500,000 human participants',
