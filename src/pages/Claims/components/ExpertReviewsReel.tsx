@@ -191,16 +191,6 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) =>
                         </Popover>
                       ))}
 
-                      {/* Ethnicity Labels */}
-                      {tags && Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && tags.ethnicityLabels.map((eth: string, i: number) => (
-                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{eth}</div>
-                      ))}
-
-                      {/* Age Ranges */}
-                      {tags && Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && tags.ageRanges.map((age: string, i: number) => (
-                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{age}</div>
-                      ))}
-
                       {/* Study Quality Checks */}
                       {noScores.length > 0 && noScores.map((scoreItem, idx) => {
                         const studycheck: Record<string, string> = {
@@ -233,6 +223,16 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) =>
                           </div>
                         );
                       })}
+                      {/* Ethnicity Labels */}
+                      {tags && Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && tags.ethnicityLabels.map((eth: string, i: number) => (
+                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{eth}</div>
+                      ))}
+
+                      {/* Age Ranges */}
+                      {tags && Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && tags.ageRanges.map((age: string, i: number) => (
+                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{age}</div>
+                      ))}
+
                     </div>
                   );
                 })()}
