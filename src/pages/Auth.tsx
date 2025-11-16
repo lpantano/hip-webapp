@@ -18,6 +18,12 @@ const Auth = () => {
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const [showLegalSummary, setShowLegalSummary] = useState(false);
   const [summaryIndex, setSummaryIndex] = useState(0);
+  // Welcome dialog shown the first time the user attempts to sign up
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [welcomeStep, setWelcomeStep] = useState(1);
+  const [welcomeAccepted, setWelcomeAccepted] = useState(false);
+  // Track current tab so we can show the welcome dialog when switching to Sign Up
+  const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signin');
   const summaries = [
     {
       title: 'Platform Purpose',
@@ -94,7 +100,15 @@ const Auth = () => {
         </div>
 
         <Card className="border-border/50 shadow-lg">
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs value={authTab} onValueChange={(v) => {
+            // v has type string from the Tabs component; narrow to our union
+            const val = v as 'signin' | 'signup';
+            setAuthTab(val);
+            if (val === 'signup' && !welcomeAccepted) {
+              setWelcomeStep(1);
+              setShowWelcomeDialog(true);
+            }
+          }} className="w-full">
             <CardHeader className="space-y-1">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -103,15 +117,51 @@ const Auth = () => {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {authTab === 'signup' && (
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      id="signup-terms"
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-muted-foreground text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="signup-terms" className="text-sm text-muted-foreground">
+                      I agree to the{' '}
+                      <Link to="/legal" className="underline text-primary hover:text-primary/80">
+                        terms of service
+                      </Link>{' '}
+                      and{' '}
+                      <Link to="/legal" className="underline text-primary hover:text-primary/80">
+                        privacy policy
+                      </Link>
+                      .
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3 ml-6 text-sm text-muted-foreground">
+                    <span>Review the short version in <strong>30 seconds</strong></span>
+                    <Button size="sm" variant="outline" onClick={() => { setShowLegalSummary(true); setSummaryIndex(0); }}>
+                      Quick summary
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <Button
                 variant="outline"
                 className="w-full"
                 onClick={handleGoogleAuth}
-                disabled={isLoading}
+                disabled={isLoading || (authTab === 'signup' && !acceptedTerms)}
               >
                 <Mail className="mr-2 h-4 w-4" />
                 Continue with Google
               </Button>
+
+              {authTab === 'signup' && !acceptedTerms && (
+                <p className="text-xs text-muted-foreground mt-2">Please accept the Terms and Privacy Policy above before creating an account with Google.</p>
+              )}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -211,35 +261,7 @@ const Auth = () => {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-start space-x-3">
-                      <input
-                        id="signup-terms"
-                        type="checkbox"
-                        checked={acceptedTerms}
-                        onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="mt-1 h-4 w-4 rounded border-muted-foreground text-primary focus:ring-primary"
-                      />
-                      <label htmlFor="signup-terms" className="text-sm text-muted-foreground">
-                        I agree to the{' '}
-                        <Link to="/legal" className="underline text-primary hover:text-primary/80">
-                          terms of service
-                        </Link>{' '}
-                        and{' '}
-                        <Link to="/legal" className="underline text-primary hover:text-primary/80">
-                          privacy policy
-                        </Link>
-                        .
-                      </label>
-                    </div>
 
-                    <div className="flex items-center space-x-3 ml-6 text-sm text-muted-foreground">
-                      <span>Review the short version in <strong>30 seconds</strong></span>
-                      <Button size="sm" variant="outline" onClick={() => { setShowLegalSummary(true); setSummaryIndex(0); }}>
-                        Quick summary
-                      </Button>
-                    </div>
-                  </div>
 
                   <div>
                     <Button
@@ -287,6 +309,66 @@ const Auth = () => {
                   </div>
                 </CardFooter>
               </Card>
+            </div>
+          </DialogContent>
+        </Dialog>
+        {/* Two-step welcome dialog shown before first sign-up */}
+        <Dialog open={showWelcomeDialog} onOpenChange={(v) => { setShowWelcomeDialog(v); }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Welcome — why we started</DialogTitle>
+              <DialogDescription>
+                A short introduction to our purpose. Read through and press "Start sign up" when you're ready.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-4 space-y-4">
+              {welcomeStep === 1 ? (
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    We started this project to help people <strong>understand the scientific evidence</strong> behind health information they encounter in the media. Our aim is <strong>clarity and transparency</strong>: to build a <strong>bridge between the public and the scientific process</strong> so people can find information they can <strong>trust</strong>.
+                  </p>
+                  <div className="mt-6 flex justify-end space-x-2">
+                    <Button variant="ghost" onClick={() => setShowWelcomeDialog(false)}>Back</Button>
+                    <Button onClick={() => setWelcomeStep(2)}>Continue</Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-base font-semibold">Our approach</h3>
+                  <div className="mt-2 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Science is a communal, iterative method</strong> — powerful but complex. When information doesn’t align with our methods, <strong>we don’t aim to shame or blame</strong>. Instead, we <strong>explain, learn, and improve together</strong>.
+                    </p>
+
+                    <p className="text-sm text-muted-foreground">
+                      We prioritize <strong>clarity, transparency, and a community-first mindset</strong>. We welcome <strong>feedback, corrections, and collaboration</strong> from both community members and experts. Your input helps us be more accurate and more useful.
+                    </p>
+
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Thank you for joining us</strong> — together we can make <strong>trustworthy</strong> health information easier to understand. If you'd like to reach out, email us at <a href="mailto:hello@healthintegrityproject.org" className="underline text-primary">hello@healthintegrityproject.org</a>.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between">
+                    <div>
+                      <Button variant="ghost" onClick={() => setWelcomeStep(1)}>Back</Button>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" onClick={() => setShowWelcomeDialog(false)}>Close</Button>
+                      <Button onClick={async () => {
+                        // mark as accepted for this session and proceed with signup
+                        setWelcomeAccepted(true);
+                        setShowWelcomeDialog(false);
+                        // Trigger signup using existing form values
+                        await handleEmailAuth(true);
+                      }}>
+                        Start sign up
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
