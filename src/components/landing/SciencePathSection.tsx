@@ -106,14 +106,14 @@ const SciencePathSection = () => {
         {/* Three-step pathway (single row: Preclinical -> Observational -> Clinical) */}
         <div className="max-w-4xl mx-auto">
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
               {[researchSteps[1], researchSteps[0], researchSteps[2]].map((step) => {
                 const Icon = step.icon;
                 return (
                   <Dialog key={step.id} open={openDialog === step.id} onOpenChange={(open) => setOpenDialog(open ? step.id : null)}>
                     <DialogTrigger asChild>
-                      <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 w-full">
-                        <CardContent className="p-4">
+                      <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 w-full h-full">
+                        <CardContent className="p-4 h-full flex flex-col">
                           <div className="flex items-center justify-between gap-3">
                             {/* Icon on left */}
                             <div className={`p-2 ${step.bgColor} rounded-lg flex-shrink-0`}>

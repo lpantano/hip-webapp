@@ -14,7 +14,7 @@ const FeaturesSection = () => {
 
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto">
-            From health conditions to wellness products and digital apps - we evaluate everything that matters for women's health decisions.
+            From health to wellness - we evaluate everything that matters for women's health decisions in this edition.
           </p>
           <a href="/claims" className="inline-flex items-center mt-4 text-black font-bold hover:text-primary transition-colors">
           <span className="mt-2 inline-block text-base md:text-lg">
@@ -27,7 +27,7 @@ const FeaturesSection = () => {
           {/* Health Issues */}
           <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3 w-full max-w-xs sm:max-w-sm">
             <CardHeader>
-              <CardTitle className="text-primary text-lg sm:text-xl md:text-2xl">Health Issues</CardTitle>
+              <CardTitle className="text-primary text-lg sm:text-xl md:text-2xl">Health</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -46,7 +46,7 @@ const FeaturesSection = () => {
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Hormone Treatment</h4>
+                    <h4 className="font-semibold text-sm sm:text-base mb-1">Pregnancy</h4>
                     {/* <p className="text-muted-foreground text-sm">Evidence-based hormonal therapies for various women's health conditions.</p> */}
                   </div>
                 </div>
@@ -63,14 +63,14 @@ const FeaturesSection = () => {
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Creatine</h4>
+                    <h4 className="font-semibold text-sm sm:text-base mb-1">Supplements</h4>
                     {/* <p className="text-muted-foreground text-sm">Well-researched supplement supporting muscle strength and cognitive function in women.</p> */}
                   </div>
 
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Strength Training</h4>
+                    <h4 className="font-semibold text-sm sm:text-base mb-1">Fitness</h4>
                     {/* <p className="text-muted-foreground text-sm">Resistance exercise with proven benefits for bone health and metabolic function.</p> */}
                   </div>
                 </div>
@@ -87,7 +87,7 @@ const FeaturesSection = () => {
           {/* Mental Health */}
           <Card className="bg-card-gradient border-2 text-center transition-all duration-300 relative p-2 sm:p-3 w-full max-w-xs sm:max-w-sm">
             <CardHeader>
-              <CardTitle className="text-primary text-lg sm:text-xl md:text-2xl">Mental Health</CardTitle>
+              <CardTitle className="text-primary text-lg sm:text-xl md:text-2xl">Mind</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">

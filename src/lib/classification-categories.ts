@@ -61,8 +61,8 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
   'inconclusive': 'border-gray-200 text-gray-700',
   'not tested in humans': 'border-yellow-300 text-yellow-700',
   'limited tested in humans': 'border-blue-200 text-blue-800',
-  'tested in humans': 'border-teal-300 text-green-900',
-  'widely tested in humans': 'border-green-300 text-green-900',
+  'tested in humans': 'border-blue-300 text-blue-900',
+  'widely tested in humans': 'border-blue-400 text-blue-900',
 } as const;
 
 // ============================================================================
