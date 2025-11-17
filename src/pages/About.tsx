@@ -1,10 +1,45 @@
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Header from '@/components/layout/Header';
 import { Users, Eye, Building2 } from 'lucide-react';
 
+interface Founder {
+  name: string;
+  role: string;
+  bio: string;
+  avatar_url: string;
+}
+
 const About = () => {
+  const founders: Founder[] = [
+    {
+      name: "Lorena Pantano",
+      role: "CEO / Chief Product Officer",
+      bio: "Leading product strategy and company vision with 10+ years in life science innovation.",
+      avatar_url: "/team/lorena-pantano.jpg"
+    },
+    {
+      name: "Meeta Mistry",
+      role: "Chief Scientific Officer",
+      bio: "PhD in Data Science, specializing in data analysis and biology research.",
+      avatar_url: "/team/meeta-mistry.jpg"
+    },
+    {
+      name: "Judit Flo Gaya",
+      role: "Chief Security Officer",
+      bio: "Cybersecurity expert ensuring the highest standards of data protection and privacy.",
+      avatar_url: "/team/judit-flo.png"
+    },
+    {
+      name: "Lina Faller",
+      role: "Chief Technology Officer",
+      bio: "Full-stack engineer with expertise in scalable health platforms and AI integration.",
+      avatar_url: "/team/lina-faller.jpg"
+    }
+  ];
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -35,7 +70,7 @@ const About = () => {
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-3 gap-6">
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
+              <Card className="cursor-pointer transition-all duration-300 border-primary/20">
                 <CardHeader className="text-center">
                   <Users className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <CardTitle>Our Team</CardTitle>
@@ -44,13 +79,16 @@ const About = () => {
                   <p className="text-muted-foreground mb-4">
                     Meet the passionate individuals behind our mission
                   </p>
-                  <Button asChild variant="outline">
-                    <Link to="/team">Meet the Team</Link>
+                  <Button
+                    variant="outline"
+                    onClick={() => scrollToSection('team')}
+                  >
+                    Meet the Team
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
+              <Card className="cursor-pointer transition-all duration-300 border-primary/20">
                 <CardHeader className="text-center">
                   <Eye className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <CardTitle>Our Vision</CardTitle>
@@ -68,7 +106,7 @@ const About = () => {
                 </CardContent>
               </Card>
 
-              <Card className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-primary/20">
+              <Card className="cursor-pointer transition-all duration-300 border-primary/20">
                 <CardHeader className="text-center">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <CardTitle>Business Model</CardTitle>
@@ -91,6 +129,42 @@ const About = () => {
         </div>
       </section>
 
+      {/* Team Section */}
+      <section id="team" className="py-12 bg-muted/30">
+        <div className="container mx-auto px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-6">Meet Our Team</h2>
+              <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto mb-8"></div>
+              <p className="text-xl text-muted-foreground">
+                Passionate experts dedicated to revolutionizing women's health through data-driven insights and evidence-based research.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {founders.map((founder, index) => (
+                <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
+                  <CardHeader className="text-center pb-4">
+                    <Avatar className="w-24 h-24 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
+                      <AvatarImage src={founder.avatar_url} alt={founder.name} />
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-2xl font-bold text-primary">
+                        {founder.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <CardTitle className="text-xl">{founder.name}</CardTitle>
+                    <Badge variant="secondary" className="mx-auto">{founder.role}</Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-center text-sm leading-relaxed">
+                      {founder.bio}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
       {/* Vision Section */}
       <section id="vision" className="py-12 bg-muted/30">
         <div className="container mx-auto px-6">
@@ -200,6 +274,7 @@ const About = () => {
           </div>
         </div>
       </section>
+
     </div>
   );
 };

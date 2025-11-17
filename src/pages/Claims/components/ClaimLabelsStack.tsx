@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { getEvidenceClassificationColor } from '@/lib/classification-colors';
-import { getEvidenceClassificationBorder } from '@/lib/classification-colors';
+import { getCategoryBackgroundColor, getCategoryBorderColor } from '@/lib/classification-categories';
 import { PROBLEMATIC_CATEGORIES } from '@/lib/classification-categories';
-import { getStudyTagColor } from '@/lib/classification-categories';
+import { getStudyTagColor, getStudyTagDescription, getCategoryDescription } from '@/lib/classification-categories';
+import type { ReviewCategory } from '@/types/review';
 
 type Props = {
   classificationOrder: string[];
@@ -30,82 +30,75 @@ export default function ClaimLabelsStack({ classificationOrder, labelCounts, wom
     ];
 
   // Build stack from top (5) to bottom (1)
-    const stack = levelDefs.map((lvl) => {
-    // For level 1 we aggregate counts across its labels
+    const stack: React.ReactNode[] = [];
+
+    levelDefs.forEach((lvl) => {
     const labels = lvl.labels;
-    const counts = labels.map(l => labelCounts[l] || 0);
-    const totalCount = counts.reduce((a,b) => a + b, 0);
 
-    // Determine representative label for coloring and title when multiple labels exist at level 1
-    let repLabel = labels[0];
-    if (labels.length > 1) {
-        // pick the label with highest count if any; fallback to first
-        let maxIdx = 0;
-        let maxVal = counts[0] || 0;
-        for (let i = 1; i < counts.length; i++) {
-        if ((counts[i] || 0) > maxVal) {
-            maxVal = counts[i] || 0;
-            maxIdx = i;
-        }
-        }
-        if (maxVal > 0) repLabel = labels[maxIdx];
-        else repLabel = labels[0];
-    }
-
-    const color = getEvidenceClassificationColor(repLabel);
-    // split into parts so we can prefer a darker text-derived border and also use bg/text when expanding
-    // const borderClass = getEvidenceClassificationBorder(repLabel);
-
-    // If present, render a full badge; if absent, render thin colored line
-    if (totalCount > 0) {
-        // For level1 with multiple labels present, if more than one present we show the chosen repLabel name
-        const titleLabel = (labels.length > 1 && counts.filter(c => c>0).length > 1)
-        ? repLabel
-        : repLabel;
-
-                // Filled bar: expand in-place to show text inside the bar when clicked
-                // return (
-                //     <LevelButton
-                //         key={`lvl-${lvl.level}`}
-                //         level={lvl.level}
-                //         closedNode={<div className={`h-2 rounded ${color}`} />}
-                //         openNode={
-                //             <div className={`rounded ${color} px-3 py-1 text-xs font-semibold flex items-center`}>
-                //                 <span className="truncate">{titleLabel}</span>
-                //                 <span className="ml-2">({totalCount})</span>
-                //             </div>
-                //         }
-                //         closedStyle={{ width: '20%', minWidth: 80 }}
-                //         openStyle={{ minWidth: 120 }}
-                //         />
-                // );
-                return (
-                    <div
-                        key={`lvl-${lvl.level}`}
-                        className={`w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden`}
-                    >
-                        <span className="break-words">{titleLabel}</span>
-                        <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
-                    </div>
+    // For level 1 (PROBLEMATIC_CATEGORIES), render each category separately if it has a count
+    if (lvl.level === 1) {
+        labels.forEach((label) => {
+            const count = labelCounts[label] || 0;
+            if (count > 0) {
+                const color = getCategoryBackgroundColor(label);
+                stack.push(
+                    <Popover key={`${label}-${stance}`}>
+                        <PopoverTrigger asChild>
+                            <div
+                                className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
+                            >
+                                <span className="break-words">{label}</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({count})</span>
+                            </div>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                            <div className="font-semibold mb-1">{label}</div>
+                            <div>{getCategoryDescription(label as ReviewCategory)}</div>
+                        </PopoverContent>
+                    </Popover>
                 );
-    }
+            }
+        });
+    } else {
+        // For other levels, aggregate as before
+        const counts = labels.map(l => labelCounts[l] || 0);
+        const totalCount = counts.reduce((a,b) => a + b, 0);
 
-    // absent -> thin colored line (20% width, centered) with colored border and transparent background
-        // Absent: show bordered thin bar, but when opened we'll fill it with bg/text and show label inside
-        // return (
-        //     <LevelButton
-        //         key={`lvl-line-${lvl.level}`}
-        //         level={lvl.level}
-        //         closedNode={<div className={`h-2 rounded border-2 ${borderClass} bg-transparent`} />}
-        //         openNode={
-        //             <div className={`rounded ${borderClass} bg-opacity-50 px-3 py-1 text-xs font-semibold flex items-center`}>
-        //                 <span className="truncate">{labels.join(', ')}</span>
-        //             </div>
-        //         }
-        //         closedStyle={{ width: '20%', minWidth: 80 }}
-        //         openStyle={{ minWidth: 120 }}
-        //     />
-        // );
+        if (totalCount > 0) {
+            // Determine representative label
+            let repLabel = labels[0];
+            if (labels.length > 1) {
+                let maxIdx = 0;
+                let maxVal = counts[0] || 0;
+                for (let i = 1; i < counts.length; i++) {
+                    if ((counts[i] || 0) > maxVal) {
+                        maxVal = counts[i] || 0;
+                        maxIdx = i;
+                    }
+                }
+                if (maxVal > 0) repLabel = labels[maxIdx];
+            }
+
+            const color = getCategoryBackgroundColor(repLabel);
+
+            stack.push(
+                <Popover key={`lvl-${lvl.level}-${stance}`}>
+                    <PopoverTrigger asChild>
+                        <div
+                            className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${color} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}
+                        >
+                            <span className="break-words">{repLabel}</span>
+                            <span className="ml-1 sm:ml-2 flex-shrink-0">({totalCount})</span>
+                        </div>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        <div className="font-semibold mb-1">{repLabel}</div>
+                        <div>{getCategoryDescription(repLabel as ReviewCategory)}</div>
+                    </PopoverContent>
+                </Popover>
+            );
+        }
+    }
 });
 
 
@@ -145,45 +138,63 @@ function LevelButton({
 }
 
   // If any womenNotIncluded flag, append it at the bottom (after level 1)
-    if (womenNotIncludedCount > 0) {
-        stack.push(
-            <div
-                key={`women-${stance}`}
-                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden`}
-            >
-                <span className="break-words">Women Not Included</span>
-                <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
-            </div>
-        );
-    }
+        if (womenNotIncludedCount > 0) {
+                stack.push(
+                        <Popover key={`women-pop-${stance}`}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden cursor-pointer`}
+                                >
+                                    <span className="break-words">Women Not Included</span>
+                                    <span className="ml-1 sm:ml-2 flex-shrink-0">({womenNotIncludedCount})</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {getStudyTagDescription('Women Not Included')}
+                            </PopoverContent>
+                        </Popover>
+                );
+        }
 
     // Add study type labels if present
-    if (observationalCount > 0) {
-        stack.push(
-            <div
-                key={`observational-${stance}`}
-                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden`}
-            >
-                <span className="break-words">Observational</span>
-                <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
-            </div>
-        );
-    }
+        if (observationalCount > 0) {
+                stack.push(
+                        <Popover key={`observational-pop-${stance}`}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden cursor-pointer`}
+                                >
+                                    <span className="break-words">Observational</span>
+                                    <span className="ml-1 sm:ml-2 flex-shrink-0">({observationalCount})</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {getStudyTagDescription('Observational')}
+                            </PopoverContent>
+                        </Popover>
+                );
+        }
 
-    if (clinicalTrialCount > 0) {
-        stack.push(
-            <div
-                key={`clinical-trial-${stance}`}
-                className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical_trial')} overflow-hidden`}
-            >
-                <span className="break-words">Clinical Trial</span>
-                <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
-            </div>
-        );
-    }
+        if (clinicalTrialCount > 0) {
+                stack.push(
+                        <Popover key={`clinical-pop-${stance}`}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className={`mt-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical trial')} overflow-hidden cursor-pointer`}
+                                >
+                                    <span className="break-words">Clinical Trial</span>
+                                    <span className="ml-1 sm:ml-2 flex-shrink-0">({clinicalTrialCount})</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                                {getStudyTagDescription('Clinical Trial')}
+                            </PopoverContent>
+                        </Popover>
+                );
+        }
 
     if (stack.length === 0) {
-        stack.push(<span className='text-xs text-gray-500'>No labels</span>);
+        stack.push(<span key={`no-labels-${stance}`} className='text-xs text-gray-500'>No labels</span>);
     }
     return (
         <div className="flex flex-col w-auto items-start">

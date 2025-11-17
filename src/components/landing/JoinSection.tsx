@@ -24,20 +24,20 @@ const JoinSection = () => {
   };
 
   return (
-    <section className="pb-20 pt-8 bg-muted/30">
+    <section className="pb-20 pt-4 bg-muted/30">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           {/* <Badge variant="outline" className="mb-4 text-accent border-accent">
             Join the Movement
           </Badge> */}
-          <h2 className="text-4xl md:text-5xl font-bold mb-8">
-            Ready to Make a 
-            <span className="text-accent"> Difference?</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Join us and See the
+            <span className="text-accent"> Evidence for Yourself</span>
           </h2>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
-          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary flex flex-col">
+          <Card className="bg-card transition-all duration-300 border-l-4 border-l-primary flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Join as a User</CardTitle>
               <p className="text-muted-foreground">
@@ -48,7 +48,7 @@ const JoinSection = () => {
               <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>Create account with Gmail, email, or LinkedIn</span>
+                  <span>Create account with Gmail, or email</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -62,19 +62,19 @@ const JoinSection = () => {
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Access educational materials</span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Voting rights</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Learn how we review science</span>
                 </div>
               </div>
-              <Button 
-                asChild={!user} 
+              <Button
+                asChild={!user}
                 disabled={!!user}
-                className="w-full mt-6 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-6 hover:bg-primary/50 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {user ? (
                   <span>Welcome Back!</span>
@@ -85,7 +85,7 @@ const JoinSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-card hover:shadow-xl transition-all duration-300 border-l-4 border-l-accent flex flex-col">
+          <Card className="bg-card transition-all duration-300 border-l-4 border-l-accent flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl text-accent">Apply as expert or researcher</CardTitle>
               <p className="text-muted-foreground">
@@ -98,10 +98,10 @@ const JoinSection = () => {
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Invitation-based exclusive access</span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Review research across 4 key criteria</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Free membership</span>
@@ -116,24 +116,20 @@ const JoinSection = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Voting rights</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Distribution profit</span>
+                  <span>Voting rights and Distribution profit</span>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowOnboarding(true)}
-                  
+
                 >
                 {isExpertOrResearcher ? 'How it works' : 'Learn How It Works'}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1 border-accent text-accent hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setShowExpertForm(true)}
                   disabled={isExpertOrResearcher}
@@ -145,14 +141,14 @@ const JoinSection = () => {
           </Card>
         </div>
       </div>
-      
+
       <ExpertOnboardingDialog
         open={showOnboarding}
         onOpenChange={setShowOnboarding}
         onApply={() => setShowExpertForm(true)}
       />
-      
-      <CommunityApplicationForm 
+
+      <CommunityApplicationForm
         open={showExpertForm}
         onOpenChange={setShowExpertForm}
         memberType="expert"

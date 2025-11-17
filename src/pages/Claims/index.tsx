@@ -1,16 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
-// Dialog and DialogTitle already imported above (with DialogTitle). Removed duplicate import.
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
-import { ChevronUp, ExternalLink, Users, Heart, Eye, BookOpen, DollarSign, Plus, Filter, FileText, CheckCircle, XCircle, Lock, LogIn, FileWarning, ThumbsDown, ThumbsUp, Link, Unlink2, Link2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -18,25 +15,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ResourcesSection } from '@/components/resources/ResourcesSection';
-import { getClassificationReasons } from '@/types/review';
-import { getEvidenceClassificationColor } from '@/lib/classification-colors';
-import { isProblematicCategory } from '@/lib/classification-categories';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { getCategoryBackgroundColor } from '@/lib/classification-categories';
+import { CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
+import { getStudyTagDescription, STUDY_TAG, getStudyTagColor } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
-import quality from '@/lib/quality-colors';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
-import ClaimLinksSection from './components/ClaimLinksSection';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
+import CategoriesLegend from './components/Legend';
+import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
+import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-
-
-// We'll load claims from Supabase. The UI expects a specific shape so we map DB rows into that shape.
-
-const CLAIMS_PER_PAGE = 20;
+import { humanize, getStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { useOptimisticVote } from './hooks/useOptimisticVote';
+import { useReviewCards } from './hooks/useReviewCards';
+import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS } from './constants';
 
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
@@ -54,43 +50,27 @@ const Claims = () => {
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-  const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
-  // Source dialog form state
-  const [sourceUrl, setSourceUrl] = useState('');
-  const [sourceTitle, setSourceTitle] = useState('');
-  const [sourceDescription, setSourceDescription] = useState('');
-  const [sourceType, setSourceType] = useState('webpage');
-  const [sourceSubmitting, setSourceSubmitting] = useState(false);
+  // Use custom hook for optimistic vote updates
+  const {
+    userVotes,
+    optimisticallyAddVote,
+    optimisticallyRemoveVote,
+    revertVote,
+    setUserVotes
+  } = useOptimisticVote(setClaims);
 
   // Confirmation dialog state for toggling claim status
   const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
   const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
-
-  // Normalize and validate URL client-side. Returns normalized URL string or null if invalid.
-  const normalizeUrl = (raw: string) => {
-    if (!raw) return null;
-    let s = raw.trim();
-    // If scheme is missing, default to https://
-    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) {
-      s = `https://${s}`;
-    }
-    try {
-      const parsed = new URL(s);
-      // Basic check: must have hostname
-      if (!parsed.hostname) return null;
-      return parsed.toString();
-    } catch (e) {
-      return null;
-    }
-  };
 
   // component-scoped Supabase client
   const sb = supabase;
 
   // Check if user is expert or researcher
   const [isExpert, setIsExpert] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   useEffect(() => {
     const checkExpertStatus = async () => {
       if (!user) {
@@ -122,6 +102,7 @@ const Claims = () => {
 
 
 
+  // Use the groupBy helper for cleaner data grouping
   const fetchClaimsData = useCallback(async (page: number = 0) => {
     try {
       // Build the claims query with pagination, filtering, and sorting
@@ -173,30 +154,10 @@ const Claims = () => {
       if (publicationsError) throw publicationsError;
       if (commentsError) throw commentsError;
 
-      // Group publications by claim_id
-      const publicationsByClaim: Record<string, PublicationRow[]> = {};
-      (publicationsData || []).forEach((pub: PublicationRow) => {
-        if (!publicationsByClaim[pub.claim_id]) {
-          publicationsByClaim[pub.claim_id] = [];
-        }
-        publicationsByClaim[pub.claim_id].push(pub);
-      });
-
-      // Group comments by claim_id
-      const commentsByClaim: Record<string, ClaimCommentRow[]> = {};
-      (commentsData || []).forEach((comment: ClaimCommentRow) => {
-        if (!commentsByClaim[comment.claim_id]) {
-          commentsByClaim[comment.claim_id] = [];
-        }
-        commentsByClaim[comment.claim_id].push(comment);
-      });
-
-      // Group claim_links by claim_id
-      const linksByClaim: Record<string, ClaimLinkRow[]> = {};
-      ((linksData || []) as ClaimLinkRow[]).forEach((link) => {
-        if (!linksByClaim[link.claim_id]) linksByClaim[link.claim_id] = [];
-        linksByClaim[link.claim_id].push(link);
-      });
+      // Use groupBy helper for cleaner data organization
+      const publicationsByClaim = groupBy(publicationsData || [], (pub: PublicationRow) => pub.claim_id);
+      const commentsByClaim = groupBy(commentsData || [], (comment: ClaimCommentRow) => comment.claim_id);
+      const linksByClaim = groupBy((linksData || []) as ClaimLinkRow[], (link) => link.claim_id);
 
 
 
@@ -310,7 +271,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, sortBy]);
+  }, [sb, user, filterByCategory, sortBy, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -346,84 +307,34 @@ const Claims = () => {
 
     const hasVoted = userVotes.has(id);
 
-    // Optimistic UI update
+    // Optimistic UI update using custom hook
     if (hasVoted) {
-      // Remove vote
-      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
-      setUserVotes(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
+      optimisticallyRemoveVote(id);
     } else {
-      // Add vote
-      setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
-      setUserVotes(prev => new Set(prev).add(id));
+      optimisticallyAddVote(id);
     }
 
     try {
       if (hasVoted) {
-        // Remove vote from database
         const { error: delError } = await sb.from('claim_votes').delete().eq('claim_id', id).eq('user_id', user.id);
         if (delError) throw delError;
       } else {
-        // Add vote to database
         const { error: insertError } = await sb.from('claim_votes').insert({ claim_id: id, user_id: user.id });
         if (insertError) throw insertError;
       }
     } catch (err) {
       console.error('Vote failed:', err);
       // Revert optimistic update on error
-      if (hasVoted) {
-        // Restore vote
-        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: claim.votes + 1 } : claim));
-        setUserVotes(prev => new Set(prev).add(id));
-      } else {
-        // Remove vote
-        setClaims(prev => prev.map(claim => claim.id === id ? { ...claim, votes: Math.max(0, claim.votes - 1) } : claim));
-        setUserVotes(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-      }
-    }
-  };
-
-  const humanize = (s?: string) => (s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
-
-  // moved getCategoryColor to src/lib/getCategoryColor.ts for reuse across the app
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      'under review': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined) => {
-    switch (stance) {
-      case 'supporting':
-        return <div title="Supporting evidence"><Link2 className="w-4 h-4 text-grey-600" /></div>;
-      case 'contradicting':
-        return <div title="Contradicting evidence"><Unlink2 className="w-4 h-4 text-grey-600" /></div>;
-      case 'neutral':
-        return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
-      case 'mixed':
-        return <div className="w-4 h-4 rounded-full bg-orange-400" title="Mixed evidence" />;
-      default:
-        return null;
+      revertVote(id, !hasVoted);
     }
   };
 
   const toggleClaimStatus = async (claimId: string, rawStatus?: string) => {
     if (!user) return;
-    // Only allow toggle between 'proposed' and 'pending' ('under review')
-    if (rawStatus !== 'proposed' && rawStatus !== 'under review') return;
+    // Only allow toggle between 'proposed' and 'under review'
+    if (rawStatus !== CLAIM_STATUS.PROPOSED && rawStatus !== CLAIM_STATUS.UNDER_REVIEW) return;
 
-    const newStatus = rawStatus === 'proposed' ? 'under review' : 'proposed';
+    const newStatus = rawStatus === CLAIM_STATUS.PROPOSED ? CLAIM_STATUS.UNDER_REVIEW : CLAIM_STATUS.PROPOSED;
     try {
       setUpdatingStatus(claimId);
       const { error } = await sb.from('claims').update({ status: newStatus }).eq('id', claimId);
@@ -459,255 +370,20 @@ const Claims = () => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
-
-
-  // Individual expert review cards
-  type ExpertReviewCard = {
-    publication: {
-      id: string;
-      title: string;
-      journal: string;
-      year: number;
-      authors: string;
-      source?: string | null;
-    };
-    expert: {
-      expert_user_id: string;
-      display_name?: string | null;
-      avatar_url?: string | null;
-      // Show the current scores for each category; score may be null when not provided
-      scores: Array<{
-        category: string;
-        score?: 'PASS' | 'NO' | 'NA' | null;
-      }>;
-      comments: Array<{
-        content: string;
-        created_at: string;
-      }>;
-      classification?: string | null;
-      tags?: {
-        testedInHuman?: boolean;
-        ethnicityLabels?: string[];
-        ageRanges?: string[];
-      } | null;
-      womenNotIncluded?: boolean;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      reviewData?: any;
-    };
-  };
-
-  const ExpertReviewsReel: React.FC<{ reviewCards: ExpertReviewCard[] }> = ({ reviewCards }) => {
-    const containerRef = useRef<HTMLDivElement | null>(null);
-
-    if (!reviewCards || reviewCards.length === 0) {
-      return <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>;
-    }
-
-    return (
-      <div className="relative">
-        <div
-          ref={containerRef}
-          className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-2"
-          role="list"
-          aria-label=""
-        >
-            {reviewCards.map((reviewCard) => {
-            // Extract tags from the reviewCard (if present)
-            // The tags are not currently passed in the reviewCard, so we need to get them from classification or add them to the reviewCard in the parent if possible.
-            // For now, try to get them from the expert.classification if it is an object (future-proofing), else skip.
-            // But the correct way is to pass tags in the reviewCard.expert, so let's check if they exist.
-            const tags = reviewCard.expert.tags || null;
-            return (
-              <div key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`} className="bg-background border border-border rounded-lg p-3 sm:p-4 shadow-sm">
-                {/* Top row: Avatar + Publication info */}
-                <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-3">
-                  <div className="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-24">
-                    {reviewCard.expert.avatar_url ? (
-                      <img
-                        src={reviewCard.expert.avatar_url}
-                        alt={reviewCard.expert.display_name || 'Expert'}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          if (target.nextElementSibling) {
-                            (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
-                      style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
-                    >
-                      {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0,2).join('')}
-                    </div>
-                    <div className="font-semibold text-sm text-center sm:text-center flex-1 sm:flex-none">{reviewCard.expert.display_name || 'Expert'}</div>
-                  </div>
-
-                  <div className="flex-1 w-full">
-                    <h4 className="font-semibold text-sm mb-1 break-words">{reviewCard.publication.title}</h4>
-                    <p className="text-xs text-muted-foreground break-words">
-                      {reviewCard.publication.authors} • {reviewCard.publication.journal} ({reviewCard.publication.year})
-                      {reviewCard.publication.source && (
-                        <>
-                          {' • '}
-                          <a
-                            href={reviewCard.publication.source}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                            title="View source"
-                          >
-                            Source <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </>
-                      )}
-                    </p>
-                    <br></br>
-                    {reviewCard.expert.classification && (
-                    <div className="flex items-start gap-3 mb-2">
-                      <Badge className={`text-xs ${getEvidenceClassificationColor(String(reviewCard.expert.classification))} pointer-events-none transition-none`}>
-                        {String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}
-                      </Badge>
-
-                      {reviewCard.expert.reviewData &&
-                        isProblematicCategory(String(reviewCard.expert.classification)) && (
-                          <div className="flex-1">
-                            {(() => {
-                              const reasons = getClassificationReasons(reviewCard.expert.reviewData);
-                              if (reasons.length > 0) {
-                                return (
-                                  <div className="text-xs text-muted-foreground list-disc list-inside space-y-1">
-                                    {reasons.map((reason, i) => (
-                                      <div key={i}>{reason}</div>
-                                    ))}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-                        )}
-                    </div>
-                  )}
-
-                  {tags && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && (
-                        <span className="text-xs flex flex-wrap items-center gap-1">
-                          <span className="font-medium">Ethnicities:</span>
-                          {tags.ethnicityLabels.map((eth: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs">{eth}</Badge>
-                          ))}
-                        </span>
-                      )}
-                      {Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && (
-                        <span className="text-xs flex flex-wrap items-center gap-1">
-                          <span className="font-medium">Ages:</span>
-                          {tags.ageRanges.map((age: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-xs">{age}</Badge>
-                          ))}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {reviewCard.expert.womenNotIncluded && (
-                    <div className="mb-2">
-                      <Badge className="text-xs bg-red-100 text-red-800">
-                        ♀ Women Not Included
-                      </Badge>
-                    </div>
-                  )}
-                  </div>
-
-                </div>
-
-                {/* Bottom row: Review content (classification, tags, scores, comments) */}
-                <div className="mt-2">
-
-
-                  {reviewCard.expert.scores.length > 0 && (
-                    <div className="mb-2">
-                      <div className="flex flex-row flex-wrap gap-2 sm:gap-3 items-center">
-                        {reviewCard.expert.scores.map((scoreItem, idx) => (
-                          <div key={idx} className="flex items-center gap-1">
-                            {(() => {
-                              const explanations: Record<string, string> = {
-                                studyDesign: 'Was the study designed to answer this claim?',
-                                // representation removed from UI/labels — kept in DB for backward compatibility but not surfaced
-                                controlGroup: 'Was there a proper control group (wildtype, baseline, placebo, standard of care, matched cohort)?',
-                                biasAddressed: 'Were confounding variables identified and tracked (e.g., time, age, sex, comorbidities, socioeconomic factors)?',
-                                statistics: 'Were statistical tests appropriate for the study design and data type?'
-                              };
-                              const humanLabels: Record<string, string> = {
-                                studyDesign: 'Study Design',
-                                controlGroup: 'Control Group',
-                                biasAddressed: 'Bias Addressed',
-                                statistics: 'Statistics'
-                              };
-                              const label = humanLabels[scoreItem.category] || scoreItem.category;
-                              const explanation = explanations[scoreItem.category] || '';
-                              return explanation ? (
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <span className="text-sm text-muted-foreground underline decoration-dotted cursor-help">{label}:</span>
-                                  </PopoverTrigger>
-                                  <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                    {explanation}
-                                  </PopoverContent>
-                                </Popover>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">{label}:</span>
-                              );
-                            })()}
-                            <Badge className={`text-xs px-1 py-1 ${scoreItem.score ? quality.badge(scoreItem.score) : ''}`}>
-                              {scoreItem.score ?? 'No score'}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {reviewCard.expert.comments.length > 0 && (
-                    <div>
-                      <div className="text-xs font-medium text-muted-foreground mb-2">Comments:</div>
-                      <div className="space-y-2">
-                        {reviewCard.expert.comments.map((comment, idx) => (
-                          <div key={idx} className="bg-muted/20 p-3 rounded-md">
-                            <div className="text-xs text-muted-foreground mb-1">
-                              {new Date(comment.created_at).toLocaleDateString()}
-                            </div>
-                            <div className="text-sm">"{comment.content}"</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
+
   // Claims are now filtered and sorted by the database query
-    // Only show claim 913322f9-6d96-49fa-ace9-9587e8952a80 if running on localhost
-    let filteredAndSortedClaims = claims;
-    const specialClaimId = '913322f9-6d96-49fa-ace9-9587e8952a80';
-    if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-      // On localhost, show all claims
-      filteredAndSortedClaims = claims;
-    } else {
-      // On production, filter out the special claim
-      filteredAndSortedClaims = claims.filter(c => c.id !== specialClaimId);
-    }
+  // Only show special claim if running on localhost
+  let filteredAndSortedClaims = claims;
+  if (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost') {
+    // On production, filter out the special claim
+    filteredAndSortedClaims = claims.filter(c => c.id !== SPECIAL_CLAIM_ID);
+  }
+
+  // Use custom hook for review cards generation
+  const currentReelClaim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
+  const reviewCards = useReviewCards(currentReelClaim, expertProfiles);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
@@ -722,16 +398,41 @@ const Claims = () => {
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
-              Upvote Claims with strong scientific backing to prioritize them for expert review.
+              Upvote Claims to prioritize them for expert review. <a href="/workflow" className="inline-flex items-center gap-2 text-md sm:text-lg text-primary hover:underline">
+                Learn how we review information and science
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </p>
-            <div className="mb-1 flex justify-center">
-            <a
-              href="/workflow"
-              className="inline-block px-2 py-2 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition"
-            >
-              Learn how we review information and science
-            </a>
-          </div>
+
+            {/*Legend (collapsible) */}
+            <div className="mb-4 flex flex-col items-center gap-4">
+
+
+              <div className="w-full max-w-3xl text-center">
+                <button
+                  type="button"
+                  onClick={() => setLegendOpen(!legendOpen)}
+                  aria-expanded={legendOpen}
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary focus:outline-none"
+                >
+                  <span className="font-medium">{legendOpen ? 'Hide legend' : 'Show legend'}</span>
+                  {legendOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+
+                {legendOpen && (
+                  <div className="mt-3">
+                    <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">
+                      Legend: Click labels to learn more
+                    </div>
+
+                    {/* Categories Legend (moved to component) */}
+                    <div className="mb-3">
+                      <CategoriesLegend />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Tabs Navigation */}
@@ -927,7 +628,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Supporting Papers</span>
+                              <span className="font-semibold text-xs">Reported to Support</span>
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -944,7 +645,7 @@ const Claims = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-2">
                               <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Contradicting Papers</span>
+                              <span className="font-semibold text-xs">Reported to Disproof</span>
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
@@ -990,7 +691,7 @@ const Claims = () => {
                           className="flex items-center gap-2 shadow-md whitespace-nowrap"
                         >
                           <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">Review Reel</span>
+                          <span className="hidden sm:inline">Full Review</span>
                           <span className="sm:hidden">Reviews</span>
                         </Button>
                         <Button
@@ -1011,14 +712,7 @@ const Claims = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
-                                    setShowSourceForm(claim.id);
-                                    // prefill some fields if desired
-                                    setSourceUrl('');
-                                    setSourceTitle('');
-                                    setSourceDescription('');
-                                    setSourceType('webpage');
-                                  }}
+                                  onClick={() => setShowSourceForm(claim.id)}
                                   className="flex items-center gap-2 whitespace-nowrap"
                                 >
                                   <Link className="w-4 h-4" />
@@ -1109,76 +803,13 @@ const Claims = () => {
 
           {/* Source Submission Dialog */}
           {user && showSourceForm && (
-            <Dialog open={!!showSourceForm} onOpenChange={() => setShowSourceForm(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[80vh] overflow-y-auto">
-                {(() => {
-                  const claim = filteredAndSortedClaims.find(c => c.id === showSourceForm);
-                  if (!claim) return null;
-
-                  const submitSource = async () => {
-                    const normalized = normalizeUrl(sourceUrl);
-                    if (!normalized) {
-                      toast.error('Invalid URL', { description: 'Please enter a valid URL before saving.' });
-                      return;
-                    }
-
-                    setSourceSubmitting(true);
-                    try {
-                      const payload = {
-                        claim_id: claim.id,
-                        expert_user_id: user.id,
-                        title: sourceTitle || null,
-                        url: normalized,
-                        description: sourceDescription || null,
-                        link_type: sourceType || 'webpage'
-                      };
-
-                      const { error } = await sb.from('claim_links').insert(payload);
-                      if (error) {
-                        throw error;
-                      }
-
-                      // Refresh claims list
-                      await fetchData(currentPage);
-                      setShowSourceForm(null);
-                      toast.success('Source added', { description: 'Your source was added successfully.' });
-                    } catch (e: unknown) {
-                      console.error('Error adding source link:', e);
-                      const message = e instanceof Error ? e.message : 'Failed to add source.';
-                      toast.error('Add Source Failed', { description: message });
-                    } finally {
-                      setSourceSubmitting(false);
-                    }
-                  };
-
-                  return (
-                    <div>
-                      <DialogTitle>Add Source to claim</DialogTitle>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium mb-1 block">URL</label>
-                          <Input value={sourceUrl} onChange={(e) => setSourceUrl((e.target as HTMLInputElement).value)} placeholder="https://..." />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium mb-1 block">Title (optional)</label>
-                          <Input value={sourceTitle} onChange={(e) => setSourceTitle((e.target as HTMLInputElement).value)} placeholder="Optional title" />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium mb-1 block">Description (optional)</label>
-                          <Textarea value={sourceDescription} onChange={(e) => setSourceDescription((e.target as HTMLTextAreaElement).value)} placeholder="Short description" />
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" size="sm" onClick={() => setShowSourceForm(null)}>Cancel</Button>
-                          <Button size="sm" onClick={submitSource} disabled={!sourceUrl || sourceSubmitting}>
-                            {sourceSubmitting ? 'Saving...' : 'Save Source'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </DialogContent>
-            </Dialog>
+            <SourceFormDialog
+              isOpen={!!showSourceForm}
+              onClose={() => setShowSourceForm(null)}
+              claimId={showSourceForm}
+              userId={user.id}
+              onSuccess={() => fetchData(currentPage)}
+            />
           )}
 
           {/* Confirmation Dialog for toggling claim status */}
@@ -1202,85 +833,17 @@ const Claims = () => {
           {/* Expert Reviews Reel Dialog */}
           {user && (
             <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-5xl max-h-[90vh] overflow-y-auto">
-                {(() => {
-                  const claim = filteredAndSortedClaims.find(c => c.id === showReelClaim);
-                  if (!claim) return <div className="text-center text-sm text-muted-foreground">No reviews available.</div>;
-
-                  // Create individual cards for each expert review on each publication
-                  const reviewCards: ExpertReviewCard[] = [];
-
-                  claim.publications.forEach(pub => {
-                    // Group scores by expert
-                    const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
-                    (pub.rawScores || []).forEach(score => {
-                      if (!scoresByExpert[score.expert_user_id]) {
-                        scoresByExpert[score.expert_user_id] = [];
-                      }
-                      scoresByExpert[score.expert_user_id].push(score);
-                    });
-
-                    // Get comments for this claim
-                    const claimCommentsForClaim = claim.comments || [];
-
-                    // Create individual cards for each expert who reviewed this publication
-                    Object.entries(scoresByExpert).forEach(([expertUserId, scores]) => {
-                      const expertProfile = expertProfiles[expertUserId];
-                      const expertComments = claimCommentsForClaim.filter(comment => comment.expert_user_id === expertUserId);
-
-                      // For consolidated schema, pick the latest row for this expert (there should be one)
-                      const latestRow = (scores || []).reduce((a, b) => {
-                        const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
-                        const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
-                        return bTime >= aTime ? b : a;
-                      }, scores[0]);
-
-                      // Exclude 'interpretation' (Evidence Quality) from per-publication score lists — it's shown as a card-level label
-                      const expertScores: Array<{ category: string; score?: 'PASS' | 'NO' | 'NA' | null }> = [
-                        { category: 'studyDesign', score: latestRow?.review_data?.qualityChecks?.studyDesign ?? null },
-                        { category: 'statistics', score: latestRow?.review_data?.qualityChecks?.statistics ?? null },
-                        { category: 'controlGroup', score: latestRow?.review_data?.qualityChecks?.controlGroup ?? null },
-                        { category: 'biasAddressed', score: latestRow?.review_data?.qualityChecks?.biasAddressed ?? null }
-                      ];
-
-                      // Merge comments: claim-level expert comments + the review's comments (if present)
-                      const mergedComments = [
-                        ...expertComments.map(c => ({ content: c.content, created_at: c.created_at })),
-                      ];
-                      if (latestRow?.comments) mergedComments.push({ content: latestRow.comments, created_at: latestRow.updated_at || latestRow.created_at || '' });
-                      // if (latestRow?.evidence_classification) mergedComments.push({ content: `Classification: ${latestRow.evidence_classification}`, created_at: latestRow.updated_at || latestRow.created_at || '' });
-
-                      reviewCards.push({
-                        publication: {
-                          id: pub.id,
-                          title: pub.title,
-                          journal: pub.journal,
-                          year: pub.year,
-                          authors: pub.authors,
-                          source: pub.source || null
-                        },
-                        expert: {
-                          expert_user_id: expertUserId,
-                          display_name: expertProfile?.display_name,
-                          avatar_url: expertProfile?.avatar_url,
-                          scores: expertScores,
-                          comments: mergedComments,
-                          classification: latestRow?.review_data?.category ?? null,
-                          tags: latestRow?.review_data?.tags ?? null,
-                          womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
-                          reviewData: latestRow?.review_data ?? null
-                        }
-                      });
-                    });
-                  });
-
-                  return (
-                    <div>
-                      <DialogTitle>{claim.claim} — Individual Expert Reviews</DialogTitle>
-                      <ExpertReviewsReel reviewCards={reviewCards} />
-                    </div>
-                  );
-                })()}
+              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+                {currentReelClaim ? (
+                  <div>
+                    <VisuallyHidden>
+                      <DialogTitle>Individual Expert Reviews</DialogTitle>
+                    </VisuallyHidden>
+                    <ExpertReviewsReel reviewCards={reviewCards} />
+                  </div>
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground">No reviews available.</div>
+                )}
               </DialogContent>
             </Dialog>
           )}

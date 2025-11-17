@@ -1,6 +1,7 @@
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import EducationSection from "@/components/landing/EducationSection"; 
+import SciencePathSection from '@/components/landing/SciencePathSection';
+import EducationSection from "@/components/landing/EducationSection";
 import JoinSection from "@/components/landing/JoinSection";
 import Header from "@/components/layout/Header";
 
@@ -10,6 +11,7 @@ const Index = () => {
       <Header />
       <HeroSection />
       <FeaturesSection />
+      <SciencePathSection />
       <EducationSection/>
       <JoinSection />
     </div>

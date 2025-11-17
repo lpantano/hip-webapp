@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { logger } from '@/lib/logger';
 import App from './App.tsx'
 import './index.css'
+import { UpdateNotificationManager } from '@/components/UpdateNotification'
 
 // Request persistent storage for PWA to prevent session loss
 if (navigator.storage && navigator.storage.persist) {
@@ -24,39 +25,41 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
+// Service worker registration and update management
+let swRegistration: ServiceWorkerRegistration | undefined;
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('SW registered: ', registration);
+        logger.log('SW registered: ', registration);
+        swRegistration = registration;
 
         // Check for updates immediately
         registration.update();
 
-        // Listen for updates
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
+        // Check for updates periodically (every hour)
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
 
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New service worker is available
-                console.log('New service worker available, updating...');
-
-                // Tell the new service worker to skip waiting
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-
-                // Reload to get the new content
-                window.location.reload();
-              }
-            });
-          }
-        });
+        // Re-render the app with the registration
+        renderApp();
       })
       .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
+        logger.log('SW registration failed: ', registrationError);
       });
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+function renderApp() {
+  createRoot(document.getElementById("root")!).render(
+    <>
+      <App />
+      <UpdateNotificationManager serviceWorkerRegistration={swRegistration} />
+    </>
+  );
+}
+
+// Initial render
+renderApp();

@@ -8,5 +8,5 @@ import type { Database } from '@/integrations/supabase/types';
 // via border and text rather than a filled background.
 export const getCategoryColor = (_category: Database['public']['Enums']['claim_category'] | string) => {
   // Use black text on light theme and white text in dark mode for maximum contrast
-  return 'bg-background border border-accent text-black dark:text-white';
+  return 'bg-background border border-grey text-black dark:text-white';
 };

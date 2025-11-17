@@ -4,7 +4,7 @@
  * to ensure consistency across the application.
  */
 
-import type { ReviewCategory } from '@/types/review';
+import type { ReviewCategory, TagStudy } from '@/types/review';
 
 // ============================================================================
 // CATEGORY DEFINITIONS
@@ -42,14 +42,14 @@ export const PROBLEMATIC_CATEGORIES: readonly ReviewCategory[] = [
  * Background color classes for each category (used in badges)
  */
 export const CATEGORY_BACKGROUND_COLORS: Record<string, string> = {
-  'misinformation': 'bg-orange-200 text-gray-700',
-  'invalid': 'bg-gray-200 text-gray-700',
-  'inconclusive': 'bg-gray-200 text-gray-700',
-  'not tested in humans': 'bg-yellow-300 text-yellow-700',
-  'limited tested in humans': 'bg-blue-200 text-blue-800',
-  'tested in humans': 'bg-teal-300 text-gray-700',
-  'tested in human': 'bg-teal-300 text-gray-200', // singular form fallback
-  'widely tested in humans': 'bg-green-300 text-green-900',
+  'misinformation': 'bg-evidence-misinformation text-white',
+  'invalid': 'bg-evidence-invalid text-gray-700',
+  'inconclusive': 'bg-evidence-invalid text-gray-700',
+  'not tested in humans': 'bg-evidence-not-tested text-grey-700',
+  'limited tested in humans': 'bg-evidence-limited text-blue-800',
+  'tested in humans': 'bg-evidence-tested text-white',
+  // 'widely tested in humans': 'bg-green-300 text-green-900',
+  'widely tested in humans': 'bg-evidence-widely-tested text-white',
 } as const;
 
 /**
@@ -61,32 +61,73 @@ export const CATEGORY_BORDER_COLORS: Record<string, string> = {
   'inconclusive': 'border-gray-200 text-gray-700',
   'not tested in humans': 'border-yellow-300 text-yellow-700',
   'limited tested in humans': 'border-blue-200 text-blue-800',
-  'tested in humans': 'border-teal-300 text-gray-700',
-  'tested in human': 'border-teal-300 text-gray-200', // singular form fallback
-  'widely tested in humans': 'border-green-300 text-green-900',
+  'tested in humans': 'border-blue-300 text-blue-900',
+  'widely tested in humans': 'border-blue-400 text-blue-900',
 } as const;
 
 // ============================================================================
 // STUDY TAG COLORS
 // ============================================================================
+export const STUDY_TAG: readonly TagStudy[] = [
+  'Women Not Included',
+  'Observational',
+  'Clinical Trial'
+] as const;
 
 /**
  * Background color classes for study tags (used in badges)
  */
 export const STUDY_TAG_COLORS: Record<string, string> = {
-  'women_not_included': 'bg-pink-100 text-pink-800',
-  'observational': 'bg-blue-100 text-blue-800',
-  'clinical_trial': 'bg-purple-100 text-purple-800',
+  'women not included': 'bg-orange-200 text-grey-700',
+  'observational': 'bg-evidence-observational text-blue-800',
+  'clinical trial': 'bg-evidence-clinical text-white',
 } as const;
 
 /**
  * Border color classes for study tags (used in form buttons/chips with selected state)
  */
 export const STUDY_TAG_BORDER_COLORS: Record<string, string> = {
-  'women_not_included': 'border-pink-400',
-  'observational': 'border-blue-400',
-  'clinical_trial': 'border-purple-400',
+  'women not included': 'border-pink-400',
+  'observational': 'border-blue-200 text-blue-800',
+  'clinical trial': 'border-green-300 text-green-900',
 } as const;
+
+/**
+ * Descriptions for study tags (used by UI tooltips/help)
+ */
+export const STUDY_TAG_DESCRIPTIONS: Record<string, string> = {
+  'Women Not Included': 'Indicates that women or female participants were not included in the study population, which limits generalizability to female populations.',
+  'Observational': 'An observational study observes participants without intervening — examples include cohort, case-control, and cross-sectional designs. Limitations: cannot prove causality and is susceptible to confounding, selection bias, and measurement error.',
+  'Clinical Trial': 'An experimental study where participants receive an intervention or treatment to evaluate its effectiveness and safety. Typically randomized and controlled to reduce bias when well-designed.'
+} as const;
+
+/**
+ * Get a human-readable description for a study tag
+ */
+export function getStudyTagDescription(tag: string): string {
+  return STUDY_TAG_DESCRIPTIONS[tag] || '';
+}
+
+// ============================================================================
+// QUALITY CHECK DESCRIPTIONS
+// ============================================================================
+
+/**
+ * Descriptions for quality check questions (used by UI tooltips/help)
+ */
+export const QUALITY_CHECK_DESCRIPTIONS: Record<string, string> = {
+  'studyDesign': 'Was the study designed to answer this claim? The research question and methodology should directly address the claim being evaluated.',
+  'controlGroup': 'Was there a proper control group? This could be wildtype, baseline, placebo, standard of care, or matched cohort depending on the study type.',
+  'biasAddressed': 'Were confounding variables identified and tracked? Important factors like time, age, sex, comorbidities, and socioeconomic factors should be considered and controlled for.',
+  'statistics': 'Were statistical tests appropriate for the study design and data type? The analysis should use proper methods for the research question and data structure.'
+} as const;
+
+/**
+ * Get a human-readable description for a quality check
+ */
+export function getQualityCheckDescription(check: string): string {
+  return QUALITY_CHECK_DESCRIPTIONS[check] || '';
+}
 
 // ============================================================================
 // CATEGORY EXPLANATIONS
@@ -99,7 +140,7 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Misinformation': 'The claim overstates what the evidence actually shows',
   'Invalid': 'The study has fundamental issues (conflict of interest, is a review/meta-analysis, etc.)',
   'Inconclusive': 'The study has quality issues in design, control group, bias handling, or statistics',
-  'Not Tested in Humans': 'The study was conducted on cells, animals, or other non-human systems',
+  'Not Tested in Humans': 'The study was conducted on cells, animals, primates or other non-human systems',
   'Limited Tested in Humans': 'The study has fewer than 100 human participants',
   'Tested in Humans': 'The study has 100-500,000 human participants',
   'Widely Tested in Humans': 'The study has more than 500,000 human participants',
@@ -182,15 +223,17 @@ export function isHumanTestingCategory(category: string): boolean {
 /**
  * Get background color classes for a study tag
  */
-export function getStudyTagColor(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
-  return STUDY_TAG_COLORS[tag] || 'bg-gray-100 text-gray-800';
+export function getStudyTagColor(tag: string): string {
+  const key = normalizeCategoryKey(tag);
+  return STUDY_TAG_COLORS[key] || 'bg-gray-100 text-gray-800';
 }
 
 /**
  * Get border color classes for a study tag (used in form buttons/chips)
  */
-export function getStudyTagBorderColor(tag: 'women_not_included' | 'observational' | 'clinical_trial'): string {
-  return STUDY_TAG_BORDER_COLORS[tag] || 'border-gray-400';
+export function getStudyTagBorderColor(tag: string): string {
+  const key = normalizeCategoryKey(tag);
+  return STUDY_TAG_BORDER_COLORS[key] || 'border-gray-400';
 }
 
 // ============================================================================

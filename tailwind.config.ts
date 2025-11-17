@@ -25,6 +25,19 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				evidence: {
+					misinformation: '#e9724c',
+					invalid: '#e5e7eb',
+					inconclusive: '#e5e7eb',
+					'not-tested': '#fed7aa',
+					'limited': '#bee9e8',
+					'tested': '#0496ff',
+					'widely-tested': '#0496ff',
+					'women-excluded': '#fed7aa',
+					'observational': '#bee9e8',
+					'clinical': '#0496ff',
+          'clear': '#dad7cd'
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -108,5 +121,6 @@ export default {
 			}
 		}
 	},
+
 	plugins: [tailwindcssAnimate],
 } satisfies Config;

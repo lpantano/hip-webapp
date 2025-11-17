@@ -33,12 +33,12 @@ const formSchema = z.object({
     doi: z.string().refine((val) => {
       // If DOI field is empty, that's fine (user can remove the publication entry)
       if (!val || val.trim() === '') return true;
-      
+
       // If DOI field has content, validate the format
       const doiPattern = /^10\.\d{4,}\/[^\s]+$/;
       const pubmedUrlPattern = /(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/\d+\/?/i;
       const pmidPattern = /^(?:pmid:?\s*)?\d+$/i;
-      
+
       return doiPattern.test(val) || pubmedUrlPattern.test(val) || pmidPattern.test(val) || val.includes('doi.org');
     }, 'Please enter a valid DOI, PubMed URL, or PMID'),
     title: z.string().optional(),
@@ -130,7 +130,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     }
 
     setIsSubmitting(true);
-    
+
     try {
       console.log('Submitting claim with data:', data);
 
@@ -156,7 +156,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       // Insert publications if any (filter out empty publications)
       if (data.publications && data.publications.length > 0) {
         const validPublications = data.publications.filter(pub => pub.doi && pub.doi.trim() !== '');
-        
+
         if (validPublications.length > 0) {
           const publicationsToInsert = validPublications.map(pub => ({
             claim_id: claimData.id,
@@ -281,10 +281,10 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Provide detailed information about your claim"
                       className="min-h-[100px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -345,9 +345,9 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                               <FormLabel>Source URL</FormLabel>
                               <div className="flex gap-2">
                                 <FormControl>
-                                  <Input 
+                                  <Input
                                     type="url"
-                                    placeholder="https://..." 
+                                    placeholder="https://..."
                                     {...field}
                                     onBlur={() => form.trigger(`sources.${index}.source_url`)}
                                   />
@@ -383,7 +383,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                             <Badge variant="secondary" className="mb-2">Auto-filled</Badge>
                             <h4 className="font-medium text-sm">{source.source_title}</h4>
                           </div>
-                          
+
                         </div>
                       )}
                     </div>
@@ -395,12 +395,15 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <FormLabel className="text-base">Supporting Publications (Optional)</FormLabel>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add scientific publications that support your claim. You can also add these later.
+                  {/* <FormLabel className="text-base">Supporting Publications (Optional)</FormLabel> */}
+                  {/* <p className="text-sm text-muted-foreground mt-1">
+                    Add scientific publications that alleged support the claim. You can also add these later.
+                  </p> */}
+                  <p className="text-sm text-muted-foreground">
+                    You would be able to add alleged supporting publications or disprofing publications after submitting the claim.
                   </p>
                 </div>
-                <Button
+                {/* <Button
                   type="button"
                   variant="outline"
                   size="sm"
@@ -408,15 +411,15 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Publication
-                </Button>
+                </Button> */}
               </div>
 
-              {fields.length === 0 && (
+              {/* {fields.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
                   <p className="text-sm">No publications added yet.</p>
                   <p className="text-xs mt-1">You can submit your claim without publications and add them later.</p>
                 </div>
-              )}
+              )} */}
 
               {fields.map((field, index) => {
                 const publication = form.watch(`publications.${index}`);
@@ -432,8 +435,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                               <FormLabel>DOI or PubMed Link</FormLabel>
                               <div className="flex gap-2">
                                 <FormControl>
-                                  <Input 
-                                    placeholder="10.1000/xyz123 or https://pubmed.ncbi.nlm.nih.gov/12345678/" 
+                                  <Input
+                                    placeholder="10.1000/xyz123 or https://pubmed.ncbi.nlm.nih.gov/12345678/"
                                     {...field}
                                   />
                                 </FormControl>
@@ -496,8 +499,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSubmitting}
                 size="sm"
                 className="w-32 text-sm px-3"
@@ -512,9 +515,9 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                 )}
               </Button>
               {onCancel && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={onCancel}
                   disabled={isSubmitting}
                   size="sm"

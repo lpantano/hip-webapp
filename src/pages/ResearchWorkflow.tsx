@@ -3,13 +3,13 @@ import { CheckCircle, XCircle, Users, FileText, AlertCircle, ArrowRight, ArrowDo
 import { Arrow } from '../components/ui/arrow';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CATEGORY_DESCRIPTIONS } from '@/lib/classification-categories';
+import { CATEGORY_DESCRIPTIONS, getStudyTagDescription, getCategoryBackgroundColor, getCategoryBorderColor, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-categories';
 import Header from '../components/layout/Header';
 
 const ResearchWorkflow = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeNode, setActiveNode] = useState<'validation' | 'qualityCheck' | 'human' | 'sample' | null>(null);
+  const [activeNode, setActiveNode] = useState<'validation' | 'qualityCheck' | 'human' | 'studyTag' | 'sample' | null>(null);
   const [validationAnswers, setValidationAnswers] = useState({
     hasConflict: false,
     isReview: false,
@@ -25,12 +25,14 @@ const ResearchWorkflow = () => {
   const [answers, setAnswers] = useState({});
   const [classification, setClassification] = useState(null);
   const [highlightPath, setHighlightPath] = useState([]);
+  const [selectedStudyType, setSelectedStudyType] = useState<'Observational' | 'Clinical Trial' | null>(null);
 
   // refs to center the visual workflow on the active node
   const visualRef = useRef(null);
   const validationRef = useRef(null);
   const qualityCheckRef = useRef(null);
   const humanRef = useRef(null);
+  const studyTagRef = useRef(null);
   const sampleRef = useRef(null);
 
   const validationQuestions = [
@@ -52,8 +54,16 @@ const ResearchWorkflow = () => {
       id: 'human',
       question: 'Is the study conducted in humans?',
       options: [
-        { value: 'yes', label: 'Yes', next: 'sample' },
+        { value: 'yes', label: 'Yes', next: 'studyTag' },
         { value: 'no', label: 'No', result: 'Not Tested in Humans' }
+      ]
+    },
+    {
+      id: 'studyTag',
+      question: 'What type of human study is this?',
+      options: [
+        { value: 'Observational', label: 'Observational', next: 'sample' },
+        { value: 'Clinical Trial', label: 'Clinical Trial', next: 'sample' }
       ]
     },
     {
@@ -130,6 +140,11 @@ const ResearchWorkflow = () => {
     const newPath = [...highlightPath, steps[stepIndex].id + '-' + option.value];
     setHighlightPath(newPath);
 
+    // Track selected study type
+    if (steps[stepIndex].id === 'studyTag') {
+      setSelectedStudyType(option.value as 'Observational' | 'Clinical Trial');
+    }
+
     if (option.result) {
       setClassification(option.result);
     } else if (option.next) {
@@ -157,6 +172,7 @@ const ResearchWorkflow = () => {
     setHighlightPath([]);
     setDialogOpen(false);
     setActiveNode(null);
+    setSelectedStudyType(null);
   };
 
   const handleNodeClick = (node: 'validation' | 'qualityCheck' | 'human' | 'sample') => {
@@ -164,27 +180,14 @@ const ResearchWorkflow = () => {
     setActiveNode(node);
     setDialogOpen(true);
   };
-
-  const getClassificationColor = (classification) => {
-    switch(classification) {
-      case 'Misinformation':
-        return 'bg-red-100 border-red-300 text-red-800';
-      case 'Invalid':
-        return 'bg-gray-100 border-gray-300 text-gray-800';
-      case 'Inconclusive':
-        return 'bg-gray-100 border-gray-300 text-gray-800';
-      case 'Not Tested in Humans':
-        return 'bg-orange-100 border-orange-300 text-orange-800';
-      case 'Limited Tested in Humans':
-        return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      case 'Tested in Humans':
-        return 'bg-blue-100 border-blue-300 text-blue-800';
-      case 'Widely Tested in Humans':
-        return 'bg-green-100 border-green-300 text-green-800';
-      default:
-        return 'bg-gray-100 border-gray-300 text-gray-800';
-    }
+  // extend typed handler for studyTag
+  const handleNodeClickExtended = (node: 'validation' | 'qualityCheck' | 'human' | 'studyTag' | 'sample') => {
+    setActiveNode(node);
+    setDialogOpen(true);
   };
+
+  // classification/result colors are now centralized via helpers in classification-categories.ts
+  // local helpers removed in favor of getCategoryBackgroundColor / getCategoryBorderColor
 
   const getClassificationIcon = (classification) => {
     switch(classification) {
@@ -212,7 +215,8 @@ const ResearchWorkflow = () => {
       return highlightPath.includes(nodeId);
     }
     if (nodeId === 'human' && currentStep === 2) return true;
-    if (nodeId === 'sample' && currentStep === 3) return true;
+    if (nodeId === 'studyTag' && currentStep === 3) return true;
+    if (nodeId === 'sample' && currentStep === 4) return true;
     return false;
   };
 
@@ -220,7 +224,7 @@ const ResearchWorkflow = () => {
     return highlightPath.includes(pathId);
   };
 
-  const getTotalSteps = () => 4;
+  const getTotalSteps = () => 5;
   const getCurrentStepNumber = () => {
     if (currentStep === 0) return 1;
     return currentStep + 1;
@@ -231,11 +235,12 @@ const ResearchWorkflow = () => {
     const container = visualRef.current;
     let targetEl = null;
 
-    // Map currentStep to node ref: 0 => validation, 1 => qualityCheck, 2 => human, 3 => sample
-    if (currentStep === 0) targetEl = validationRef.current;
-    else if (currentStep === 1) targetEl = qualityCheckRef.current;
-    else if (currentStep === 2) targetEl = humanRef.current;
-    else if (currentStep === 3) targetEl = sampleRef.current;
+  // Map currentStep to node ref: 0 => validation, 1 => qualityCheck, 2 => human, 3 => studyTag, 4 => sample
+  if (currentStep === 0) targetEl = validationRef.current;
+  else if (currentStep === 1) targetEl = qualityCheckRef.current;
+  else if (currentStep === 2) targetEl = humanRef.current;
+  else if (currentStep === 3) targetEl = studyTagRef.current;
+  else if (currentStep === 4) targetEl = sampleRef.current;
 
     if (container && targetEl && typeof container.scrollTo === 'function') {
       // Use bounding rects to compute the target center relative to the container
@@ -273,33 +278,35 @@ const ResearchWorkflow = () => {
 
         <div className="grid grid-cols-1 gap-8">
           {/* Visual Workflow - Full Width */}
-          <div ref={visualRef} className="bg-white rounded-2xl shadow-xl p-4 md:p-8 border border-gray-100 w-full max-w-[1200px] mx-auto overflow-x-auto" >
-            {/* Progress */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs md:text-sm font-medium text-gray-700">
-                      Step {getCurrentStepNumber()} of {getTotalSteps()}
-                    </span>
-                    <span className="text-xs md:text-sm text-gray-500">
-                      {Math.round((getCurrentStepNumber() / getTotalSteps()) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(getCurrentStepNumber() / getTotalSteps()) * 100}%` }}
-                    ></div>
-                  </div>
+            <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 border border-gray-100 w-full max-w-[1200px] mx-auto">
+              {/* Progress bar kept outside the horizontally scrollable area so it stays visible */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs md:text-sm font-medium text-gray-700">
+                    Step {getCurrentStepNumber()} of {getTotalSteps()}
+                  </span>
+                  <span className="text-xs md:text-sm text-gray-500">
+                    {Math.round((getCurrentStepNumber() / getTotalSteps()) * 100)}%
+                  </span>
                 </div>
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Workflow</h2>
-              <button
-                onClick={resetWorkflow}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 border border-gray-300"
-              >
-                Reset
-              </button>
-            </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(getCurrentStepNumber() / getTotalSteps()) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="flex items-center justify-center gap-4 mb-6 mt-4">
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-900">Workflow</h2>
+                  <button
+                    onClick={resetWorkflow}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 border border-gray-300"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+              <div ref={visualRef} className="overflow-x-auto pt-6 pb-6 pl-6 pr-6">
+
 
             <div className="flex items-start justify-center gap-4 min-w-max">
               {/* Column 1: Validation Screen */}
@@ -339,7 +346,7 @@ const ResearchWorkflow = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                        isPathActive('validation-invalid') || isPathActive('validation-misinformation') ? 'border-red-400 bg-red-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                        isPathActive('validation-misinformation') ? `${getCategoryBackgroundColor('Misinformation')} ${getCategoryBorderColor('Misinformation')}` : isPathActive('validation-invalid') ? `${getCategoryBackgroundColor('Invalid')} ${getCategoryBorderColor('Invalid')}` : 'border-gray-200 bg-gray-50'
                       }`}>
                         <div className="flex items-center justify-center gap-1">
                           <p className="text-xs font-semibold text-gray-700">Invalid/Misinfo</p>
@@ -401,7 +408,7 @@ const ResearchWorkflow = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                        isPathActive('qualityCheck-no') ? 'border-gray-400 bg-gray-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                        isPathActive('qualityCheck-no') ? `${getCategoryBackgroundColor('Inconclusive')} ${getCategoryBorderColor('Inconclusive')}` : 'border-gray-200 bg-gray-50'
                       }`}>
                         <div className="flex items-center justify-center gap-1">
                           <p className="text-xs font-semibold text-gray-700">Inconclusive</p>
@@ -466,7 +473,7 @@ const ResearchWorkflow = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                        isNodeActive('human-no') ? 'border-orange-400 bg-orange-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                        isNodeActive('human-no') ? `${getCategoryBackgroundColor('Not Tested in Humans')} ${getCategoryBorderColor('Not Tested in Humans')}` : 'border-gray-200 bg-gray-50'
                       }`}>
                         <div className="flex items-center justify-center gap-1">
                           <p className="text-xs font-semibold text-gray-700">Not Tested</p>
@@ -492,7 +499,76 @@ const ResearchWorkflow = () => {
                 </div>
               </div>
 
-              {/* Column 4: Sample Size */}
+              {/* Column 4: Sample Size (moved to column 5 below - placeholder kept for layout) */}
+              <div className="hidden md:block md:w-0" />
+              {/* Column 4: Study Type (Observational vs Clinical Trial) */}
+              <div className="flex flex-col items-center flex-1">
+                <button
+                  onClick={() => handleNodeClickExtended('studyTag')}
+                  ref={studyTagRef}
+                  className={`w-[140px] h-[140px] p-4 rounded-xl border-2 transition-all duration-300 ${
+                  isNodeActive('studyTag')
+                    ? 'border-blue-500 bg-blue-50 shadow-lg scale-105 cursor-pointer hover:shadow-xl'
+                    : 'border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 opacity-60 hover:opacity-80'
+                }`}>
+                  <div className="text-center h-full flex flex-col justify-center">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 mx-auto ${
+                      isNodeActive('studyTag') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      <span className="font-bold">4</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Study Type</p>
+                    {isNodeActive('studyTag') && (
+                      <p className="text-xs text-blue-600 mt-1">Click to specify</p>
+                    )}
+                    {!isNodeActive('studyTag') && (
+                      <p className="text-xs text-gray-500 mt-1">Click to view</p>
+                    )}
+                  </div>
+                </button>
+
+                {/* Outcomes from Study Type */}
+                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex items-center justify-center pr-2">
+                      <Arrow length={40} label="Type" direction="vertical" isActive={isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial')}  />
+                    </div>
+                  </div>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className={`w-full p-3 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
+                        selectedStudyType
+                          ? `${getStudyTagColor(selectedStudyType)} ${getStudyTagBorderColor(selectedStudyType)} shadow-md`
+                          : isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial')
+                          ? 'border-gray-400 bg-gray-100 shadow-md'
+                          : 'border-gray-200 bg-gray-50'
+                      }`}>
+                        <div className="flex items-center justify-center gap-1">
+                          <p className={`text-xs font-semibold ${selectedStudyType ? '' : 'text-gray-700'}`}>
+                            {selectedStudyType || 'Observational / Trial'}
+                          </p>
+                          <Info className={`w-3 h-3 ${selectedStudyType ? '' : 'text-gray-500'}`} />
+                        </div>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-2">
+                        <p className="text-sm"><strong>Observational:</strong> {getStudyTagDescription('Observational')}</p>
+                        <p className="text-sm"><strong>Clinical Trial:</strong> {getStudyTagDescription('Clinical Trial')}</p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Column 5: Sample Size */}
+              {/* Arrow between Study Type and Sample Size */}
+              <div className="flex flex-col items-center justify-start pt-16">
+                <div className="flex items-center">
+                  <Arrow length={40} label="Then" isActive={isPathActive('studyTag-Observational') || isPathActive('studyTag-Clinical Trial')}  />
+                </div>
+              </div>
               <div className="flex flex-col items-center flex-1">
                 <button
                   onClick={() => handleNodeClick('sample')}
@@ -506,7 +582,7 @@ const ResearchWorkflow = () => {
                     <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full mb-2 mx-auto ${
                       isNodeActive('sample') ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
                     }`}>
-                      <span className="font-bold">4</span>
+                      <span className="font-bold">5</span>
                     </div>
                     <p className="text-sm font-medium text-gray-700">Sample Size</p>
                     {isNodeActive('sample') && (
@@ -520,7 +596,7 @@ const ResearchWorkflow = () => {
               </div>
               {/* Column 5: Outcomes from Sample Size */}
               <div className="flex flex-col items-center flex-2">
-                <div className="flex flex-col items-center w-full mt-6 space-y-3">
+                <div className="flex flex-col items-center w-full space-y-3">
                   <div className="flex items-center w-full">
                     <div className="flex-1 flex min-w-[80px] items-center justify-start pr-2">
                       {/* <ArrowRight className={`w-4 h-4 transition-all duration-300 ${
@@ -532,7 +608,7 @@ const ResearchWorkflow = () => {
                     <Popover>
                       <PopoverTrigger asChild>
                         <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                          isNodeActive('sample-small') ? 'border-yellow-400 bg-yellow-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                          isNodeActive('sample-small') ? `${getCategoryBackgroundColor('Limited Tested in Humans')} ${getCategoryBorderColor('Limited Tested in Humans')}` : 'border-gray-200 bg-gray-50'
                         }`}>
                           <div className="flex items-center justify-center gap-1">
                             <p className="text-xs font-semibold text-gray-700">Limited</p>
@@ -558,7 +634,7 @@ const ResearchWorkflow = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                        isNodeActive('sample-medium') ? 'border-blue-400 bg-blue-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                        isNodeActive('sample-medium') ? `${getCategoryBackgroundColor('Tested in Humans')} ${getCategoryBorderColor('Tested in Humans')}` : 'border-gray-200 bg-gray-50'
                       }`}>
                         <div className="flex items-center justify-center gap-1">
                           <p className="text-xs font-semibold text-gray-700">Tested</p>
@@ -583,12 +659,12 @@ const ResearchWorkflow = () => {
                     <Popover>
                       <PopoverTrigger asChild>
                         <div className={`w-full p-2 rounded-lg border-2 text-center transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                          isNodeActive('sample-large') ? 'border-green-400 bg-green-100 shadow-md' : 'border-gray-200 bg-gray-50'
+                          isNodeActive('sample-large') ? `${getCategoryBackgroundColor('Widely Tested in Humans')} ${getCategoryBorderColor('Widely Tested in Humans')}` : 'border-gray-200 bg-gray-50'
                         }`}>
                           <div className="flex items-center justify-center gap-1">
-                            <p className="text-xs font-semibold text-gray-700">Widely</p>
-                            <Info className="w-3 h-3 text-gray-500" />
-                          </div>
+                              <p className="text-xs font-semibold text-gray-700">Widely</p>
+                              <Info className="w-3 h-3 text-gray-500" />
+                            </div>
                         </div>
                       </PopoverTrigger>
                       <PopoverContent className="w-80">
@@ -600,6 +676,7 @@ const ResearchWorkflow = () => {
               </div>
             </div>
           </div>
+          </div>
 
           {/* Dialog for Questionnaire */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -609,19 +686,22 @@ const ResearchWorkflow = () => {
                   {activeNode === 'validation' && 'Validation Screen'}
                   {activeNode === 'qualityCheck' && 'Quality Assessment'}
                   {activeNode === 'human' && 'Human Study Assessment'}
+                  {activeNode === 'studyTag' && 'Study Type'}
                   {activeNode === 'sample' && 'Sample Size Classification'}
                 </DialogTitle>
                 <DialogDescription>
                   {activeNode === 'validation' && 'Check if any validation issues apply'}
                   {activeNode === 'qualityCheck' && 'Evaluate the study quality (all should pass)'}
                   {activeNode === 'human' && 'Determine if the study was conducted in humans'}
+                  {activeNode === 'studyTag' && 'Is this an observational study or a clinical trial?'}
                   {activeNode === 'sample' && 'Select the appropriate sample size range'}
                 </DialogDescription>
                 {/* Show read-only indicator */}
                 {((activeNode === 'validation' && currentStep !== 0) ||
                   (activeNode === 'qualityCheck' && currentStep !== 1) ||
                   (activeNode === 'human' && currentStep !== 2) ||
-                  (activeNode === 'sample' && currentStep !== 3)) && !classification && (
+                  (activeNode === 'studyTag' && currentStep !== 3) ||
+                  (activeNode === 'sample' && currentStep !== 4)) && !classification && (
                   <div className="mt-2 p-2 bg-gray-100 rounded-lg text-center">
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Preview Mode:</span> You can view the questions but cannot answer them yet.
@@ -642,7 +722,7 @@ const ResearchWorkflow = () => {
                   <div>
                     <div className="space-y-4">
                       {validationQuestions.map((question) => (
-                        <div key={question.id} className="p-3 md:p-4 border-2 border-gray-200 rounded-xl">
+                        <div key={question.id} className="py-2 px-3 border-b border-gray-100">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                             <p className="text-sm font-medium text-gray-800 mb-0">
                               {question.label}
@@ -652,12 +732,12 @@ const ResearchWorkflow = () => {
                               <button
                                 onClick={() => handleValidationAnswer(question.id, true)}
                                 disabled={currentStep !== 0 || classification !== null}
-                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                className={`py-1 px-3 rounded-md border transition-all duration-200 text-sm ${
                                   validationAnswers[question.id] === true
-                                    ? 'border-red-500 bg-red-50 text-red-700 font-medium'
+                                    ? 'bg-red-50 text-red-700 font-medium border-red-500'
                                     : currentStep === 0 && !classification
-                                    ? 'border-gray-300 bg-white text-gray-700 hover:border-red-300 cursor-pointer'
-                                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-white text-gray-700 hover:bg-red-50 cursor-pointer border-gray-300'
+                                    : 'text-gray-400 opacity-60 cursor-not-allowed border-gray-200 bg-gray-50'
                                 }`}
                               >
                                 Yes
@@ -665,12 +745,12 @@ const ResearchWorkflow = () => {
                               <button
                                 onClick={() => handleValidationAnswer(question.id, false)}
                                 disabled={currentStep !== 0 || classification !== null}
-                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                className={`py-1 px-3 rounded-md border transition-all duration-200 text-sm ${
                                   validationAnswers[question.id] === false
-                                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                    ? 'bg-blue-50 text-blue-700 font-medium border-blue-500'
                                     : currentStep === 0 && !classification
-                                    ? 'border-gray-300 bg-white text-gray-700 hover:border-blue-300 cursor-pointer'
-                                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-white text-gray-700 hover:bg-blue-50 cursor-pointer border-gray-300'
+                                    : 'text-gray-400 opacity-60 cursor-not-allowed border-gray-200 bg-gray-50'
                                 }`}
                               >
                                 No
@@ -704,7 +784,7 @@ const ResearchWorkflow = () => {
                   <div>
                     <div className="space-y-4">
                       {qualityCheckQuestions.map((question) => (
-                        <div key={question.id} className="p-3 md:p-4 border-2 border-gray-200 rounded-xl">
+                        <div key={question.id} className="py-2 px-3 border-b border-gray-100">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                             <p className="text-sm font-medium text-gray-800 mb-0">
                               {question.label}
@@ -714,12 +794,12 @@ const ResearchWorkflow = () => {
                               <button
                                 onClick={() => handleQualityCheckAnswer(question.id, true)}
                                 disabled={currentStep !== 1 || classification !== null}
-                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                className={`py-1 px-3 rounded-md border transition-all duration-200 text-sm ${
                                   qualityCheckAnswers[question.id] === true
-                                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                    ? 'bg-blue-50 text-blue-700 font-medium border-blue-500'
                                     : currentStep === 1 && !classification
-                                    ? 'border-gray-300 bg-white text-gray-700 hover:border-blue-300 cursor-pointer'
-                                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-white text-gray-700 hover:bg-blue-50 cursor-pointer border-gray-300'
+                                    : 'text-gray-400 opacity-60 cursor-not-allowed border-gray-200 bg-gray-50'
                                 }`}
                               >
                                 Yes
@@ -727,12 +807,12 @@ const ResearchWorkflow = () => {
                               <button
                                 onClick={() => handleQualityCheckAnswer(question.id, false)}
                                 disabled={currentStep !== 1 || classification !== null}
-                                className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+                                className={`py-1 px-3 rounded-md border transition-all duration-200 text-sm ${
                                   qualityCheckAnswers[question.id] === false
-                                    ? 'border-red-500 bg-red-50 text-red-700 font-medium'
+                                    ? 'bg-red-50 text-red-700 font-medium border-red-500'
                                     : currentStep === 1 && !classification
-                                    ? 'border-gray-300 bg-white text-gray-700 hover:border-red-300 cursor-pointer'
-                                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-white text-gray-700 hover:bg-red-50 cursor-pointer border-gray-300'
+                                    : 'text-gray-400 opacity-60 cursor-not-allowed border-gray-200 bg-gray-50'
                                 }`}
                               >
                                 No
@@ -778,9 +858,9 @@ const ResearchWorkflow = () => {
                             }
                           }}
                           disabled={currentStep !== 2 || classification !== null}
-                          className={`w-full p-4 text-left border-2 border-gray-200 rounded-xl transition-all duration-200 group ${
+                          className={`w-full p-2 text-left rounded-md transition-all duration-200 group ${
                             currentStep === 2 && !classification
-                              ? 'hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
+                              ? 'hover:bg-blue-50 cursor-pointer border'
                               : 'cursor-not-allowed opacity-60'
                           }`}
                         >
@@ -804,11 +884,19 @@ const ResearchWorkflow = () => {
                   </div>
                 )}
 
-                {activeNode === 'sample' && (
+                {activeNode === 'studyTag' && (
                   <div>
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 text-center">
                       {steps[1].question}
                     </h3>
+                    {selectedStudyType && (
+                      <div className="mb-4 text-center">
+                        <span className="text-sm text-gray-600">Selected: </span>
+                        <span className={`inline-block px-3 py-1 rounded-lg text-sm font-semibold ${getStudyTagColor(selectedStudyType)} ${getStudyTagBorderColor(selectedStudyType)}`}>
+                          {selectedStudyType}
+                        </span>
+                      </div>
+                    )}
                     <div className="space-y-3">
                       {steps[1].options.map((option, index) => (
                         <button
@@ -820,22 +908,63 @@ const ResearchWorkflow = () => {
                             }
                           }}
                           disabled={currentStep !== 3 || classification !== null}
-                          className={`w-full p-4 text-left border-2 border-gray-200 rounded-xl transition-all duration-200 group ${
-                            currentStep === 3 && !classification
-                              ? 'hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
-                              : 'cursor-not-allowed opacity-60'
-                          }`}
-                        >
+                          className={`w-full p-2 text-left rounded-md transition-all duration-200 group ${currentStep === 3 && !classification ? 'hover:bg-blue-50 cursor-pointer' : 'cursor-not-allowed opacity-60'} ${selectedStudyType === option.value ? `${getStudyTagColor(option.value as 'Observational' | 'Clinical Trial')} ${getStudyTagBorderColor(option.value as 'Observational' | 'Clinical Trial')} shadow-md` : 'border border-gray-200'}`}>
                           <div className="flex items-center justify-between">
                             <span className={`text-base md:text-lg font-medium ${
-                              currentStep === 3 && !classification
+                              selectedStudyType === option.value
+                                ? ''
+                                : currentStep === 3 && !classification
                                 ? 'text-gray-800 group-hover:text-blue-600'
                                 : 'text-gray-500'
                             }`}>
                               {option.label}
                             </span>
                             <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
-                              currentStep === 3 && !classification
+                selectedStudyType === option.value
+                  ? `${getStudyTagBorderColor(option.value as 'Observational' | 'Clinical Trial')} ${getStudyTagColor(option.value as 'Observational' | 'Clinical Trial')}`
+                  : currentStep === 3 && !classification
+                  ? 'border-gray-300 group-hover:border-blue-500 group-hover:bg-blue-500'
+                  : 'border-gray-200 bg-gray-100'
+                            }`}></div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeNode === 'sample' && (
+                  <div>
+                    <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 text-center">
+                      {steps[2].question}
+                    </h3>
+                    <div className="space-y-3">
+                      {steps[2].options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            if (currentStep === 4 && !classification) {
+                              handleAnswer(option);
+                              setDialogOpen(false);
+                            }
+                          }}
+                          disabled={currentStep !== 4 || classification !== null}
+                          className={`w-full p-2 text-left rounded-md transition-all duration-200 group ${
+                            currentStep === 4 && !classification
+                              ? 'hover:bg-blue-50 cursor-pointer border'
+                              : 'cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-base md:text-lg font-medium ${
+                              currentStep === 4 && !classification
+                                ? 'text-gray-800 group-hover:text-blue-600'
+                                : 'text-gray-500'
+                            }`}>
+                              {option.label}
+                            </span>
+                            <div className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                              currentStep === 4 && !classification
                                 ? 'border-gray-300 group-hover:border-blue-500 group-hover:bg-blue-500'
                                 : 'border-gray-200 bg-gray-100'
                             }`}></div>
@@ -857,11 +986,22 @@ const ResearchWorkflow = () => {
                   Classification Result
                 </h2>
 
-                <div className={`inline-block px-8 py-4 rounded-xl border-2 ${getClassificationColor(classification)}`}>
+                <div className={`inline-block px-8 py-4 rounded-xl border-2 ${getCategoryBackgroundColor(classification)} ${getCategoryBorderColor(classification)}`}>
                   <p className="text-lg font-semibold">
                     {classification}
                   </p>
                 </div>
+
+                {selectedStudyType && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">Study Type:</p>
+                    <div className={`inline-block px-6 py-2 rounded-lg ${getStudyTagColor(selectedStudyType)} ${getStudyTagBorderColor(selectedStudyType)}`}>
+                      <p className="text-base font-semibold">
+                        {selectedStudyType}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-gray-600 mt-6 max-w-md mx-auto">
                   {classification === 'Misinformation' &&
@@ -898,12 +1038,13 @@ const ResearchWorkflow = () => {
           </h3>
           <div className="space-y-3 text-gray-600">
             <p>
-              Our four-step workflow ensures consistent and transparent evaluation of research publications:
+              Our five-step workflow ensures consistent and transparent evaluation of research publications:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li><strong>Validation:</strong> Screens for fundamental issues like conflicts of interest, review studies, categorical meta-analyses, and evidence overstatement</li>
               <li><strong>Quality Checks:</strong> Evaluates study design, control groups, bias management, and statistical methods</li>
               <li><strong>Human Study Verification:</strong> Confirms findings are applicable to human populations</li>
+              <li><strong>Study Type:</strong> Distinguishes observational studies from clinical trials (affects interpretation and downstream tagging)</li>
               <li><strong>Sample Size Classification:</strong> Assesses the robustness and generalizability based on participant numbers</li>
             </ul>
           </div>
