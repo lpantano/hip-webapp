@@ -27,7 +27,7 @@ const StudyDesignCard = () => {
          <DialogHeader>
            <DialogTitle className="flex items-center gap-2 text-2xl">
              <Compass className="w-6 h-6 text-primary" />
-             Important aspects of Study Design
+             Important aspects of study design
            </DialogTitle>
            <DialogDescription className="text-base">
              Understanding how thoughtful design increases the reliability of research findings.
@@ -48,7 +48,7 @@ const StudyDesignCard = () => {
              </p>
            </div>
         <div>
-            <h3 className="text-lg font-semibold mb-3">Important considerations </h3>
+            <h2 className="text-xl font-semibold mb-3">Main considerations </h2>
             <p className="text-muted-foreground">
               Design is the foundation of trustworthy science. It ensures that <b>research questions are tested in a fair, unbiased, and reproducible way</b>. Below we highlight elements that The Health Integrity Project focuses on to assess the reliability of a study.
             </p>
