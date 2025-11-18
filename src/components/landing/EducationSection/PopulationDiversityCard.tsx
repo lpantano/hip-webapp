@@ -168,7 +168,10 @@ const PopulationDiversityCard = () => {
               <DialogTitle className="text-2xl m-0">How do we score Population Representation?</DialogTitle>
             </div>
             <div className="text-md text-muted-foreground">
-              The Health Integrity Project allows experts to <b>categorize</b> evidence on diversity traits such as <b>ethnicity</b>, and <b>age</b>. If there are no women included in the study population, the final label is "Not Tested in Women".
+              The Health Integrity Project allows experts to <b>categorize</b> evidence on diversity traits such as <b>ethnicity</b> and <b>age</b>, Age is labeled by selecting from existing age brackets and ethnicity can be explictly defined or selected from a drop-down list.
+              <br></br>
+              <br></br>
+              <b>What about balancing representation across sexes?</b> If there are no women included in the study population, the final label is "Not Tested in Women".
             </div>
           </div>
           

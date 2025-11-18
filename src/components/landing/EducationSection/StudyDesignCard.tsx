@@ -101,17 +101,17 @@ const StudyDesignCard = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  <span>Missing, inappropriate, or poorly matched controls</span>
+                  <span>No blinding, risking expectancy and observer bias</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  <span>Misapplied or incorrect statistical analyses</span>
+                  <span>Violation of statistical assumptions (e.g., normality, homoscedasticity)</span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-         {/* Real World Example: Diverse */}
+         {/* Real World Example: Robust design */}
           <div>
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
@@ -119,16 +119,18 @@ const StudyDesignCard = () => {
                   <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-sm">
                     <Check className="w-6 h-6 text-white" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold m-0">Carolina Breast Cancer Study </h3>
+                  <h3 className="text-lg font-semibold m-0">The TAILORx trial (Trial Assigning Individualized Options for Treatment) </h3>
                 </div>
 
                 <div className="space-y-3 text-sm">
                   <div>
-                    <div className="font-medium">A population-based, case-control cohort conducted in a 24-county region of North Carolina beginning in the 1990s. Deliberate oversampling of Black (African-American) women and younger (premenopausal) women, so that those groups would be represented at roughly equal levels to White and older women.</div>
+                    <div className="font-medium">A  large, prospective, randomized clinical trial aimed to personalize treatment and reduce unnecessary chemotherapy in women with a specific type of breast cancer.
+</div>
                     <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
-                      <li>Enrolled thousands of participants collecting tumor tissue, biospecimens, and detailed demographic, clinical, and exposure data — enabling robust subgroup analyses</li>
-                      <li><b>Result</b>: Identified differences in tumor subtypes and outcomes (for example, higher prevalence of basal-like/triple-negative tumors among Black women)</li>
-                      <li><b>Impact</b>: A great model for studying disparities in breast cancer</li>
+                      <li>Prospective means the researchers identified participants first, then followed them forward in time to observe outcomes. This design avoids many biases associated with retrospective analysis.</li>
+                      <li>Randomization ensured patient characteristics were evenly balanced between groups; reducing selection bias in statistical analysis</li>
+                      <li>Large sample size ensured high statistical power, even for subgroup comparison</li>
+                      <li><b>Impact</b>: Dramatically reduced the number of women receiving unnecessary chemotherapy</li>
                     </ul>
                   </div>
                 </div>
@@ -136,23 +138,24 @@ const StudyDesignCard = () => {
             </div>
           </div>
 
-          {/* Real World Example: Limited (duplicated formatting with red X) */}
+          {/* Real World Example: Inadequate design(duplicated formatting with red X) */}
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
             <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-sm">
                     <X className="w-6 h-6 text-white" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold m-0">Early Cardiovascular Disease Trials (1960s–1980s) </h3>
+                  <h3 className="text-lg font-semibold m-0"> Green Tea Extract for Weight Loss (various early 2000s studies) </h3>
                 </div>
 
                 <div className="space-y-3 text-sm">
                   <div>
-                    <div className="font-medium">Many early heart disease studies recruited mostly middle-aged white men. Women and racial/ethnic minorities were largely excluded</div>
+                    <div className="font-medium">Many early studies on green tea extract (particularly EGCG-containing supplements) were promoted as evidence that green tea causes significant weight loss.
+</div>
                     <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
-                      <li><b>Result</b>: For years, heart attack symptoms in women were underrecognized because early data reflected only male presentations (e.g., chest pain vs. atypical symptoms like nausea or fatigue).</li>
-                      <li><b>Impact</b>: Diagnostic guidelines were biased, leading to missed or delayed treatment for women.</li>
-
+                      <li>Lack of proper control groups; no placebo, or used a “control beverage” that was not matched for caffeine or taste.</li>
+                      <li>No blinding in many studies,  introduces expectation bias especially in subjective outcomes.</li>
+                      <li>Many papers overstated conclusions, generalizing results beyond what the dat supported, even though in many cases body weight was not assessed.</li>
                     </ul>
 
                 </div>
@@ -160,6 +163,24 @@ const StudyDesignCard = () => {
             </div>
           </div>
 
+         {/* How we score study design */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
+              <DialogTitle className="text-2xl m-0">How do we score Study Design?</DialogTitle>
+            </div>
+            <div className="text-md text-muted-foreground">
+              The Health Integrity Project implements a research publication classification in which the <b>the first step is to assess the study design</b>. If a publication does not pass the screen for a study design, it is assigned a "Inconclusive" label.
+              <br></br>
+              <br></br>
+              The criteria for the intial screen are outlined below:
+                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
+                      <li>Does the study have a valid design (randomized, controlled, etc.)?</li>
+                      <li>Does the study include an appropriate control group?</li>
+                      <li>Are the statistical methods appropriate and clearly described?</li>
+                    </ul>
+            </div>
+          </div>
+          
 
          </div>
        </DialogContent>
