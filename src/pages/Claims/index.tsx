@@ -279,7 +279,8 @@ const Claims = () => {
     try {
       // Fetch claims data for the specified page
       await fetchClaimsData(page);
-      setCurrentPage(page);
+      // Don't set currentPage here - it's already set by the caller or useEffect
+      // Setting it here causes infinite loops when fetchData is in useEffect dependencies
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -292,12 +293,15 @@ const Claims = () => {
     fetchData(currentPage);
   }, [currentPage, fetchData]);
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   // Reset to first page when filters or sorting change
   useEffect(() => {
-    if (currentPage !== 0) {
-      setCurrentPage(0);
-    }
-  }, [filterByCategory, sortBy, currentPage]);
+    setCurrentPage(0);
+  }, [filterByCategory, sortBy]);
 
   const handleVote = async (id: string) => {
     if (!user) {
