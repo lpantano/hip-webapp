@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
-import { Globe, BookOpen } from 'lucide-react';
+import { Globe, BookOpen, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const PopulationDiversityCard = () => {
@@ -32,84 +32,150 @@ const PopulationDiversityCard = () => {
           <DialogDescription className="text-base">
             Understanding how bias in study populations can invalidate research results
           </DialogDescription>
+          <br />
+          <img
+          src="/images/pop_diversity.png"
+          alt="Illustration showing diverse group of people representing population diversity"
+          className="w-full max-w-3xl mx-auto mt-4 rounded-lg shadow-sm object-cover"
+            />
         </DialogHeader>
         <div className="space-y-6 mt-6">
           {/* Introduction */}
           <div>
-            <p className="text-muted-foreground">
-              Population diversity refers to the inclusion of participants with a wide range of characteristics—such as age, sex, race, ethnicity, geography, socioeconomic status, and health background. A sample population with adequate representation creates research results which can be more applicable to the general population.
-            </p>
-          </div>
-
-          <div>
             <h3 className="text-lg font-semibold mb-3">What is Population Representation?</h3>
             <p className="text-muted-foreground">
-              Population representation refers to how well the study participants reflect the broader group the research claims to help. Good representation includes diversity in age, race, ethnicity, socioeconomic status, geography, and health conditions.
+              Population representation refers to the inclusion of participants with a wide range of characteristics—such as age, sex, race, ethnicity, geography, socioeconomic status, and health background. 
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-3">Why Representation Matters</h3>
+            <h3 className="text-lg font-semibold mb-3">Why does Representation Matter?</h3>
+            <p className="text-muted-foreground">
+              Ensuring diverse representation in a study’s population is essential for generating results that are <b>broadly applicable.</b> When certain groups are underrepresented, the findings may not accurately capture how an intervention, treatment, or condition affects different segments of the population. Inadequate representation can introduce bias, limit the generalizability of results, and ultimately undermine the validity and impact of the research.
+            </p>
+          </div>
+
+          {/* Key Points */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="border-green-200 dark:border-green-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
+                  {/* <CheckCircle className="w-5 h-5" /> */}
+                  Good Representation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span>Participants ages span across relevant ranges</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span>Balance of both men and women, when applicable</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span>Ethnic diversity inclusive of multiple racial groups</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span>Geographic spread across locations</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 dark:border-red-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+                  {/* <AlertTriangle className="w-5 h-5" /> */}
+                  Limited Representation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  <span>Young adults recruited for arthirtis study</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  <span>Study group with only one female participant</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  <span>Studies conducted primarily in Western populations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  <span>Only particpants with health insurance included</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+
+          {/* Real World Example: Diverse */}
+          <div>
             <div className="space-y-4">
-              <div className="bg-muted/20 p-4 rounded-lg">
-                <h4 className="font-medium text-green-700 dark:text-green-400 mb-2">✓ Diverse, Representative Sample</h4>
-                <p className="text-sm text-muted-foreground">
-                  Results are more likely to apply to different groups of people, accounting for genetic, cultural, and environmental differences.
-                </p>
-              </div>
-              <div className="bg-muted/20 p-4 rounded-lg">
-                <h4 className="font-medium text-yellow-700 dark:text-yellow-400 mb-2">~ Moderately Representative</h4>
-                <p className="text-sm text-muted-foreground">
-                  Some diversity but may miss important subgroups, limiting generalizability to certain populations.
-                </p>
-              </div>
-              <div className="bg-muted/20 p-4 rounded-lg">
-                <h4 className="font-medium text-red-700 dark:text-red-400 mb-2">✗ Narrow, Unrepresentative Sample</h4>
-                <p className="text-sm text-muted-foreground">
-                  Results may not apply to most people, potentially leading to ineffective or harmful recommendations for underrepresented groups.
-                </p>
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-sm">
+                    <Check className="w-6 h-6 text-white" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-lg font-semibold m-0">Carolina Breast Cancer Study </h3>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <div className="font-medium">A population-based, case-control cohort conducted in a 24-county region of North Carolina beginning in the 1990s. Deliberate oversampling of Black (African-American) women and younger (premenopausal) women, so that those groups would be represented at roughly equal levels to White and older women.</div>
+                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
+                      <li>Enrolled thousands of participants collecting tumor tissue, biospecimens, and detailed demographic, clinical, and exposure data — enabling robust subgroup analyses</li>
+                      <li><b>Result</b>: Identified differences in tumor subtypes and outcomes (for example, higher prevalence of basal-like/triple-negative tumors among Black women)</li>
+                      <li><b>Impact</b>: A great model for studying disparities in breast cancer</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Real-World Examples</h3>
-            <div className="space-y-4">
-              <div className="border-l-4 border-green-500 pl-4">
-                <h4 className="font-medium">Good Representation: VITAL Study</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  This vitamin D and omega-3 study included 25,871 participants with 20% African Americans, balanced gender representation, and participants from across the U.S., making results more applicable to diverse populations.
-                </p>
-              </div>
-              <div className="border-l-4 border-red-500 pl-4">
-                <h4 className="font-medium">Poor Representation: Historical Heart Disease Research</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  For decades, heart disease research focused primarily on middle-aged white men. This led to missed diagnoses in women and minorities, whose symptoms and risk factors can differ significantly.
-                </p>
+          {/* Real World Example: Limited (duplicated formatting with red X) */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+            <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-sm">
+                    <X className="w-6 h-6 text-white" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-lg font-semibold m-0">Early Cardiovascular Disease Trials (1960s–1980s) </h3>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <div className="font-medium">Many early heart disease studies recruited mostly middle-aged white men. Women and racial/ethnic minorities were largely excluded</div>
+                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground mt-2">
+                      <li><b>Result</b>: For years, heart attack symptoms in women were underrecognized because early data reflected only male presentations (e.g., chest pain vs. atypical symptoms like nausea or fatigue).</li>
+                      <li><b>Impact</b>: Diagnostic guidelines were biased, leading to missed or delayed treatment for women.</li>
+
+                    </ul>
+
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Common Representation Problems</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>• <strong>Age bias:</strong> Only studying young adults when the condition affects older people</li>
-              <li>• <strong>Gender bias:</strong> Male-only studies applied to women without validation</li>
-              <li>• <strong>Racial/ethnic bias:</strong> Predominantly white participants when genetics vary by ancestry</li>
-              <li>• <strong>Geographic bias:</strong> Only urban or only Western populations</li>
-              <li>• <strong>Socioeconomic bias:</strong> Only educated, affluent participants</li>
-            </ul>
+         {/* How we score study size */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
+              <DialogTitle className="text-2xl m-0">How do we score Population Representation?</DialogTitle>
+            </div>
+            <div className="text-md text-muted-foreground">
+              The Health Integrity Project allows experts to <b>categorize</b> evidence on diversity traits such as <b>ethnicity</b> and <b>age</b>, Age is labeled by selecting from existing age brackets and ethnicity can be explictly defined or selected from a drop-down list.
+              <br></br>
+              <br></br>
+              <b>What about balancing representation across sexes?</b> If there are no women included in the study population, the final label is "Not Tested in Women".
+            </div>
           </div>
+          
 
-          <div>
-            <h3 className="text-lg font-semibold mb-3">What to Look For</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>• Check if the study population matches the group you belong to</li>
-              <li>• Look for diversity in age, gender, race, and health status</li>
-              <li>• Be cautious of animal studies or single-demographic human studies</li>
-              <li>• Prefer studies that explicitly address population diversity</li>
-            </ul>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

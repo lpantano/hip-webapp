@@ -34,7 +34,7 @@ const SampleSizeCard = () => {
           <br />
           <img
           src="/images/holding_hands.png"
-          alt="Illustration showing effect size and sample size comparison"
+          alt="Illustration showing large sample size"
           className="w-full max-w-3xl mx-auto mt-4 rounded-lg shadow-sm object-cover"
             />
         </DialogHeader>
@@ -151,14 +151,8 @@ const SampleSizeCard = () => {
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 rounded-lg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
               <DialogTitle className="text-2xl m-0">How do we score Study Size?</DialogTitle>
-              <img
-                src="/images/score-meter.png"
-                alt="Study size scoring meter"
-                className="w-24 h-24 sm:w-32 sm:h-32 object-contain mt-4 sm:mt-0 ml-auto"
-                loading="lazy"
-              />
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-md text-muted-foreground">
               The Health Integrity Project limits study size scoring to human studies (see Evaluation Workflow). The number of samples required is highly dependent on the type of study being performed. Below we provide the criteria and the associated labels when evaluating study size.
             </div>
           </div>
