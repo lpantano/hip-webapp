@@ -293,6 +293,11 @@ const Claims = () => {
     fetchData(currentPage);
   }, [currentPage, fetchData]);
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
