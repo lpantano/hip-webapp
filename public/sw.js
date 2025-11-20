@@ -4,7 +4,7 @@
  */
 
 // Version - increment this when you want to force a cache update
-const VERSION = '1.0.3';
+const VERSION = '1.0.4';
 const CACHE_NAME = `healthintegrityproject-v${VERSION}`;
 const RUNTIME_CACHE = `healthintegrityproject-runtime-v${VERSION}`;
 const MAX_RUNTIME_CACHE_SIZE = 50; // Maximum number of items in runtime cache
