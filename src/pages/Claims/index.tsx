@@ -7,8 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link } from 'lucide-react';
-import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';

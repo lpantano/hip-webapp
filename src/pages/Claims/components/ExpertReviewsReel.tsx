@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ExternalLink, HelpCircle, Info, Play, Pause } from 'lucide-react';
+import { ExternalLink, HelpCircle, Info } from 'lucide-react';
 import { getCategoryBackgroundColor, getStudyTagDescription, getQualityCheckDescription, getStudyTagColor } from '@/lib/classification-categories';
 import { isProblematicCategory } from '@/lib/classification-categories';
 import { getClassificationReasons } from '@/types/review';
@@ -108,10 +108,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
     >
       {/* Top Section: Publication Title */}
       <div className="flex-shrink-0 px-4 sm:px-6 pt-3 sm:pt-8 pb-2 sm:pb-6 border-b border-border/50">
-        <h2 className="text-lg sm:text-2xl font-bold leading-tight mb-2 sm:mb-3 text-foreground break-words">
+        <h2 className="text-lg sm:text-lg font-bold leading-tight mb-2 sm:mb-3 text-foreground break-words">
           {reviewCard.publication.title}
         </h2>
-        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
           <span className="font-medium">{reviewCard.publication.year}</span>
           {reviewCard.publication.journal && (
             <>
@@ -137,10 +137,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
         </div>
       </div>
 
-      {/* Middle Section: Comments (Centered) */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-2 sm:py-8 overflow-hidden">
+      {/* Middle Section: Comments (Scrollable) */}
+      <div className="flex-1 flex items-center px-4 sm:px-6 py-2 sm:py-8 overflow-y-auto">
         {reviewCard.expert.comments.length > 0 ? (
-          <div className="w-full max-w-2xl space-y-3 sm:space-y-6">
+          <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-6 my-auto">
             {reviewCard.expert.comments.map((comment, idx) => (
               <div
                 key={idx}
@@ -153,18 +153,14 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                     day: 'numeric'
                   })}
                 </div>
-                <div className="text-sm sm:text-lg leading-relaxed text-foreground font-normal">
-                  <TranscriptText
-                    text={comment.content}
-                    wordsPerMinute={250}
-                    isVisible={isVisible && idx === 0}
-                  />
+                <div className="text-sm sm:text-base leading-relaxed text-foreground font-normal">
+                  {comment.content}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center text-muted-foreground/60 text-base font-medium">
+          <div className="w-full text-center text-muted-foreground/60 text-base font-medium">
             No comments provided for this review.
           </div>
         )}
@@ -317,216 +313,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
   );
 };
 
-// Component for transcript-style word highlighting
-interface TranscriptTextProps {
-  text: string;
-  wordsPerMinute?: number; // Average reading speed (default: 200 WPM = ~300ms per word)
-  isVisible?: boolean; // Whether the component is visible in viewport
-}
-
-const TranscriptText: React.FC<TranscriptTextProps> = ({
-  text,
-  wordsPerMinute = 300,
-  isVisible = true
-}) => {
-  const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const hasStartedRef = useRef<boolean>(false);
-
-  // Split text into words while preserving spaces - memoize to prevent recreation
-  const words = useMemo(() => {
-    return text.split(/(\s+)/).map((part, idx) => ({
-      text: part,
-      isSpace: /\s+/.test(part),
-      index: idx
-    }));
-  }, [text]);
-
-  // Calculate delay per word (average reading speed: 200-250 WPM)
-  // 200 WPM = 200 words / 60 seconds = ~3.33 words/second = ~300ms per word
-  const delayPerWord = useMemo(() => (60 / wordsPerMinute) * 1000, [wordsPerMinute]);
-
-  // Get only non-space word indices for easier navigation
-  const wordIndices = useMemo(() => {
-    return words.map((w, i) => w.isSpace ? -1 : i).filter(i => i !== -1);
-  }, [words]);
-
-  // Pause when not visible
-  useEffect(() => {
-    if (!isVisible && isPlaying) {
-      setIsPlaying(false);
-    }
-  }, [isVisible, isPlaying]);
-
-  // Initialize to first word when starting to play
-  useEffect(() => {
-    if (isPlaying && currentWordIndex === -1 && wordIndices.length > 0) {
-      setCurrentWordIndex(wordIndices[0]);
-    }
-  }, [isPlaying, currentWordIndex, wordIndices]);
-
-  // Main interval effect for highlighting words
-  // Restarts when delayPerWord changes to apply new speed
-  useEffect(() => {
-    if (!isPlaying || wordIndices.length === 0 || !isVisible) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
-    }
-
-    // Clear any existing interval before creating a new one (important when delayPerWord changes)
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    // Initialize to first word if not started
-    if (currentWordIndex === -1) {
-      setCurrentWordIndex(wordIndices[0]);
-      return;
-    }
-
-    // Create interval with current delayPerWord
-    // This will restart with new delay when delayPerWord changes
-    intervalRef.current = setInterval(() => {
-      setCurrentWordIndex((prevIndex) => {
-        const currentPos = wordIndices.indexOf(prevIndex);
-        if (currentPos === -1 || currentPos >= wordIndices.length - 1) {
-          // Finished reading
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-          setIsPlaying(false);
-          return prevIndex;
-        }
-        return wordIndices[currentPos + 1];
-      });
-    }, delayPerWord);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isPlaying, wordIndices, delayPerWord, isVisible, currentWordIndex]);
-
-  // Reset when text changes
-  useEffect(() => {
-    setCurrentWordIndex(-1);
-    setIsPlaying(false);
-    hasStartedRef.current = false;
-  }, [text]);
-
-  // Scroll highlighted word into view smoothly
-  useEffect(() => {
-    if (currentWordIndex >= 0 && containerRef.current) {
-      const wordElement = containerRef.current.querySelector(`[data-word-index="${currentWordIndex}"]`);
-      if (wordElement) {
-        // Use requestAnimationFrame for smoother scrolling
-        requestAnimationFrame(() => {
-          wordElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest'
-          });
-        });
-      }
-    }
-  }, [currentWordIndex]);
-
-  const handlePlay = () => {
-    if (currentWordIndex === -1 || wordIndices.indexOf(currentWordIndex) >= wordIndices.length - 1) {
-      // Start or restart from beginning
-      setCurrentWordIndex(-1);
-      setIsPlaying(true);
-      hasStartedRef.current = true;
-    } else {
-      // Resume playing
-      setIsPlaying(true);
-    }
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-  };
-
-  const handleTextClick = () => {
-    // Toggle play/pause when clicking on text
-    if (isPlaying) {
-      handlePause();
-    } else {
-      handlePlay();
-    }
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      className="select-none"
-    >
-      {/* Text content */}
-      <div
-        className="cursor-pointer"
-        onClick={handleTextClick}
-        title={isPlaying ? "Click to pause" : "Click to play"}
-      >
-      {words.map((word, index) => {
-        const isHighlighted = index === currentWordIndex;
-        const isPast = index < currentWordIndex && !word.isSpace;
-
-        if (word.isSpace) {
-          return <span key={index}>{word.text}</span>;
-        }
-
-        return (
-          <span
-            key={index}
-            data-word-index={index}
-            className={`transition-colors duration-150 ${
-              isHighlighted
-                ? 'text-primary'
-                : isPast
-                ? 'text-foreground/90'
-                : 'text-foreground/50'
-            }`}
-          >
-            {word.text}
-          </span>
-        );
-      })}
-      </div>
-
-      {/* Play/Pause Button - below text, aligned right */}
-      <div className="flex justify-end mt-3">
-        {!isPlaying || currentWordIndex === -1 ? (
-          <button
-            onClick={handlePlay}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground transition-all shadow-md hover:scale-110 backdrop-blur-sm"
-            aria-label="Play transcript"
-            title="Start transcript animation"
-          >
-            <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
-          </button>
-        ) : (
-          <button
-            onClick={handlePause}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground transition-all shadow-md hover:scale-110 backdrop-blur-sm"
-            aria-label="Pause transcript"
-            title="Pause transcript animation"
-          >
-            <Pause className="w-5 h-5" fill="currentColor" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
+// TranscriptText component removed - feature to be added later
 
 const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
