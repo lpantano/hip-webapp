@@ -7,7 +7,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import DevRoleSelector from "./components/dev/DevRoleSelector";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
 import About from "./pages/About";
 import Team from "./pages/Team";
 import Community from "./pages/Community";
@@ -34,7 +33,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/about" element={<About />} />
             <Route path="/team" element={<Team />} />
             <Route path="/community" element={<Community />} />
