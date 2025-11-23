@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link } from 'lucide-react';
 import { ChevronUp, ChevronDown, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +51,7 @@ const Claims = () => {
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
 
   // Use custom hook for optimistic vote updates
@@ -116,11 +118,19 @@ const Claims = () => {
         claimsQuery = claimsQuery.eq('category', filterByCategory);
       }
 
-      // Apply sorting
+      // Apply sorting with secondary keys for stable pagination
+      // Secondary sort keys ensure consistent ordering even when primary values change
       if (sortBy === 'votes') {
-        claimsQuery = claimsQuery.order('vote_count', { ascending: false });
+        // Sort by vote_count, then by created_at (desc), then by id for complete stability
+        claimsQuery = claimsQuery
+          .order('vote_count', { ascending: false })
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true });
       } else {
-        claimsQuery = claimsQuery.order('created_at', { ascending: false });
+        // Sort by created_at, then by id for stability
+        claimsQuery = claimsQuery
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true });
       }
 
       // Batch the first set of queries in parallel for better performance
@@ -292,6 +302,22 @@ const Claims = () => {
   useEffect(() => {
     fetchData(currentPage);
   }, [currentPage, fetchData]);
+
+  // Scroll to top when page changes and data has finished loading
+  useEffect(() => {
+    // Only scroll if page changed (skip initial load when prevPageRef is 0 and currentPage is 0)
+    const pageChanged = prevPageRef.current !== currentPage;
+    if (pageChanged && !loading && prevPageRef.current !== -1) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+    // Update ref after checking
+    if (pageChanged) {
+      prevPageRef.current = currentPage;
+    }
+  }, [currentPage, loading]);
 
   // Reset to first page when filters or sorting change
   useEffect(() => {
@@ -739,6 +765,20 @@ const Claims = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => setCurrentPage(0)}
+                    disabled={currentPage === 0 || loading}
+                    className="min-w-[40px] sm:min-w-[44px]"
+                    aria-label="First page"
+                  >
+                    {loading && currentPage === 0 ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    ) : (
+                      <ChevronsLeft className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0 || loading}
                     className="min-w-[70px] sm:min-w-[80px]"
@@ -763,6 +803,20 @@ const Claims = () => {
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
                       <span className="text-xs sm:text-sm">Next</span>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1)}
+                    disabled={!hasMoreClaims || loading || currentPage === Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1}
+                    className="min-w-[40px] sm:min-w-[44px]"
+                    aria-label="Last page"
+                  >
+                    {loading && !hasMoreClaims ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    ) : (
+                      <ChevronsRight className="w-4 h-4" />
                     )}
                   </Button>
                 </div>

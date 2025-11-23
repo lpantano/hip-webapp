@@ -14,6 +14,10 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: AuthError | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  hasPasswordAuth: () => boolean;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -109,10 +113,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     window.addEventListener('hashchange', onUrlChange);
     window.addEventListener('popstate', onUrlChange);
 
-    // 2. Set up auth state listener
+    // 2. Set up auth state listener (fires immediately with current session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        logger.log('[Auth] State change event:', event);
+        logger.log('[Auth] State change event:', event, session ? 'with session' : 'no session');
 
         // Log token refresh attempts and failures
         if (event === 'TOKEN_REFRESHED') {
@@ -121,6 +125,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           logger.log('⚠️ User signed out (could be automatic due to token expiry)');
         } else if (event === 'USER_UPDATED') {
           logger.log('ℹ️ User data updated');
+        } else if (event === 'SIGNED_IN') {
+          logger.log('✅ User signed in');
         }
 
         setSession(session);
@@ -128,28 +134,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         // Only stop loading here if no error was immediately handled
         if (!isErrorHandled) {
-            setLoading(false);
+          setLoading(false);
         }
       }
     );
 
-    // 3. THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        logger.error('[Auth] Error getting session:', error);
-      }
-      if (session) {
-        logger.log('[Auth] Session loaded from storage:', {
-          expiresAt: session.expires_at,
-          expiresIn: session.expires_at ? Math.floor((session.expires_at * 1000 - Date.now()) / 1000 / 60) + ' minutes' : 'unknown'
-        });
-      } else {
-        logger.log('[Auth] No session found in storage');
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false); // Ensure loading is false after checking session
-    });
+    // 3. Optionally verify session with server (more secure than getSession)
+    // This validates the session server-side but doesn't read from local storage
+    // Note: onAuthStateChange already fires immediately with current session,
+    // so this is just an extra verification step
+    supabase.auth.getUser()
+      .then(({ data: { user: authUser }, error }) => {
+        if (error) {
+          logger.error('[Auth] Error verifying user session:', error);
+          // onAuthStateChange will handle clearing state if needed
+        } else if (authUser) {
+          logger.log('[Auth] User session verified via getUser:', {
+            userId: authUser.id,
+            email: authUser.email
+          });
+          // Session is verified - onAuthStateChange already handled setting state
+        }
+        // Ensure loading stops (onAuthStateChange also handles this, but this is a fallback)
+        setLoading(false);
+      })
+      .catch((error) => {
+        logger.error('[Auth] Error in getUser verification:', error);
+        // onAuthStateChange will handle state, just ensure loading stops
+        setLoading(false);
+      });
 
     return () => {
       subscription.unsubscribe();
@@ -226,6 +239,100 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return { error };
   };
 
+  const signInWithMagicLink = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+
+    if (error) {
+      // Check for custom whitelist error
+      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
+        ? CUSTOM_TOAST_MESSAGE
+        : error.message;
+
+      toast.error('Magic Link Error', {
+        description,
+      });
+    } else {
+      toast.success('Check your email', {
+        description: "We've sent you a magic link to sign in. Click the link in your email to continue.",
+      });
+    }
+
+    return { error };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    if (!user) {
+      toast.error('Password Update Error', {
+        description: 'User not found.',
+      });
+      return { error: { message: 'User not found' } as AuthError };
+    }
+
+    // Update the password directly (no current password verification needed)
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      toast.error('Password Update Error', {
+        description: error.message || 'Failed to update password. Please try again.',
+      });
+    } else {
+      toast.success('Password Updated', {
+        description: 'Your password has been successfully updated.',
+      });
+    }
+
+    return { error };
+  };
+
+  const resetPassword = async (email: string) => {
+    // Use resetPasswordForEmail which sends a password reset link
+    // The link will redirect to /reset-password page with token_hash in the URL
+    const redirectUrl = `${window.location.origin}/reset-password`;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+
+    if (error) {
+      // Check for custom whitelist error
+      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
+        ? CUSTOM_TOAST_MESSAGE
+        : error.message;
+
+      toast.error('Password Reset Error', {
+        description,
+      });
+    } else {
+      toast.success('Reset link sent', {
+        description: "We've sent a password reset link to your email. Click the link to reset your password.",
+      });
+    }
+
+    return { error };
+  };
+
+
+  const hasPasswordAuth = (): boolean => {
+    if (!user) return false;
+
+    // Check if user has email identity with email provider (password-based auth)
+    // Users with OAuth-only won't have this identity
+    const hasEmailIdentity = user.identities?.some(
+      (identity) => identity.provider === 'email'
+    );
+
+    return hasEmailIdentity || false;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -241,6 +348,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signUp,
     signInWithGoogle,
+    signInWithMagicLink,
+    updatePassword,
+    resetPassword,
+    hasPasswordAuth,
     signOut,
     loading,
   };
