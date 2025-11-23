@@ -107,8 +107,8 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
       className="snap-start snap-always h-screen sm:h-[95vh] sm:max-h-[800px] flex flex-col bg-background border-b border-border"
     >
       {/* Top Section: Publication Title */}
-      <div className="flex-shrink-0 px-4 sm:px-6 pt-3 sm:pt-8 pb-2 sm:pb-6 border-b border-border/50">
-        <h2 className="text-lg sm:text-lg font-bold leading-tight mb-2 sm:mb-3 text-foreground break-words">
+      <div className="flex-shrink-0 px-4 sm:px-6 pt-6 sm:pt-4 pb-2 sm:pb-3 border-b border-border/50">
+        <h2 className="text-lg sm:text-lg font-bold leading-tight mb-2 text-foreground break-words">
           {reviewCard.publication.title}
         </h2>
         <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
@@ -138,22 +138,22 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
       </div>
 
       {/* Middle Section: Comments (Scrollable) */}
-      <div className="flex-1 flex items-center px-4 sm:px-6 py-2 sm:py-8 overflow-y-auto">
+      <div className="flex-1 flex items-center px-4 sm:px-6 py-2 sm:py-4 overflow-y-auto">
         {reviewCard.expert.comments.length > 0 ? (
-          <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-6 my-auto">
+          <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-4 my-auto">
             {reviewCard.expert.comments.map((comment, idx) => (
               <div
                 key={idx}
-                className="bg-muted/30 backdrop-blur-sm rounded-xl p-3 sm:p-6 border border-border/50 shadow-sm"
+                className="bg-muted/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-border/50 shadow-sm"
               >
-                <div className="text-xs text-muted-foreground mb-2 sm:mb-3 font-medium tracking-wide uppercase">
+                <div className="text-xs text-muted-foreground mb-2 font-medium tracking-wide uppercase">
                   {new Date(comment.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </div>
-                <div className="text-sm sm:text-base leading-relaxed text-foreground font-normal">
+                <div className="text-base sm:text-base leading-relaxed text-foreground font-normal">
                   {comment.content}
                 </div>
               </div>
@@ -167,8 +167,8 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
       </div>
 
       {/* Bottom Section: Labels, Tags, and Avatar */}
-      <div className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-6 border-t border-border/50 bg-muted/20">
-        <div className="flex flex-col gap-2 sm:gap-4">
+      <div className="flex-shrink-0 px-4 sm:px-6 py-5 sm:py-4 border-t border-border/50 bg-muted/20">
+        <div className="flex flex-col gap-2 sm:gap-3">
           {/* Labels and Tags Row */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
             {/* Classification */}
