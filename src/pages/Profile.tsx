@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Constants } from '@/integrations/supabase/types';
 import { Separator } from '@/components/ui/separator';
-import { User, Shield, FileText, MapPin, Calendar } from 'lucide-react';
+import { User, Shield, FileText, MapPin, Calendar, Lock } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import type { Database } from '@/integrations/supabase/types';
@@ -21,14 +21,15 @@ import type { Database } from '@/integrations/supabase/types';
 const Profile = () => {
   // Dynamically get claim_category options from types
   const claimCategoryOptions = Constants.public.Enums.claim_category;
-  const { user } = useAuth();
+  const { user, session, updatePassword, hasPasswordAuth } = useAuth();
   const queryClient = useQueryClient();
-  
+
   // Profile form state
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
-  
+  const [sessionStartTime, setSessionStartTime] = useState<string | null>(null);
+
   // Expert form state
   const [education, setEducation] = useState('');
   const [motivation, setMotivation] = useState('');
@@ -38,6 +39,12 @@ const Profile = () => {
   const [expertiseArea, setExpertiseArea] = useState('');
   // Social media links for expert profile
   const [socialLinks, setSocialLinks] = useState<{ id?: string; platform: string; url: string }[]>([]);
+
+  // Password change form state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   // Fetch profile data
   const { data: profile } = useQuery({
@@ -49,7 +56,7 @@ const Profile = () => {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -87,7 +94,7 @@ const Profile = () => {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -135,6 +142,26 @@ const Profile = () => {
     }
   }, [socialLinksData]);
 
+  // Decode JWT to get session start time
+  useEffect(() => {
+    if (session?.access_token) {
+      try {
+        // Decode the JWT to get the 'issued at' (iat) claim
+        const jwtPayload = JSON.parse(atob(session.access_token.split('.')[1]));
+        const issuedAtTimestamp = jwtPayload.iat; // This is in Unix epoch seconds
+
+        // Convert to a readable Date object
+        const startTime = new Date(issuedAtTimestamp * 1000); // Multiply by 1000 for milliseconds
+        setSessionStartTime(startTime.toLocaleString());
+      } catch (error) {
+        console.error('Error decoding session token:', error);
+        setSessionStartTime(null);
+      }
+    } else {
+      setSessionStartTime(null);
+    }
+  }, [session]);
+
   const addSocialLink = () => setSocialLinks(prev => [...prev, { platform: '', url: '' }]);
   const removeSocialLink = (index: number) => setSocialLinks(prev => prev.filter((_, i) => i !== index));
   const updateSocialLink = (index: number, field: 'platform' | 'url', value: string) => {
@@ -163,7 +190,7 @@ const Profile = () => {
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('No user');
-      
+
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -172,7 +199,7 @@ const Profile = () => {
           bio: bio,
           avatar_url: avatarUrl
         }, { onConflict: 'user_id' });
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -195,7 +222,7 @@ const Profile = () => {
   const updateExpertMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('No user');
-      
+
       const res = await supabase
         .from('experts')
         .upsert({
@@ -339,8 +366,8 @@ const Profile = () => {
                     rows={3}
                   />
                 </div>
-                <Button 
-                  onClick={() => updateProfileMutation.mutate()} 
+                <Button
+                  onClick={() => updateProfileMutation.mutate()}
                   disabled={updateProfileMutation.isPending}
                 >
                   {updateProfileMutation.isPending ? 'Updating...' : 'Update Profile'}
@@ -388,7 +415,7 @@ const Profile = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="location">Location</Label>
@@ -505,8 +532,8 @@ const Profile = () => {
                   </div>
                 </div>
 
-                  <Button 
-                    onClick={() => updateExpertMutation.mutate()} 
+                  <Button
+                    onClick={() => updateExpertMutation.mutate()}
                     disabled={updateExpertMutation.isPending}
                   >
                     {updateExpertMutation.isPending ? 'Updating...' : 'Update Expert Profile'}
@@ -538,6 +565,133 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
+
+                {sessionStartTime && (
+                  <div>
+                    <Label>Session Started At</Label>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {sessionStartTime}
+                    </div>
+                  </div>
+                )}
+
+                {/* Password Change Section - Only show if user has password auth */}
+                {hasPasswordAuth() && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Lock className="w-4 h-4" />
+                            Change Password
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            Update your account password
+                          </CardDescription>
+                        </div>
+                        {!showPasswordForm && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowPasswordForm(true)}
+                          >
+                            Change Password
+                          </Button>
+                        )}
+                      </div>
+
+                      {showPasswordForm && (
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+
+                            // Validate passwords match
+                            if (newPassword !== confirmPassword) {
+                              toast.error('Passwords do not match', {
+                                description: 'Please make sure both password fields match.',
+                              });
+                              return;
+                            }
+
+                            // Validate password length
+                            if (newPassword.length < 6) {
+                              toast.error('Password too short', {
+                                description: 'Password must be at least 6 characters long.',
+                              });
+                              return;
+                            }
+
+                            setIsChangingPassword(true);
+                            try {
+                              const { error } = await updatePassword(newPassword);
+                              if (!error) {
+                                // Reset form on success
+                                setNewPassword('');
+                                setConfirmPassword('');
+                                setShowPasswordForm(false);
+                              }
+                            } finally {
+                              setIsChangingPassword(false);
+                            }
+                          }}
+                          className="space-y-4"
+                        >
+                          <div className="space-y-2">
+                            <Label htmlFor="newPassword">New Password</Label>
+                            <Input
+                              id="newPassword"
+                              type="password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Enter your new password"
+                              autoComplete="new-password"
+                              required
+                              minLength={6}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Password must be at least 6 characters long
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            <Input
+                              id="confirmPassword"
+                              type="password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              placeholder="Confirm your new password"
+                              autoComplete="new-password"
+                              required
+                              minLength={6}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="submit"
+                              disabled={isChangingPassword || !newPassword || !confirmPassword}
+                            >
+                              {isChangingPassword ? 'Updating...' : 'Update Password'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setShowPasswordForm(false);
+                                setNewPassword('');
+                                setConfirmPassword('');
+                              }}
+                              disabled={isChangingPassword}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -8,14 +8,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail } from 'lucide-react';
+import { Mail, Link as LinkIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithMagicLink, user } = useAuth();
   const [showLegalSummary, setShowLegalSummary] = useState(false);
   const [summaryIndex, setSummaryIndex] = useState(0);
   // Welcome dialog shown the first time the user attempts to sign up
@@ -80,6 +81,22 @@ const Auth = () => {
     setIsLoading(true);
     try {
       await signInWithGoogle();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email) {
+      toast.error('Email required', {
+        description: 'Please enter your email address to receive a magic link.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await signInWithMagicLink(email);
     } finally {
       setIsLoading(false);
     }
@@ -211,13 +228,23 @@ const Auth = () => {
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Button
                       type="submit"
                       className="w-full"
                       disabled={isLoading || !email || !password}
                     >
                       {isLoading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleMagicLink}
+                      disabled={isLoading || !email}
+                    >
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      {isLoading ? 'Sending...' : 'Send Magic Link'}
                     </Button>
                   </div>
                 </form>
