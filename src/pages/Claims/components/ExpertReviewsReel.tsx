@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ExternalLink, HelpCircle, Info } from 'lucide-react';
 import { getCategoryBackgroundColor, getStudyTagDescription, getQualityCheckDescription, getStudyTagColor } from '@/lib/classification-categories';
@@ -43,221 +43,309 @@ interface ExpertReviewsReelProps {
   reviewCards: ExpertReviewCard[];
 }
 
+// Individual Review Card Component
+interface ReviewCardProps {
+  reviewCard: ExpertReviewCard;
+  index: number;
+  totalCards: number;
+}
+
+const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }) => {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [isVisible, setIsVisible] = useState<boolean>(index === 0);
+
+  const tags = reviewCard.expert.tags || null;
+  // derive study-level tags from reviewData when available
+  const studyTags: string[] = [];
+  const rd = reviewCard.expert.reviewData;
+  if (rd) {
+    if (rd.womenNotIncluded) studyTags.push('Women Not Included');
+    if (rd.studyType?.observational) studyTags.push('Observational');
+    if (rd.studyType?.clinicalTrial) studyTags.push('Clinical Trial');
+  }
+
+  const noScores = reviewCard.expert.scores.filter(s => s.score === 'NO');
+
+  // Use IntersectionObserver to detect when card is visible
+  useEffect(() => {
+    // For the first card, set visible immediately
+    if (index === 0) {
+      setIsVisible(true);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+            setIsVisible(true);
+          } else if (!entry.isIntersecting) {
+            setIsVisible(false);
+          }
+        });
+      },
+      {
+        threshold: [0, 0.3, 0.5, 1],
+        rootMargin: '0px'
+      }
+    );
+
+    const currentCard = cardRef.current;
+    if (currentCard) {
+      observer.observe(currentCard);
+    }
+
+    return () => {
+      if (currentCard) {
+        observer.unobserve(currentCard);
+      }
+    };
+  }, [index]);
+
+  return (
+    <div
+      ref={cardRef}
+      className="snap-start snap-always h-screen sm:h-[95vh] sm:max-h-[800px] flex flex-col bg-background border-b border-border"
+    >
+      {/* Top Section: Publication Title */}
+      <div className="flex-shrink-0 px-4 sm:px-6 pt-6 sm:pt-4 pb-2 sm:pb-3 border-b border-border/50">
+        <h2 className="text-lg sm:text-lg font-bold leading-tight mb-2 text-foreground break-words">
+          {reviewCard.publication.title}
+        </h2>
+        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
+          <span className="font-medium">{reviewCard.publication.year}</span>
+          {reviewCard.publication.journal && (
+            <>
+              <span className="text-muted-foreground/50">•</span>
+              <span>{reviewCard.publication.journal}</span>
+            </>
+          )}
+          {reviewCard.publication.source && (
+            <>
+              <span className="text-muted-foreground/50">•</span>
+              <a
+                href={reviewCard.publication.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
+                title="View source"
+              >
+                Source
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Middle Section: Comments (Scrollable) */}
+      <div className="flex-1 flex items-center px-4 sm:px-6 py-2 sm:py-4 overflow-y-auto">
+        {reviewCard.expert.comments.length > 0 ? (
+          <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-4 my-auto">
+            {reviewCard.expert.comments.map((comment, idx) => (
+              <div
+                key={idx}
+                className="bg-muted/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-border/50 shadow-sm"
+              >
+                <div className="text-xs text-muted-foreground mb-2 font-medium tracking-wide uppercase">
+                  {new Date(comment.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+                <div className="text-base sm:text-base leading-relaxed text-foreground font-normal">
+                  {comment.content}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full text-center text-muted-foreground/60 text-base font-medium">
+            No comments provided for this review.
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Section: Labels, Tags, and Avatar */}
+      <div className="flex-shrink-0 px-4 sm:px-6 py-5 sm:py-4 border-t border-border/50 bg-muted/20">
+        <div className="flex flex-col gap-2 sm:gap-3">
+          {/* Labels and Tags Row */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
+            {/* Classification */}
+            {reviewCard.expert.classification && (
+              <div className={`inline-flex items-center gap-1 sm:gap-2 rounded-lg ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold`}>
+                <span>{String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}</span>
+                {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                        aria-label="Classification reasons"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="max-w-xs text-sm p-3">
+                      {(() => {
+                        const reasons = getClassificationReasons(reviewCard.expert.reviewData);
+                        if (reasons.length > 0) {
+                          return (
+                            <div className="text-sm text-muted-foreground space-y-2">
+                              {reasons.map((reason, i) => (
+                                <div key={i} className="leading-relaxed">{reason}</div>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return <div className="text-sm text-muted-foreground">No reasons provided.</div>;
+                      })()}
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            )}
+
+            {/* Study Tags */}
+            {studyTags.length > 0 && studyTags.map((tag, i) => (
+              <Popover key={i}>
+                <PopoverTrigger asChild>
+                  <div className={`cursor-pointer inline-flex items-center rounded-lg ${getStudyTagColor(tag)} px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold transition-opacity hover:opacity-80`}>
+                    {tag}
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent side="top" className="max-w-xs text-sm p-3">
+                  <div className="leading-relaxed">{getStudyTagDescription(tag)}</div>
+                </PopoverContent>
+              </Popover>
+            ))}
+
+            {/* Study Quality Checks */}
+            {noScores.length > 0 && noScores.map((scoreItem, idx) => {
+              const studycheck: Record<string, string> = {
+                studyDesign: 'Study Design',
+                controlGroup: 'Control Group',
+                biasAddressed: 'Bias Addressed',
+                statistics: 'Statistics'
+              };
+              const label = studycheck[scoreItem.category] || scoreItem.category;
+
+              return (
+                <div key={idx} className={`inline-flex items-center gap-1 sm:gap-2 rounded-lg ${scoreItem.score ? quality.badge(scoreItem.score) : ''} px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold`}>
+                  <span className="font-semibold">{label}</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                        aria-label={`Help for ${label}`}
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="max-w-xs text-sm p-3">
+                      <div className="leading-relaxed">
+                        {"This didn't pass: " + getQualityCheckDescription(scoreItem.category)}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              );
+            })}
+
+            {/* Ethnicity Labels */}
+            {tags && Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && tags.ethnicityLabels.map((eth: string, i: number) => (
+              <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold text-foreground bg-background/50">
+                {eth}
+              </div>
+            ))}
+
+            {/* Age Ranges */}
+            {tags && Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && tags.ageRanges.map((age: string, i: number) => (
+              <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold text-foreground bg-background/50">
+                {age}
+              </div>
+            ))}
+          </div>
+
+          {/* Avatar and Expert Name Row */}
+          <div className="flex items-center gap-3 pt-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="flex items-center gap-3 cursor-pointer group" role="button" tabIndex={0}>
+                  {reviewCard.expert.avatar_url ? (
+                    <img
+                      src={reviewCard.expert.avatar_url}
+                      alt={reviewCard.expert.display_name || 'Expert'}
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-border group-hover:ring-primary/50 transition-all"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-base font-semibold flex items-center justify-center ring-2 ring-border group-hover:ring-primary/50 transition-all"
+                    style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
+                  >
+                    {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0, 2).join('')}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {reviewCard.expert.display_name || 'Expert Reviewer'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Expert Review</div>
+                  </div>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent side="top" className="max-w-xs text-sm p-3">
+                <div className="font-semibold">{reviewCard.expert.display_name || 'Expert'}</div>
+                <div className="text-xs text-muted-foreground mt-1">Review #{index + 1} of {totalCards}</div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// TranscriptText component removed - feature to be added later
+
 const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   if (!reviewCards || reviewCards.length === 0) {
-    return <div className="text-sm text-muted-foreground">No reviews yet for this claim.</div>;
+    return (
+      <div className="flex items-center justify-center h-[70vh] text-base text-muted-foreground font-medium">
+        No reviews yet for this claim.
+      </div>
+    );
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
       <div
         ref={containerRef}
-        className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] p-0 w-full"
+        className="h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(155, 155, 155, 0.5) transparent'
+        }}
         role="list"
         aria-label="Expert reviews"
       >
-        {reviewCards.map((reviewCard) => {
-          const tags = reviewCard.expert.tags || null;
-          // derive study-level tags from reviewData when available
-          const studyTags: string[] = [];
-          const rd = reviewCard.expert.reviewData;
-          if (rd) {
-            if (rd.womenNotIncluded) studyTags.push('Women Not Included');
-            if (rd.studyType?.observational) studyTags.push('Observational');
-            if (rd.studyType?.clinicalTrial) studyTags.push('Clinical Trial');
-          }
-
-          return (
-            <div
-              key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`}
-              className="bg-background border border-border rounded-lg p-1 sm:p-1 shadow-sm w-full"
-            >
-              {/* Top row: Publication info + Avatar (avatar moved to the right) */}
-
-              <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-1">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <div className="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-12 cursor-pointer" role="button" tabIndex={0}>
-                      {reviewCard.expert.avatar_url ? (
-                        <img
-                          src={reviewCard.expert.avatar_url}
-                          alt={reviewCard.expert.display_name || 'Expert'}
-                          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            if (target.nextElementSibling) {
-                              (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-sm flex items-center justify-center"
-                        style={{ display: reviewCard.expert.avatar_url ? 'none' : 'flex' }}
-                      >
-                        {(reviewCard.expert.display_name || 'E').split(' ').map(n => n[0]).slice(0, 2).join('')}
-                      </div>
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent side="top" className="max-w-xs text-sm p-2">
-                    <div className="font-semibold">{reviewCard.expert.display_name || 'Expert'}</div>
-                  </PopoverContent>
-                </Popover>
-                <div className="flex-1 w-full">
-                  <h4 className="font-semibold text-sm mb-1 sm:mr-4 break-words">
-                    {reviewCard.publication.title}
-                  </h4>
-                  <p className="text-xs text-muted-foreground break-words">
-                    ({reviewCard.publication.year})
-                    {reviewCard.publication.source && (
-                      <>
-                        {' • '}
-                        <a
-                          href={reviewCard.publication.source}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-primary hover:underline"
-                          title="View source"
-                        >
-                          Source <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </>
-                    )}
-                  </p>
-                  <br />
-                </div>
-
-
-              </div>
-              {/* Bottom row: Review content (top: tags + quality checks; second row: labels/categories) */}
-              <div className="mt-1">
-                <div className="ml-1">
-                {(() => {
-                  const noScores = reviewCard.expert.scores.filter(s => s.score === 'NO');
-
-                  return (
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* Classification */}
-                      {reviewCard.expert.classification && (
-                        <div className={`inline-flex items-center gap-2 rounded-lg ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} px-2 py-1 text-xs font-semibold`}>
-                          <span>{String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}</span>
-
-                          {/* Put the Info trigger inside the badge so the icon is visually inside it */}
-                          {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                                  aria-label="Classification reasons"
-                                >
-                                  <Info className="w-3.5 h-3.5" />
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                {(() => {
-                                  const reasons = getClassificationReasons(reviewCard.expert.reviewData);
-                                  if (reasons.length > 0) {
-                                    return (
-                                      <div className="text-xs text-muted-foreground list-disc list-inside space-y-1">
-                                        {reasons.map((reason, i) => (
-                                          <div key={i}>{reason}</div>
-                                        ))}
-                                      </div>
-                                    );
-                                  }
-                                  return <div className="text-xs text-muted-foreground">No reasons provided.</div>;
-                                })()}
-                              </PopoverContent>
-                            </Popover>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Study Tags */}
-                      {studyTags.length > 0 && studyTags.map((tag, i) => (
-                        <Popover key={i}>
-                          <PopoverTrigger asChild>
-                            <div className={`cursor-pointer inline-flex items-center rounded-lg ${getStudyTagColor(tag)} px-2 py-1 text-xs font-semibold`}>
-                              {tag}
-                            </div>
-                          </PopoverTrigger>
-                          <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                            {getStudyTagDescription(tag)}
-                          </PopoverContent>
-                        </Popover>
-                      ))}
-
-                      {/* Study Quality Checks */}
-                      {noScores.length > 0 && noScores.map((scoreItem, idx) => {
-                        const studycheck: Record<string, string> = {
-                          studyDesign: 'Study Design',
-                          controlGroup: 'Control Group',
-                          biasAddressed: 'Bias Addressed',
-                          statistics: 'Statistics'
-                        };
-                        const label = studycheck[scoreItem.category] || scoreItem.category;
-
-                        return (
-                          <div key={idx} className={`inline-flex items-center gap-2 rounded-lg ${scoreItem.score ? quality.badge(scoreItem.score) : ''} px-2 py-1 text-xs font-semibold`}>
-                            <span className="font-medium">{label}</span>
-
-                            {/* Info popover trigger inside the badge */}
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                                  aria-label={`Help for ${label}`}
-                                >
-                                  <HelpCircle className="w-3.5 h-3.5" />
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                                {"This didn't pass: " + getQualityCheckDescription(scoreItem.category)}
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        );
-                      })}
-                      {/* Ethnicity Labels */}
-                      {tags && Array.isArray(tags.ethnicityLabels) && tags.ethnicityLabels.length > 0 && tags.ethnicityLabels.map((eth: string, i: number) => (
-                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{eth}</div>
-                      ))}
-
-                      {/* Age Ranges */}
-                      {tags && Array.isArray(tags.ageRanges) && tags.ageRanges.length > 0 && tags.ageRanges.map((age: string, i: number) => (
-                        <div key={i} className="inline-flex items-center rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground">{age}</div>
-                      ))}
-
-                    </div>
-                  );
-                })()}
-                </div>
-
-
-
-                {reviewCard.expert.comments.length > 0 && (
-                  <div>
-                    <div className="space-y-2 mt-2">
-                      {reviewCard.expert.comments.map((comment, idx) => (
-                        <div key={idx} className="bg-muted/20 p-3 rounded-md">
-                          <div className="text-xs text-muted-foreground mb-1">
-                            {new Date(comment.created_at).toLocaleDateString()}
-                          </div>
-                          <div className="text-sm">"{comment.content}"</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {reviewCards.map((reviewCard, index) => (
+          <ReviewCard
+            key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`}
+            reviewCard={reviewCard}
+            index={index}
+            totalCards={reviewCards.length}
+          />
+        ))}
       </div>
     </div>
   );

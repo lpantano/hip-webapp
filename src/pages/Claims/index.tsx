@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogTrigger, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -884,10 +884,21 @@ const Claims = () => {
 
           {/* Expert Reviews Reel Dialog */}
           {user && (
-            <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+            <>
+              <style>{`
+                [data-radix-dialog-content] > button[data-radix-dialog-close]:first-of-type {
+                  display: none;
+                }
+              `}</style>
+              <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
+                <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] w-screen h-screen sm:w-auto sm:h-[95vh] sm:max-h-[800px] max-w-none max-h-none sm:max-w-[90vw] p-0 m-0 rounded-none sm:rounded-lg overflow-hidden">
+                  {/* Custom close button with dark transparent background */}
+                  <DialogClose className="absolute right-4 top-4 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/70 transition-colors">
+                    <X className="h-5 w-5 text-white" />
+                    <span className="sr-only">Close</span>
+                  </DialogClose>
                 {currentReelClaim ? (
-                  <div>
+                  <div className="h-full w-full">
                     <VisuallyHidden>
                       <DialogTitle>Individual Expert Reviews</DialogTitle>
                     </VisuallyHidden>
@@ -898,6 +909,7 @@ const Claims = () => {
                 )}
               </DialogContent>
             </Dialog>
+            </>
           )}
 
           {/* Publication Review Dialog */}
