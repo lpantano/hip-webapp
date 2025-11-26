@@ -14,3 +14,5 @@ export const CLAIM_STATUS = {
 } as const;
 
 export type ClaimStatus = typeof CLAIM_STATUS[keyof typeof CLAIM_STATUS];
+
+export const SEARCH_DEBOUNCE_MS = 300;
