@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -16,15 +16,12 @@ import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { getCategoryBackgroundColor } from '@/lib/classification-categories';
-import { CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
-import { getStudyTagDescription, STUDY_TAG, getStudyTagColor } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import CategoriesLegend from './components/Legend';
-import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
+import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
@@ -32,7 +29,7 @@ import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 import { humanize, getStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
-import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS } from './constants';
+import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
@@ -41,6 +38,8 @@ const Claims = () => {
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
@@ -101,7 +100,16 @@ const Claims = () => {
     checkExpertStatus();
   }, [user, sb]);
 
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, SEARCH_DEBOUNCE_MS);
 
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   // Use the groupBy helper for cleaner data grouping
   const fetchClaimsData = useCallback(async (page: number = 0) => {
@@ -115,6 +123,11 @@ const Claims = () => {
       // Apply category filter
       if (filterByCategory !== 'all') {
         claimsQuery = claimsQuery.eq('category', filterByCategory);
+      }
+
+      // Apply search filter
+      if (debouncedSearchQuery.trim()) {
+        claimsQuery = claimsQuery.ilike('title', `%${debouncedSearchQuery.trim()}%`);
       }
 
       // Apply sorting with secondary keys for stable pagination
@@ -280,7 +293,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, sortBy, setUserVotes]);
+  }, [sb, user, filterByCategory, sortBy, debouncedSearchQuery, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -321,7 +334,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, sortBy]);
+  }, [filterByCategory, sortBy, debouncedSearchQuery]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -496,6 +509,33 @@ const Claims = () => {
                     </DialogContent>
                   </Dialog>
 
+                  {/* Search Input */}
+                  <div className="relative w-full sm:w-[240px]">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      type="text"
+                      placeholder="Search claims..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-9 h-9"
+                      aria-label="Search claims by title"
+                      role="searchbox"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Clear search"
+                        type="button"
+                      >
+                        <X className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+
                   <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
                     <SelectTrigger className="w-full sm:w-[180px] h-9">
                       <div className="flex items-center gap-2">
@@ -568,7 +608,11 @@ const Claims = () => {
 
               {user && filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
-                  <p>No claims found for the selected category.</p>
+                  <p>
+                    {debouncedSearchQuery.trim()
+                      ? 'No claims match your search.'
+                      : 'No claims found for the selected category.'}
+                  </p>
                 </div>
               )}
               {user && filteredAndSortedClaims.map((claim) => (
