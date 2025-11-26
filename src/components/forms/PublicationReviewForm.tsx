@@ -35,6 +35,8 @@ import {
 import { getCategoryBackgroundColor, getStudyTagColor, getStudyTagBorderColor, getQualityCheckDescription } from '@/lib/classification-categories';
 import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobileKeyboardFix } from '@/hooks/useMobileKeyboardFix';
 
 interface Publication {
   id: string;
@@ -77,6 +79,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const [ethnicityOpen, setEthnicityOpen] = useState(false);
   const [ageRangeOpen, setAgeRangeOpen] = useState(false);
   const [studyTagsHelpOpen, setStudyTagsHelpOpen] = useState(false);
+
+  // Mobile keyboard fix: scroll inputs into view when focused
+  const isMobile = useIsMobile();
+  const scrollContainerRef = useMobileKeyboardFix({
+    enabled: isMobile && isOpen,
+    delay: 350,
+    block: 'center'
+  });
 
   // Fetch existing review for this publication by this expert
   const { data: existingReview } = useQuery({
@@ -473,7 +483,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-auto">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-auto">
           <ScrollArea className="h-full w-full pr-2 sm:pr-4">
             <div className="space-y-3 sm:space-y-4 pb-6 sm:pb-8 px-1">
               {/* Publication Info */}
