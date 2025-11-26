@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -64,6 +64,11 @@ const Claims = () => {
   // Confirmation dialog state for toggling claim status
   const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
   const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
+
+  // State for inline title editing
+  const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [updatingTitle, setUpdatingTitle] = useState<string | null>(null);
 
   // component-scoped Supabase client
   const sb = supabase;
@@ -407,6 +412,72 @@ const Claims = () => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
+  // Permission check for editing claim titles
+  const canEditClaim = (claim: ClaimUI) => {
+    // Experts/researchers can always edit
+    if (isExpert) return true;
+
+    // Claim creator can edit if status is "proposed"
+    if (user && claim.user_id === user.id && claim.rawStatus === 'proposed') {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Helper functions for inline title editing
+  const startEditing = (claim: ClaimUI) => {
+    setEditingClaimId(claim.id);
+    setEditedTitle(claim.claim);
+  };
+
+  const cancelEditing = () => {
+    setEditingClaimId(null);
+    setEditedTitle('');
+  };
+
+  const saveTitle = async (claimId: string) => {
+    await updateClaimTitle(claimId, editedTitle);
+  };
+
+  // Update claim title with validation
+  const updateClaimTitle = async (claimId: string, newTitle: string) => {
+    if (!user) return;
+
+    // Validation
+    const trimmed = newTitle.trim();
+    if (trimmed.length < 10) {
+      toast.error('Validation error', {
+        description: 'Title must be at least 10 characters'
+      });
+      return;
+    }
+
+    try {
+      setUpdatingTitle(claimId);
+      const { error } = await sb
+        .from('claims')
+        .update({ title: trimmed })
+        .eq('id', claimId);
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchData(currentPage);
+      toast.success('Title updated', {
+        description: 'Claim title has been updated successfully.'
+      });
+      setEditingClaimId(null);
+      setEditedTitle('');
+    } catch (e: unknown) {
+      console.error('Failed to update claim title', e);
+      const msg = e instanceof Error ? e.message : 'Failed to update title';
+      toast.error('Update failed', { description: msg });
+    } finally {
+      setUpdatingTitle(null);
+    }
+  };
+
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
 
 
@@ -616,7 +687,7 @@ const Claims = () => {
                 </div>
               )}
               {user && filteredAndSortedClaims.map((claim) => (
-              <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
+              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
@@ -662,13 +733,78 @@ const Claims = () => {
                   </div>
 
                   {/* Second row: Claim title */}
-                  <div className="cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
-                    <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
-                      {claim.claim}
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {expandedClaim === claim.id ? '▼' : '▶'}
-                      </span>
-                    </CardTitle>
+                  <div className="flex items-start gap-2">
+                    {editingClaimId === claim.id ? (
+                      // Edit mode: show input and save/cancel buttons
+                      <div className="flex-1 flex flex-col sm:flex-row items-start gap-2">
+                        <Input
+                          value={editedTitle}
+                          onChange={(e) => setEditedTitle(e.target.value)}
+                          className="flex-1 text-lg"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              saveTitle(claim.id);
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              cancelEditing();
+                            }
+                          }}
+                          disabled={updatingTitle === claim.id}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => saveTitle(claim.id)}
+                            disabled={updatingTitle === claim.id}
+                            className="h-8"
+                          >
+                            {updatingTitle === claim.id ? (
+                              'Saving...'
+                            ) : (
+                              <Check className="h-4 w-4 text-green-600" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={cancelEditing}
+                            disabled={updatingTitle === claim.id}
+                            className="h-8"
+                          >
+                            <X className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View mode: show title with optional edit button
+                      <>
+                        <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
+                          <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                            {claim.claim}
+                            <span className="ml-2 text-sm text-muted-foreground">
+                              {expandedClaim === claim.id ? '▼' : '▶'}
+                            </span>
+                          </CardTitle>
+                        </div>
+                        {canEditClaim(claim) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditing(claim);
+                            }}
+                            className="h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit claim title"
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </div>
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
