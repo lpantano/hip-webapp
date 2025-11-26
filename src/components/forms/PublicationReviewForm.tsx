@@ -17,9 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileText, User, X, Check, ChevronsUpDown, HelpCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,12 +26,11 @@ import {
   type ReviewAnswer,
   type ReviewData,
   createEmptyReviewData,
-  getClassificationReasons,
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
 import { getCategoryBackgroundColor, getStudyTagColor, getStudyTagBorderColor, getQualityCheckDescription } from '@/lib/classification-categories';
-import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
+import { CLASSIFICATION_CATEGORIES } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobileKeyboardFix } from '@/hooks/useMobileKeyboardFix';
@@ -472,7 +469,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[90vh] sm:max-h-[95vh] overflow-hidden flex flex-col p-3 sm:p-6">
+      <DialogContent className="max-w-4xl w-screen h-screen sm:w-[90vw] sm:h-auto max-h-screen sm:max-h-[95vh] !top-0 !left-0 sm:!top-[50%] sm:!left-[50%] !translate-x-0 !translate-y-0 sm:!translate-x-[-50%] sm:!translate-y-[-50%] !rounded-none sm:!rounded-lg overflow-hidden flex flex-col p-3 sm:p-6 border-0 sm:border">
         <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -887,11 +884,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
                             className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.womenNotIncluded
-                                ? `${getStudyTagColor('women_not_included')} ${getStudyTagBorderColor('women_not_included')} shadow-sm`
+                                ? `${getStudyTagColor('women not included')} ${getStudyTagBorderColor('women not included')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.womenNotIncluded ? '✓ ' : ''} Women Not Included
+                            Women Not Included
                           </button>
 
                           {/* Observational Study Chip */}
@@ -910,7 +907,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.studyType.observational ? '✓ ' : ''} Observational
+                            Observational
                           </button>
 
                           {/* Clinical Trial Chip */}
@@ -925,11 +922,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             }))}
                             className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.studyType.clinicalTrial
-                                ? `${getStudyTagColor('clinical_trial')} ${getStudyTagBorderColor('clinical_trial')} shadow-sm`
+                                ? `${getStudyTagColor('clinical trial')} ${getStudyTagBorderColor('clinical trial')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.studyType.clinicalTrial ? '✓ ' : ''} Clinical Trial
+                            Clinical Trial
                           </button>
                         </div>
 

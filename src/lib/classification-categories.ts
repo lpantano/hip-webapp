@@ -89,7 +89,7 @@ export const STUDY_TAG_COLORS: Record<string, string> = {
 export const STUDY_TAG_BORDER_COLORS: Record<string, string> = {
   'women not included': 'border-pink-400',
   'observational': 'border-blue-200 text-blue-800',
-  'clinical trial': 'border-green-300 text-green-900',
+  'clinical trial': 'border-blue-300 text-blue-900',
 } as const;
 
 /**
