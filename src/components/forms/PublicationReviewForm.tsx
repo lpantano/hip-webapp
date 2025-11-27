@@ -469,7 +469,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-screen h-screen sm:w-[90vw] sm:h-auto max-h-screen sm:max-h-[95vh] !top-0 !left-0 sm:!top-[50%] sm:!left-[50%] !translate-x-0 !translate-y-0 sm:!translate-x-[-50%] sm:!translate-y-[-50%] !rounded-none sm:!rounded-lg overflow-hidden flex flex-col p-3 sm:p-6 border-0 sm:border">
+      <DialogContent className="max-w-4xl w-full h-[100dvh] sm:w-[90vw] sm:h-auto max-h-[100dvh] sm:max-h-[95vh] !top-0 !left-0 !right-0 sm:!top-[50%] sm:!left-[50%] sm:!right-auto !translate-x-0 !translate-y-0 sm:!translate-x-[-50%] sm:!translate-y-[-50%] !rounded-none sm:!rounded-lg overflow-hidden flex flex-col p-3 sm:p-6 border-0 sm:border !m-0 !fixed">
         <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
