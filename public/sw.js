@@ -3,8 +3,9 @@
  * Implements multiple caching strategies, offline support, and proper cache management
  */
 
-// Version - increment this when you want to force a cache update
-const VERSION = '1.0.4';
+// Version - automatically injected during build from package.json
+const VERSION = '__APP_VERSION__';
+const BUILD_TIME = '__BUILD_TIME__';
 const CACHE_NAME = `healthintegrityproject-v${VERSION}`;
 const RUNTIME_CACHE = `healthintegrityproject-runtime-v${VERSION}`;
 const MAX_RUNTIME_CACHE_SIZE = 50; // Maximum number of items in runtime cache
