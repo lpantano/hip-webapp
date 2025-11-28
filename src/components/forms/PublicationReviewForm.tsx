@@ -1043,7 +1043,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           </PopoverTrigger>
                           <PopoverContent className="w-[280px] sm:w-60 p-0" align="start">
                             <Command shouldFilter={true}>
-                              <CommandInput placeholder="Search ethnicities..." className="h-9 text-xs" />
+                              <CommandInput placeholder="Search ethnicities..." className="h-9 text-base sm:text-xs" />
                               <CommandList className="max-h-[200px] overflow-y-scroll">
                                 <CommandEmpty>No ethnicity found.</CommandEmpty>
                                 <CommandGroup>
@@ -1078,7 +1078,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             value={customEthnicity}
                             onChange={(e) => setCustomEthnicity(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())}
-                            className="flex-1 rounded border px-2 py-1 text-xs h-7"
+                            className="flex-1 rounded border px-2 py-1 text-base sm:text-xs h-7"
                           />
                           <Button
                             size="sm"
@@ -1123,7 +1123,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           </PopoverTrigger>
                           <PopoverContent className="w-[200px] p-0" align="start">
                             <Command shouldFilter={true}>
-                              <CommandInput placeholder="Search ranges..." className="h-9 text-xs" />
+                              <CommandInput placeholder="Search ranges..." className="h-9 text-base sm:text-xs" />
                               <CommandList className="max-h-[240px] overflow-y-scroll">
                                 <CommandEmpty>No age range found.</CommandEmpty>
                                 <CommandGroup>
@@ -1199,7 +1199,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  className="text-xs sm:text-sm resize-none"
+                  className="text-base sm:text-sm resize-none"
                 />
                 {existingReview && (
                   <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300 mt-1 flex items-center gap-1">
