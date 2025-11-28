@@ -298,18 +298,18 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
       <Header />
-      <main className="pt-28 px-6 pb-12">
+      <main className="pt-28 px-4 sm:px-6 pb-12">
         <div className="container mx-auto max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
-            <p className="text-muted-foreground">Manage your personal information and preferences</p>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Profile Settings</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Manage your personal information and preferences</p>
           </div>
 
           <div className="grid gap-6">
             {/* Basic Profile Card */}
             <Card>
               <CardHeader>
-                <div className="flex items-start gap-6">
+                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                   <AvatarUpload
                     currentAvatarUrl={avatarUrl}
                     onAvatarChange={setAvatarUrl}
@@ -317,7 +317,7 @@ const Profile = () => {
                     displayName={displayName}
                     size="lg"
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     <CardTitle className="flex items-center gap-2 mb-2">
                       <User className="w-5 h-5" />
                       Personal Information
@@ -369,6 +369,7 @@ const Profile = () => {
                 <Button
                   onClick={() => updateProfileMutation.mutate()}
                   disabled={updateProfileMutation.isPending}
+                  className="w-full sm:w-auto"
                 >
                   {updateProfileMutation.isPending ? 'Updating...' : 'Update Profile'}
                 </Button>
@@ -461,9 +462,9 @@ const Profile = () => {
 
                 {/* Social Media Links */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                     <Label>Social Media Links (Optional)</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addSocialLink} className="text-sm">
+                    <Button type="button" variant="outline" size="sm" onClick={addSocialLink} className="text-sm w-full sm:w-auto">
                       Add Link
                     </Button>
                   </div>
@@ -488,12 +489,12 @@ const Profile = () => {
                     </div>
                   )}
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {socialLinks.map((link, index) => (
-                      <div key={index} className="flex gap-2 items-center">
-                        <div className="w-[160px] flex-shrink-0">
+                      <div key={index} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                        <div className="w-full sm:w-[160px] sm:flex-shrink-0">
                           <Select value={link.platform} onValueChange={(v) => updateSocialLink(index, 'platform', v)}>
-                            <SelectTrigger className="h-8 w-full">
+                            <SelectTrigger className="h-9 w-full">
                               <SelectValue placeholder="Platform" />
                             </SelectTrigger>
                             <SelectContent>
@@ -511,20 +512,20 @@ const Profile = () => {
                           </Select>
                         </div>
 
-                        <div className="flex-1">
-                          <div className="flex items-center gap-0">
-                            <span className="inline-flex items-center px-2 h-9 rounded-l-md bg-muted/20 text-xs text-muted-foreground select-none">
+                        <div className="flex-1 w-full">
+                          <div className="flex items-center gap-0 w-full">
+                            <span className="inline-flex items-center px-2 h-9 rounded-l-md bg-muted/20 text-xs text-muted-foreground select-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px] sm:max-w-none">
                               {getPlatformPrefix(link.platform)}
                             </span>
                             <Input
-                              className="rounded-l-none flex-1 h-9"
+                              className="rounded-l-none flex-1 h-9 min-w-0"
                               placeholder="username or handle"
                               value={link.url}
                               onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
                             />
                           </div>
                         </div>
-                        <Button type="button" variant="outline" size="sm" onClick={() => removeSocialLink(index)} className="shrink-0">
+                        <Button type="button" variant="outline" size="sm" onClick={() => removeSocialLink(index)} className="shrink-0 w-full sm:w-auto">
                           Remove
                         </Button>
                       </div>
@@ -535,6 +536,7 @@ const Profile = () => {
                   <Button
                     onClick={() => updateExpertMutation.mutate()}
                     disabled={updateExpertMutation.isPending}
+                    className="w-full sm:w-auto"
                   >
                     {updateExpertMutation.isPending ? 'Updating...' : 'Update Expert Profile'}
                   </Button>
@@ -581,7 +583,7 @@ const Profile = () => {
                   <>
                     <Separator />
                     <div>
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <div>
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Lock className="w-4 h-4" />
@@ -596,6 +598,7 @@ const Profile = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => setShowPasswordForm(true)}
+                            className="w-full sm:w-auto"
                           >
                             Change Password
                           </Button>
@@ -667,10 +670,11 @@ const Profile = () => {
                               minLength={6}
                             />
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <Button
                               type="submit"
                               disabled={isChangingPassword || !newPassword || !confirmPassword}
+                              className="w-full sm:w-auto"
                             >
                               {isChangingPassword ? 'Updating...' : 'Update Password'}
                             </Button>
@@ -683,6 +687,7 @@ const Profile = () => {
                                 setConfirmPassword('');
                               }}
                               disabled={isChangingPassword}
+                              className="w-full sm:w-auto"
                             >
                               Cancel
                             </Button>
