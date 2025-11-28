@@ -80,7 +80,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   // Mobile keyboard fix: scroll inputs into view when focused
   const isMobile = useIsMobile();
   const scrollContainerRef = useMobileKeyboardFix({
-    enabled: isMobile && isOpen,
+    enabled: false, // Disabled: full-screen layout and proper font sizes prevent zoom issues
     delay: 350,
     block: 'center'
   });
