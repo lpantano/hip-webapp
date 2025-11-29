@@ -36,7 +36,7 @@ const Claims = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
-  const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
+  const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
@@ -212,6 +212,7 @@ const Claims = () => {
           user_id: c.user_id,
           category: c.category,
           votes: c.vote_count || 0,
+          created_at: c.created_at,
           publications: pubs,
           links: (linksByClaim[c.id] || []).map(l => ({ id: l.id, title: l.title, url: l.url, description: l.description, link_type: l.link_type, expert_user_id: l.expert_user_id })),
           comments: commentsByClaim[c.id] || [],
@@ -886,44 +887,49 @@ const Claims = () => {
                 <CardContent className="pt-2">
                   {user && (
                     <div className="border-t border-border pt-3">
-                      {/* Action buttons */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => setShowReelClaim(claim.id)}
-                          className="flex items-center gap-2 shadow-md whitespace-nowrap"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">Full Review</span>
-                          <span className="sm:hidden">Reviews</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowPaperForm(claim.id)}
-                          className="flex items-center gap-2 whitespace-nowrap"
-                        >
-                          <FileText className="w-4 h-4" />
-                          <span className="hidden sm:inline">Add Paper</span>
-                          <span className="sm:hidden">Paper</span>
-                        </Button>
-                              {(
-                                // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
-                                // AND the underlying DB status is exactly 'proposed'. We expose rawStatus on the mapped claim.
-                                user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed'))
-                              ) && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setShowSourceForm(claim.id)}
-                                  className="flex items-center gap-2 whitespace-nowrap"
-                                >
-                                  <Link className="w-4 h-4" />
-                                  <span className="hidden sm:inline">Add Source</span>
-                                  <span className="sm:hidden">Source</span>
-                                </Button>
-                              )}
+                      {/* Action buttons and date */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setShowReelClaim(claim.id)}
+                            className="flex items-center gap-2 shadow-md whitespace-nowrap"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span className="hidden sm:inline">Full Review</span>
+                            <span className="sm:hidden">Reviews</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowPaperForm(claim.id)}
+                            className="flex items-center gap-2 whitespace-nowrap"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden sm:inline">Add Paper</span>
+                            <span className="sm:hidden">Paper</span>
+                          </Button>
+                                {(
+                                  // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
+                                  // AND the underlying DB status is exactly 'proposed'. We expose rawStatus on the mapped claim.
+                                  user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed'))
+                                ) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowSourceForm(claim.id)}
+                                    className="flex items-center gap-2 whitespace-nowrap"
+                                  >
+                                    <Link className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Add Source</span>
+                                    <span className="sm:hidden">Source</span>
+                                  </Button>
+                                )}
+                        </div>
+                        <div className="text-xs text-muted-foreground ml-auto">
+                          {new Date(claim.created_at).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   )}
