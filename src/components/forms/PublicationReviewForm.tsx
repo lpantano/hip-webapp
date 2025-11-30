@@ -17,9 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileText, User, X, Check, ChevronsUpDown, HelpCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,13 +26,14 @@ import {
   type ReviewAnswer,
   type ReviewData,
   createEmptyReviewData,
-  getClassificationReasons,
   AGE_RANGES,
   ETHNICITY_OPTIONS
 } from '@/types/review';
 import { getCategoryBackgroundColor, getStudyTagColor, getStudyTagBorderColor, getQualityCheckDescription } from '@/lib/classification-categories';
-import { CLASSIFICATION_CATEGORIES, isProblematicCategory } from '@/lib/classification-categories';
+import { CLASSIFICATION_CATEGORIES } from '@/lib/classification-categories';
 import quality from '@/lib/quality-colors';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobileKeyboardFix } from '@/hooks/useMobileKeyboardFix';
 
 interface Publication {
   id: string;
@@ -77,6 +76,14 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const [ethnicityOpen, setEthnicityOpen] = useState(false);
   const [ageRangeOpen, setAgeRangeOpen] = useState(false);
   const [studyTagsHelpOpen, setStudyTagsHelpOpen] = useState(false);
+
+  // Mobile keyboard fix: scroll inputs into view when focused
+  const isMobile = useIsMobile();
+  const scrollContainerRef = useMobileKeyboardFix({
+    enabled: false, // Disabled: full-screen layout and proper font sizes prevent zoom issues
+    delay: 350,
+    block: 'center'
+  });
 
   // Fetch existing review for this publication by this expert
   const { data: existingReview } = useQuery({
@@ -462,7 +469,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[90vh] sm:max-h-[95vh] overflow-hidden flex flex-col p-3 sm:p-6">
+      <DialogContent className="max-w-4xl w-full h-[100dvh] sm:w-[90vw] sm:h-auto max-h-[100dvh] sm:max-h-[95vh] !top-0 !left-0 !right-0 sm:!top-[50%] sm:!left-[50%] sm:!right-auto !translate-x-0 !translate-y-0 sm:!translate-x-[-50%] sm:!translate-y-[-50%] !rounded-none sm:!rounded-lg overflow-hidden flex flex-col p-3 sm:p-6 border-0 sm:border !m-0 !fixed">
         <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -473,7 +480,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-auto">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-auto">
           <ScrollArea className="h-full w-full pr-2 sm:pr-4">
             <div className="space-y-3 sm:space-y-4 pb-6 sm:pb-8 px-1">
               {/* Publication Info */}
@@ -877,11 +884,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             onClick={() => updateWomenIncluded(!reviewData.womenNotIncluded)}
                             className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.womenNotIncluded
-                                ? `${getStudyTagColor('women_not_included')} ${getStudyTagBorderColor('women_not_included')} shadow-sm`
+                                ? `${getStudyTagColor('women not included')} ${getStudyTagBorderColor('women not included')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.womenNotIncluded ? '✓ ' : ''} Women Not Included
+                            Women Not Included
                           </button>
 
                           {/* Observational Study Chip */}
@@ -900,7 +907,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.studyType.observational ? '✓ ' : ''} Observational
+                            Observational
                           </button>
 
                           {/* Clinical Trial Chip */}
@@ -915,11 +922,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             }))}
                             className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border-2 transition-all duration-200 hover:shadow-sm touch-manipulation ${
                               reviewData.studyType.clinicalTrial
-                                ? `${getStudyTagColor('clinical_trial')} ${getStudyTagBorderColor('clinical_trial')} shadow-sm`
+                                ? `${getStudyTagColor('clinical trial')} ${getStudyTagBorderColor('clinical trial')} shadow-sm`
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                             }`}
                           >
-                            {reviewData.studyType.clinicalTrial ? '✓ ' : ''} Clinical Trial
+                            Clinical Trial
                           </button>
                         </div>
 
@@ -1036,7 +1043,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           </PopoverTrigger>
                           <PopoverContent className="w-[280px] sm:w-60 p-0" align="start">
                             <Command shouldFilter={true}>
-                              <CommandInput placeholder="Search ethnicities..." className="h-9 text-xs" />
+                              <CommandInput placeholder="Search ethnicities..." className="h-9 text-base sm:text-xs" />
                               <CommandList className="max-h-[200px] overflow-y-scroll">
                                 <CommandEmpty>No ethnicity found.</CommandEmpty>
                                 <CommandGroup>
@@ -1071,7 +1078,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                             value={customEthnicity}
                             onChange={(e) => setCustomEthnicity(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomEthnicity())}
-                            className="flex-1 rounded border px-2 py-1 text-xs h-7"
+                            className="flex-1 rounded border px-2 py-1 text-base sm:text-xs h-7"
                           />
                           <Button
                             size="sm"
@@ -1116,7 +1123,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                           </PopoverTrigger>
                           <PopoverContent className="w-[200px] p-0" align="start">
                             <Command shouldFilter={true}>
-                              <CommandInput placeholder="Search ranges..." className="h-9 text-xs" />
+                              <CommandInput placeholder="Search ranges..." className="h-9 text-base sm:text-xs" />
                               <CommandList className="max-h-[240px] overflow-y-scroll">
                                 <CommandEmpty>No age range found.</CommandEmpty>
                                 <CommandGroup>
@@ -1192,7 +1199,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  className="text-xs sm:text-sm resize-none"
+                  className="text-base sm:text-sm resize-none"
                 />
                 {existingReview && (
                   <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300 mt-1 flex items-center gap-1">

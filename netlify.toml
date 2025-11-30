@@ -1,5 +1,32 @@
+# Production build settings (main branch)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Branch-specific build settings
+[context.production]
+  command = "npm run build"
+
+[context.deploy-preview]
+  command = "npm run build:dev"
+
+[context.branch-deploy]
+  command = "npm run build:dev"
+
+# Development branch (devel) specific settings
+[context.devel]
+  command = "npm run build:dev"
+
+# Cache control headers
 [[headers]]
   for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/sw.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"

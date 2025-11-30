@@ -123,3 +123,30 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile keyboard scroll fixes */
+@layer components {
+  /* iOS-specific: Use dynamic viewport height that updates when keyboard appears */
+  @supports (-webkit-touch-callout: none) {
+    [data-radix-dialog-content] {
+      /* dvh (dynamic viewport height) updates when keyboard appears (iOS 15.4+) */
+      max-height: 90dvh;
+      /* Fallback for older browsers without dvh support */
+      max-height: 90vh;
+    }
+  }
+
+  /* Mobile: Enable smooth scrolling and keyboard clearance */
+  @media (max-width: 768px) {
+    [data-radix-scroll-area-viewport] {
+      /* Enable momentum scrolling on iOS for better feel */
+      -webkit-overflow-scrolling: touch;
+
+      /* Ensure smooth scrolling behavior */
+      scroll-behavior: smooth;
+
+      /* Add padding at bottom for keyboard clearance on newer iPhones */
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+}

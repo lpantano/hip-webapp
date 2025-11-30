@@ -82,6 +82,7 @@ interface ClaimUI {
   // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
   category: Database['public']['Enums']['claim_category'];
   votes: number;
+  created_at: string;
   publications: {
     id: string; // Add publication ID
     title: string;

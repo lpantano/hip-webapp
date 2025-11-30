@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -16,15 +16,12 @@ import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { getCategoryBackgroundColor } from '@/lib/classification-categories';
-import { CLASSIFICATION_CATEGORIES, getCategoryDescription } from '@/lib/classification-categories';
-import { getStudyTagDescription, STUDY_TAG, getStudyTagColor } from '@/lib/classification-categories';
 import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
 import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
 import CategoriesLegend from './components/Legend';
-import ExpertReviewsReel, { type ExpertReviewCard } from './components/ExpertReviewsReel';
+import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
@@ -32,15 +29,17 @@ import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 import { humanize, getStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
-import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS } from './constants';
+import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
-  const [sortBy, setSortBy] = useState<'votes' | 'recent'>('votes');
+  const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
@@ -65,6 +64,11 @@ const Claims = () => {
   // Confirmation dialog state for toggling claim status
   const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
   const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
+
+  // State for inline title editing
+  const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [updatingTitle, setUpdatingTitle] = useState<string | null>(null);
 
   // component-scoped Supabase client
   const sb = supabase;
@@ -101,7 +105,16 @@ const Claims = () => {
     checkExpertStatus();
   }, [user, sb]);
 
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, SEARCH_DEBOUNCE_MS);
 
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   // Use the groupBy helper for cleaner data grouping
   const fetchClaimsData = useCallback(async (page: number = 0) => {
@@ -115,6 +128,11 @@ const Claims = () => {
       // Apply category filter
       if (filterByCategory !== 'all') {
         claimsQuery = claimsQuery.eq('category', filterByCategory);
+      }
+
+      // Apply search filter
+      if (debouncedSearchQuery.trim()) {
+        claimsQuery = claimsQuery.ilike('title', `%${debouncedSearchQuery.trim()}%`);
       }
 
       // Apply sorting with secondary keys for stable pagination
@@ -194,6 +212,7 @@ const Claims = () => {
           user_id: c.user_id,
           category: c.category,
           votes: c.vote_count || 0,
+          created_at: c.created_at,
           publications: pubs,
           links: (linksByClaim[c.id] || []).map(l => ({ id: l.id, title: l.title, url: l.url, description: l.description, link_type: l.link_type, expert_user_id: l.expert_user_id })),
           comments: commentsByClaim[c.id] || [],
@@ -280,7 +299,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, sortBy, setUserVotes]);
+  }, [sb, user, filterByCategory, sortBy, debouncedSearchQuery, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -321,7 +340,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, sortBy]);
+  }, [filterByCategory, sortBy, debouncedSearchQuery]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -392,6 +411,72 @@ const Claims = () => {
 
   const toggleClaimExpansion = (claimId: string) => {
     setExpandedClaim(expandedClaim === claimId ? null : claimId);
+  };
+
+  // Permission check for editing claim titles
+  const canEditClaim = (claim: ClaimUI) => {
+    // Experts/researchers can always edit
+    if (isExpert) return true;
+
+    // Claim creator can edit if status is "proposed"
+    if (user && claim.user_id === user.id && claim.rawStatus === 'proposed') {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Helper functions for inline title editing
+  const startEditing = (claim: ClaimUI) => {
+    setEditingClaimId(claim.id);
+    setEditedTitle(claim.claim);
+  };
+
+  const cancelEditing = () => {
+    setEditingClaimId(null);
+    setEditedTitle('');
+  };
+
+  const saveTitle = async (claimId: string) => {
+    await updateClaimTitle(claimId, editedTitle);
+  };
+
+  // Update claim title with validation
+  const updateClaimTitle = async (claimId: string, newTitle: string) => {
+    if (!user) return;
+
+    // Validation
+    const trimmed = newTitle.trim();
+    if (trimmed.length < 10) {
+      toast.error('Validation error', {
+        description: 'Title must be at least 10 characters'
+      });
+      return;
+    }
+
+    try {
+      setUpdatingTitle(claimId);
+      const { error } = await sb
+        .from('claims')
+        .update({ title: trimmed })
+        .eq('id', claimId);
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchData(currentPage);
+      toast.success('Title updated', {
+        description: 'Claim title has been updated successfully.'
+      });
+      setEditingClaimId(null);
+      setEditedTitle('');
+    } catch (e: unknown) {
+      console.error('Failed to update claim title', e);
+      const msg = e instanceof Error ? e.message : 'Failed to update title';
+      toast.error('Update failed', { description: msg });
+    } finally {
+      setUpdatingTitle(null);
+    }
   };
 
   const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
@@ -496,6 +581,33 @@ const Claims = () => {
                     </DialogContent>
                   </Dialog>
 
+                  {/* Search Input */}
+                  <div className="relative w-full sm:w-[240px]">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      type="text"
+                      placeholder="Search claims..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-9 h-9"
+                      aria-label="Search claims by title"
+                      role="searchbox"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Clear search"
+                        type="button"
+                      >
+                        <X className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+
                   <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
                     <SelectTrigger className="w-full sm:w-[180px] h-9">
                       <div className="flex items-center gap-2">
@@ -568,11 +680,15 @@ const Claims = () => {
 
               {user && filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
-                  <p>No claims found for the selected category.</p>
+                  <p>
+                    {debouncedSearchQuery.trim()
+                      ? 'No claims match your search.'
+                      : 'No claims found for the selected category.'}
+                  </p>
                 </div>
               )}
               {user && filteredAndSortedClaims.map((claim) => (
-              <Card key={claim.id} className="bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
+              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
@@ -618,13 +734,78 @@ const Claims = () => {
                   </div>
 
                   {/* Second row: Claim title */}
-                  <div className="cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
-                    <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
-                      {claim.claim}
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {expandedClaim === claim.id ? '▼' : '▶'}
-                      </span>
-                    </CardTitle>
+                  <div className="flex items-start gap-2">
+                    {editingClaimId === claim.id ? (
+                      // Edit mode: show input and save/cancel buttons
+                      <div className="flex-1 flex flex-col sm:flex-row items-start gap-2">
+                        <Input
+                          value={editedTitle}
+                          onChange={(e) => setEditedTitle(e.target.value)}
+                          className="flex-1 text-lg"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              saveTitle(claim.id);
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              cancelEditing();
+                            }
+                          }}
+                          disabled={updatingTitle === claim.id}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => saveTitle(claim.id)}
+                            disabled={updatingTitle === claim.id}
+                            className="h-8"
+                          >
+                            {updatingTitle === claim.id ? (
+                              'Saving...'
+                            ) : (
+                              <Check className="h-4 w-4 text-green-600" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={cancelEditing}
+                            disabled={updatingTitle === claim.id}
+                            className="h-8"
+                          >
+                            <X className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View mode: show title with optional edit button
+                      <>
+                        <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
+                          <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                            {claim.claim}
+                            <span className="ml-2 text-sm text-muted-foreground">
+                              {expandedClaim === claim.id ? '▼' : '▶'}
+                            </span>
+                          </CardTitle>
+                        </div>
+                        {canEditClaim(claim) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditing(claim);
+                            }}
+                            className="h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit claim title"
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </div>
                   {/* Aggregated Category Labels from all expert reviews, separated by stance */}
                   <div className="flex-col mt-2">
@@ -706,44 +887,49 @@ const Claims = () => {
                 <CardContent className="pt-2">
                   {user && (
                     <div className="border-t border-border pt-3">
-                      {/* Action buttons */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => setShowReelClaim(claim.id)}
-                          className="flex items-center gap-2 shadow-md whitespace-nowrap"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">Full Review</span>
-                          <span className="sm:hidden">Reviews</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowPaperForm(claim.id)}
-                          className="flex items-center gap-2 whitespace-nowrap"
-                        >
-                          <FileText className="w-4 h-4" />
-                          <span className="hidden sm:inline">Add Paper</span>
-                          <span className="sm:hidden">Paper</span>
-                        </Button>
-                              {(
-                                // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
-                                // AND the underlying DB status is exactly 'proposed'. We expose rawStatus on the mapped claim.
-                                user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed'))
-                              ) && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setShowSourceForm(claim.id)}
-                                  className="flex items-center gap-2 whitespace-nowrap"
-                                >
-                                  <Link className="w-4 h-4" />
-                                  <span className="hidden sm:inline">Add Source</span>
-                                  <span className="sm:hidden">Source</span>
-                                </Button>
-                              )}
+                      {/* Action buttons and date */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setShowReelClaim(claim.id)}
+                            className="flex items-center gap-2 shadow-md whitespace-nowrap"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span className="hidden sm:inline">Full Review</span>
+                            <span className="sm:hidden">Reviews</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowPaperForm(claim.id)}
+                            className="flex items-center gap-2 whitespace-nowrap"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden sm:inline">Add Paper</span>
+                            <span className="sm:hidden">Paper</span>
+                          </Button>
+                                {(
+                                  // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
+                                  // AND the underlying DB status is exactly 'proposed'. We expose rawStatus on the mapped claim.
+                                  user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed'))
+                                ) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowSourceForm(claim.id)}
+                                    className="flex items-center gap-2 whitespace-nowrap"
+                                  >
+                                    <Link className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Add Source</span>
+                                    <span className="sm:hidden">Source</span>
+                                  </Button>
+                                )}
+                        </div>
+                        <div className="text-xs text-muted-foreground ml-auto">
+                          {new Date(claim.created_at).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   )}
