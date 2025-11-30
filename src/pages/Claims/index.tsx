@@ -785,8 +785,18 @@ const Claims = () => {
                         <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
                           <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
                             {claim.claim}
-                            <span className="ml-2 text-sm text-muted-foreground">
-                              {expandedClaim === claim.id ? '▼' : '▶'}
+                            <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                              <span>
+                                {claim.publications.length === 0
+                                  ? 'waiting for papers'
+                                  : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
+                                }
+                              </span>
+                              {expandedClaim === claim.id ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
                             </span>
                           </CardTitle>
                         </div>
