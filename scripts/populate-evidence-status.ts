@@ -73,12 +73,28 @@ async function populateEvidenceStatus() {
   // Process each claim
   for (const claim of claims) {
     try {
+      // Define the publication type from the database query
+      type PublicationFromDB = {
+        id: string;
+        stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+        publication_scores: Array<{
+          review_data: {
+            category?: string;
+            studyType?: {
+              observational?: boolean;
+              clinicalTrial?: boolean;
+            };
+            womenNotIncluded?: boolean;
+          };
+        }>;
+      };
+
       // Transform data to match calculator interface
       const claimData = {
         id: claim.id,
-        publications: claim.publications?.map((pub: { id: string; stance: string; publication_scores: unknown[] }) => ({
+        publications: claim.publications?.map((pub: PublicationFromDB) => ({
           id: pub.id,
-          stance: pub.stance,
+          stance: pub.stance || undefined,
           rawScores: pub.publication_scores || []
         })) || []
       };
