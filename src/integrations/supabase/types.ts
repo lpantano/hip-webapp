@@ -175,6 +175,7 @@ export type Database = {
           category: Database["public"]["Enums"]["claim_category"]
           created_at: string
           description: string
+          evidence_status: Database["public"]["Enums"]["evidence_status_type"] | null
           id: string
           status: Database["public"]["Enums"]["claim_status"]
           title: string
@@ -186,6 +187,7 @@ export type Database = {
           category: Database["public"]["Enums"]["claim_category"]
           created_at?: string
           description: string
+          evidence_status?: Database["public"]["Enums"]["evidence_status_type"] | null
           id?: string
           status?: Database["public"]["Enums"]["claim_status"]
           title: string
@@ -197,6 +199,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["claim_category"]
           created_at?: string
           description?: string
+          evidence_status?: Database["public"]["Enums"]["evidence_status_type"] | null
           id?: string
           status?: Database["public"]["Enums"]["claim_status"]
           title?: string
@@ -790,6 +793,11 @@ export type Database = {
         | "disputed"
         | "needs_more_evidence"
         | "under review"
+      evidence_status_type:
+        | "Awaiting Evidence"
+        | "Evidence Supports"
+        | "Evidence Disproves"
+        | "Inconclusive"
       // evidence_score_category:
       //   | "study_size"
       //   | "population"
