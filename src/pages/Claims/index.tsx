@@ -26,10 +26,10 @@ import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-import { humanize, getStatusColor, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { humanize, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
-import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS, SEARCH_DEBOUNCE_MS } from './constants';
+import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);

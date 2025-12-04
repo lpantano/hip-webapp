@@ -17,14 +17,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%; /* white */
     --popover-foreground: 222.2 84% 4.9%; /* very dark blue-gray */
 
-    /* PRIMARY: Bright Sky (friendly / modern) */
+    /* PRIMARY: Superman Blue (bright / heroic) */
     /* #1995AD, #A1D6E2, #F1F1F2  teal blue, light blue, and light gray */
-    --primary: 204.6 41.9% 44.5%; /* #427aa1 ocean blue */
+    --primary: 215 95% 58%; /* Superman blue */
     --primary-foreground: 0 0% 100%; /* white */
 
-    --secondary: 211 66% 87.3%; /* #c9def4 */
+    --secondary: 215 90% 90%; /* light Superman blue */
     /* --secondary: 222 44% 47%; */
-    --secondary-foreground: 204.6 41.9% 44.5%; /* ocean blue */
+    --secondary-foreground: 215 95% 58%; /* Superman blue */
     /* --secondary-foreground: 222 44% 95%; ocean blue */
 
     --muted: 220 20% 95%; /* very light gray */
@@ -34,26 +34,30 @@ All colors MUST be HSL.
     --accent: 32 100% 62%; /* bright orange */
     --accent-foreground: 220 50% 15%; /* dark blue-gray */
 
+    /* SECONDARY ACCENT: darker Superman blue */
+    --accent-secondary: 215 85% 38%; /* darker Superman blue */
+    --accent-secondary-foreground: 0 0% 100%; /* white */
+
     --destructive: 0 84.2% 60.2%; /* red */
     --destructive-foreground: 210 40% 98%; /* very light blue-gray */
 
     --border: 214.3 31.8% 91.4%; /* light gray-blue */
     --input: 214.3 31.8% 91.4%; /* light gray-blue */
     /* Use primary hue for ring to match theme */
-    --ring: 204 90% 65%; /* light blue */
+    --ring: 215 95% 65%; /* light Superman blue */
 
     --radius: 0.75rem;
 
     /* Theme gradients */
-    --hero-gradient: linear-gradient(135deg, hsl(199 46% 54%) 0%, hsl(204 90% 85%) 100%); /* medium blue to light sky blue */
+    --hero-gradient: linear-gradient(135deg, hsl(215 95% 58%) 0%, hsl(215 85% 88%) 100%); /* Superman blue to light Superman blue */
     --card-gradient: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%); /* white to very light blue-gray */
 
     --sidebar-background: 0 0% 98%; /* very light gray */
 
     --sidebar-foreground: 240 5.3% 26.1%; /* dark gray */
 
-    /* Sidebar primary tuned to sky */
-    --sidebar-primary: 204 90% 50%; /* medium blue */
+    /* Sidebar primary tuned to Superman blue */
+    --sidebar-primary: 215 95% 55%; /* Superman blue for sidebar */
 
     --sidebar-primary-foreground: 0 0% 98%; /* very light gray */
 
@@ -63,7 +67,7 @@ All colors MUST be HSL.
 
     --sidebar-border: 220 13% 91%; /* light gray */
 
-    --sidebar-ring: 204 90% 65%; /* light blue */
+    --sidebar-ring: 215 95% 65%; /* light Superman blue */
   }
 
   .dark {
@@ -76,8 +80,8 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%; /* very dark blue-gray */
     --popover-foreground: 210 40% 98%; /* very light blue-gray */
 
-    /* Dark primary uses a slightly deeper sky blue for contrast */
-    --primary: 204 90% 48%; /* medium blue */
+    /* Dark primary uses Superman blue with reduced lightness for contrast */
+    --primary: 215 90% 45%; /* Superman blue (dark mode) */
     --primary-foreground: 0 0% 100%; /* white */
 
     --secondary: 220 15% 20%; /* dark gray */
@@ -93,24 +97,28 @@ All colors MUST be HSL.
     --accent: 24 95% 60%; /* orange */
     --accent-foreground: 0 0% 100%; /* white */
 
+    /* SECONDARY ACCENT: darker Superman blue for dark mode */
+    --accent-secondary: 215 80% 42%; /* darker Superman blue (lighter for dark mode) */
+    --accent-secondary-foreground: 0 0% 100%; /* white */
+
     --destructive: 0 62.8% 30.6%; /* dark red */
     --destructive-foreground: 210 40% 98%; /* very light blue-gray */
 
     --border: 217.2 32.6% 17.5%; /* dark gray-blue */
     --input: 217.2 32.6% 17.5%; /* dark gray-blue */
-    --ring: 204 90% 48%; /* medium blue */
+    --ring: 215 90% 45%; /* Superman blue (dark mode) */
 
-    /* Dark mode gradients tuned to original brand */
-    --hero-gradient: linear-gradient(135deg, hsl(210 79% 26%) 0%, hsl(165 78% 26%) 100%); /* dark blue to dark teal */
+    /* Dark mode gradients tuned to Superman blue */
+    --hero-gradient: linear-gradient(135deg, hsl(215 85% 28%) 0%, hsl(165 78% 26%) 100%); /* dark Superman blue to dark teal */
     --card-gradient: linear-gradient(145deg, hsl(222.2 84% 4.9%) 0%, hsl(217.2 32.6% 17.5%) 100%); /* very dark blue-gray to dark gray-blue */
     --sidebar-background: 240 5.9% 10%; /* very dark gray */
     --sidebar-foreground: 240 4.8% 95.9%; /* very light gray */
-    --sidebar-primary: 204 90% 40%; /* darker blue */
+    --sidebar-primary: 215 90% 38%; /* darker Superman blue */
     --sidebar-primary-foreground: 0 0% 100%; /* white */
     --sidebar-accent: 240 3.7% 15.9%; /* dark gray */
     --sidebar-accent-foreground: 240 4.8% 95.9%; /* very light gray */
     --sidebar-border: 240 3.7% 15.9%; /* dark gray */
-    --sidebar-ring: 204 90% 48%; /* medium blue */
+    --sidebar-ring: 215 90% 45%; /* Superman blue (dark mode) */
   }
 }
 
