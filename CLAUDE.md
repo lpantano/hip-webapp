@@ -16,6 +16,7 @@ Evidence Decoded is a React-based web application built with:
 
 ### TypeScript
 
+- Don't use `any` ever
 - Use TypeScript for all new files (`.tsx` for components, `.ts` for utilities)
 - The project has relaxed TypeScript settings:
   - `noImplicitAny: false`

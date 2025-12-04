@@ -177,9 +177,24 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
 
         if (claimData) {
           // Transform data to match calculator interface
+          type PublicationFromDB = {
+            id: string;
+            stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+            publication_scores: Array<{
+              review_data: {
+                category?: string;
+                studyType?: {
+                  observational?: boolean;
+                  clinicalTrial?: boolean;
+                };
+                womenNotIncluded?: boolean;
+              };
+            }>;
+          };
+
           const transformedClaimData = {
             id: claimData.id,
-            publications: claimData.publications?.map((pub: any) => ({
+            publications: claimData.publications?.map((pub: PublicationFromDB) => ({
               id: pub.id,
               stance: pub.stance || undefined,
               rawScores: pub.publication_scores || []

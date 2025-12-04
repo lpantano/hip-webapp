@@ -19,7 +19,6 @@ async function queryClaimData() {
     .from('claims')
     .select(`
       id,
-      claim_text,
       claim_publications!inner(
         publication:publications!inner(
           id,
@@ -44,10 +43,37 @@ async function queryClaimData() {
   console.log('Raw claim data from DB:', JSON.stringify(claim, null, 2));
 
   // Transform to match calculator format
-  const publications = claim.claim_publications?.map((cp: any) => ({
+  interface PublicationReview {
+    review_data: {
+      category?: string;
+      studyType?: {
+        observational?: boolean;
+        clinicalTrial?: boolean;
+      };
+      womenNotIncluded?: boolean;
+    };
+  }
+
+  interface ClaimPublication {
+    publication: {
+      id: string;
+      title: string;
+      stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+      publication_reviews: PublicationReview[];
+    };
+  }
+
+  interface ClaimWithPublications {
+    id: string;
+    claim_publications?: ClaimPublication[];
+  }
+
+  const typedClaim = claim as unknown as ClaimWithPublications;
+
+  const publications = typedClaim.claim_publications?.map((cp: ClaimPublication) => ({
     id: cp.publication.id,
     title: cp.publication.title,
-    stance: cp.publication.stance,
+    stance: cp.publication.stance || undefined,
     rawScores: cp.publication.publication_reviews || []
   }));
 
@@ -56,7 +82,7 @@ async function queryClaimData() {
   // Test with calculator
   const { calculateClaimStateLabel } = await import('../src/lib/claim-state-calculator');
   const result = calculateClaimStateLabel({
-    id: claim.id,
+    id: typedClaim.id,
     publications
   });
 

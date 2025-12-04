@@ -59,7 +59,34 @@ async function debugClaim() {
   analyzeAndCalculate(claim, 'publication_scores');
 }
 
-function analyzeAndCalculate(claim: any, scoreFieldName: string) {
+interface ReviewData {
+  category?: string;
+  studyType?: {
+    observational?: boolean;
+    clinicalTrial?: boolean;
+  };
+  womenNotIncluded?: boolean;
+}
+
+interface PublicationScore {
+  review_data: ReviewData;
+}
+
+interface PublicationData {
+  id: string;
+  title?: string;
+  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  publication_scores?: PublicationScore[];
+}
+
+interface ClaimData {
+  id: string;
+  title?: string;
+  evidence_status?: string;
+  publications?: PublicationData[];
+}
+
+function analyzeAndCalculate(claim: ClaimData, _scoreFieldName: string) {
   console.log('\n' + '='.repeat(80));
   console.log('ANALYSIS');
   console.log('='.repeat(80));
@@ -67,14 +94,15 @@ function analyzeAndCalculate(claim: any, scoreFieldName: string) {
   console.log(`\nCurrent evidence_status in DB: ${claim.evidence_status}`);
   console.log(`\nNumber of publications: ${claim.publications?.length || 0}`);
 
-  claim.publications?.forEach((pub: any, idx: number) => {
+  claim.publications?.forEach((pub: PublicationData, idx: number) => {
     console.log(`\nPublication ${idx + 1}:`);
     console.log(`  ID: ${pub.id}`);
     console.log(`  Title: ${pub.title}`);
     console.log(`  Stance: ${pub.stance}`);
-    console.log(`  Reviews: ${pub[scoreFieldName]?.length || 0}`);
+    const scores = pub.publication_scores || [];
+    console.log(`  Reviews: ${scores.length}`);
 
-    pub[scoreFieldName]?.forEach((review: any, reviewIdx: number) => {
+    scores.forEach((review: PublicationScore, reviewIdx: number) => {
       console.log(`\n  Review ${reviewIdx + 1}:`);
       console.log(`    Category: ${review.review_data?.category}`);
       console.log(`    Study Type:`, review.review_data?.studyType);
@@ -85,10 +113,10 @@ function analyzeAndCalculate(claim: any, scoreFieldName: string) {
   // Transform data to match calculator interface
   const claimData = {
     id: claim.id,
-    publications: claim.publications?.map((pub: any) => ({
+    publications: claim.publications?.map((pub: PublicationData) => ({
       id: pub.id,
       stance: pub.stance || undefined,
-      rawScores: pub[scoreFieldName] || []
+      rawScores: pub.publication_scores || []
     })) || []
   };
 
