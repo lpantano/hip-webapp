@@ -76,7 +76,7 @@ async function populateEvidenceStatus() {
       // Transform data to match calculator interface
       const claimData = {
         id: claim.id,
-        publications: claim.publications?.map((pub: any) => ({
+        publications: claim.publications?.map((pub: { id: string; stance: string; publication_scores: unknown[] }) => ({
           id: pub.id,
           stance: pub.stance,
           rawScores: pub.publication_scores || []
