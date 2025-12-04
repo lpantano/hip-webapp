@@ -290,7 +290,17 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
             .single();
 
           if (claimData) {
-            const evidenceStatus = calculateClaimStateLabel(claimData);
+            // Transform data to match calculator interface
+            const transformedClaimData = {
+              id: claimData.id,
+              publications: claimData.publications?.map((pub: any) => ({
+                id: pub.id,
+                stance: pub.stance || undefined,
+                rawScores: pub.publication_scores || []
+              })) || []
+            };
+
+            const evidenceStatus = calculateClaimStateLabel(transformedClaimData);
             await supabase
               .from('claims')
               .update({ evidence_status: evidenceStatus })
