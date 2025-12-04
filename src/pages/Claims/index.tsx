@@ -26,7 +26,7 @@ import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-import { humanize, getStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { humanize, getStatusColor, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
 import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS, SEARCH_DEBOUNCE_MS } from './constants';
@@ -46,9 +46,8 @@ const Claims = () => {
   const [showSourceForm, setShowSourceForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
-  const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
+  const [expandedStance, setExpandedStance] = useState<{ claimId: string; stance: 'supporting' | 'contradicting' } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
 
@@ -60,10 +59,6 @@ const Claims = () => {
     revertVote,
     setUserVotes
   } = useOptimisticVote(setClaims);
-
-  // Confirmation dialog state for toggling claim status
-  const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
-  const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
 
   // State for inline title editing
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
@@ -218,7 +213,8 @@ const Claims = () => {
           comments: commentsByClaim[c.id] || [],
           // preserve DB enum/status values directly as requested
           rawStatus: c.status,
-          status: c.status as ClaimUI['status']
+          status: c.status as ClaimUI['status'],
+          evidence_status: 'evidence_status' in c ? (c.evidence_status as ClaimUI['evidence_status']) : null
         };
       });
 
@@ -372,45 +368,14 @@ const Claims = () => {
     }
   };
 
-  const toggleClaimStatus = async (claimId: string, rawStatus?: string) => {
-    if (!user) return;
-    // Only allow toggle between 'proposed' and 'under review'
-    if (rawStatus !== CLAIM_STATUS.PROPOSED && rawStatus !== CLAIM_STATUS.UNDER_REVIEW) return;
-
-    const newStatus = rawStatus === CLAIM_STATUS.PROPOSED ? CLAIM_STATUS.UNDER_REVIEW : CLAIM_STATUS.PROPOSED;
-    try {
-      setUpdatingStatus(claimId);
-      const { error } = await sb.from('claims').update({ status: newStatus }).eq('id', claimId);
-      if (error) throw error;
-      // Refresh data
-      await fetchData(currentPage);
-      toast.success('Status updated', { description: `Claim status set to ${newStatus}.` });
-    } catch (e: unknown) {
-      console.error('Failed to update claim status', e);
-      const msg = e instanceof Error ? e.message : 'Failed to update status';
-      toast.error('Update failed', { description: msg });
-    } finally {
-      setUpdatingStatus(null);
+  const handleStanceClick = (claimId: string, stance: 'supporting' | 'contradicting') => {
+    // Toggle: if clicking same stance on same claim, collapse it
+    if (expandedStance?.claimId === claimId && expandedStance?.stance === stance) {
+      setExpandedStance(null);
+    } else {
+      // Otherwise expand the clicked stance
+      setExpandedStance({ claimId, stance });
     }
-  };
-
-  // Confirm + toggle flow: user clicks badge -> open dialog -> confirmAndToggle calls toggleClaimStatus
-  const confirmAndToggle = async () => {
-    if (!confirmToggleClaimId || !confirmToggleRawStatus) {
-      setConfirmToggleClaimId(null);
-      setConfirmToggleRawStatus(null);
-      return;
-    }
-    try {
-      await toggleClaimStatus(confirmToggleClaimId, confirmToggleRawStatus);
-    } finally {
-      setConfirmToggleClaimId(null);
-      setConfirmToggleRawStatus(null);
-    }
-  };
-
-  const toggleClaimExpansion = (claimId: string) => {
-    setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
   // Permission check for editing claim titles
@@ -696,27 +661,9 @@ const Claims = () => {
                       <Badge className={`${getCategoryColor(claim.category)} pointer-events-none transition-none`}>
                         {humanize(claim.category)}
                       </Badge>
-                      {(
-                        // Allow experts/researchers to request a status toggle between proposed <-> under review
-                        isExpert && (claim.rawStatus === 'proposed' || claim.rawStatus === 'under review')
-                      ) ? (
-                        <button
-                          onClick={() => {
-                            // open confirmation dialog instead of toggling immediately
-                            setConfirmToggleClaimId(claim.id);
-                            setConfirmToggleRawStatus(claim.rawStatus || null);
-                          }}
-                          className="inline-flex items-center"
-                          aria-label={`Toggle status for claim ${claim.id}`}
-                          disabled={updatingStatus === claim.id}
-                        >
-                          <Badge className={getStatusColor(claim.status)} >
-                            {updatingStatus === claim.id ? 'Updating...' : claim.status.replace('_', ' ')}
-                          </Badge>
-                        </button>
-                      ) : (
-                        <Badge className={getStatusColor(claim.status)}>
-                          {claim.status.replace('_', ' ')}
+                      {claim.evidence_status && (
+                        <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
+                          {claim.evidence_status}
                         </Badge>
                       )}
                     </div>
@@ -782,21 +729,16 @@ const Claims = () => {
                     ) : (
                       // View mode: show title with optional edit button
                       <>
-                        <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
-                          <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg mb-1">
                             {claim.claim}
-                            <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                            <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                               <span>
                                 {claim.publications.length === 0
                                   ? 'waiting for papers'
                                   : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
                                 }
                               </span>
-                              {expandedClaim === claim.id ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
                             </span>
                           </CardTitle>
                         </div>
@@ -841,9 +783,18 @@ const Claims = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
 
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Reported to Support</span>
+                            <div
+                              className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleStanceClick(claim.id, 'supporting')}
+                            >
+                              <span className="font-semibold text-xs">
+                                Reported to Support ({claim.publications.filter(p => p.stance === 'supporting').length})
+                              </span>
+                              {expandedStance?.claimId === claim.id && expandedStance?.stance === 'supporting' ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -858,9 +809,18 @@ const Claims = () => {
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Reported to Disproof</span>
+                            <div
+                              className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleStanceClick(claim.id, 'contradicting')}
+                            >
+                              <span className="font-semibold text-xs">
+                                Reported to Disprove ({claim.publications.filter(p => p.stance === 'contradicting').length})
+                              </span>
+                              {expandedStance?.claimId === claim.id && expandedStance?.stance === 'contradicting' ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
@@ -882,9 +842,9 @@ const Claims = () => {
                   </div>
                 </CardHeader>
                 {/* Expanded view with individual reviews (moved to component) */}
-                {expandedClaim === claim.id && (
+                {expandedStance?.claimId === claim.id && (
                   <ClaimPublicationsExpanded
-                    publications={claim.publications}
+                    publications={claim.publications.filter(p => p.stance === expandedStance.stance)}
                     links={claim.links}
                     isExpert={isExpert}
                     user={user}
@@ -907,8 +867,8 @@ const Claims = () => {
                             className="flex items-center gap-2 shadow-md whitespace-nowrap"
                           >
                             <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">Full Review</span>
-                            <span className="sm:hidden">Reviews</span>
+                            <span className="hidden sm:inline">See Comments</span>
+                            <span className="sm:hidden">Comments</span>
                           </Button>
                           <Button
                             variant="outline"
@@ -916,7 +876,8 @@ const Claims = () => {
                             onClick={() => setShowPaperForm(claim.id)}
                             className="flex items-center gap-2 whitespace-nowrap"
                           >
-                            <FileText className="w-4 h-4" />
+                            <FileText className="hidden sm:inline w-4 h-4" />
+                            <Plus className="sm:hidden w-4 h-4" />
                             <span className="hidden sm:inline">Add Paper</span>
                             <span className="sm:hidden">Paper</span>
                           </Button>
@@ -931,7 +892,8 @@ const Claims = () => {
                                     onClick={() => setShowSourceForm(claim.id)}
                                     className="flex items-center gap-2 whitespace-nowrap"
                                   >
-                                    <Link className="w-4 h-4" />
+                                    <Link className="hidden sm:inline w-4 h-4" />
+                                    <Plus className="sm:hidden w-4 h-4" />
                                     <span className="hidden sm:inline">Add Source</span>
                                     <span className="sm:hidden">Source</span>
                                   </Button>
@@ -1060,24 +1022,6 @@ const Claims = () => {
             />
           )}
 
-          {/* Confirmation Dialog for toggling claim status */}
-          {user && (
-            <Dialog open={!!confirmToggleClaimId} onOpenChange={(open) => { if (!open) { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); } }}>
-              <DialogContent className="max-w-[95vw] sm:max-w-md">
-                <DialogTitle>Confirm status change</DialogTitle>
-                <p className="text-sm text-muted-foreground">
-                  {`Are you sure you want to change the status from "${confirmToggleRawStatus ? confirmToggleRawStatus.replace('_', ' ') : ''}" to "${confirmToggleRawStatus === 'proposed' ? 'under review' : 'proposed'}"?`}
-                </p>
-                <div className="flex gap-2 justify-end mt-4">
-                  <Button variant="outline" size="sm" onClick={() => { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); }}>Cancel</Button>
-                  <Button size="sm" onClick={confirmAndToggle} disabled={updatingStatus === confirmToggleClaimId}>
-                    {updatingStatus === confirmToggleClaimId ? 'Updating...' : 'Confirm'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
           {/* Expert Reviews Reel Dialog */}
           {user && (
             <>
@@ -1098,7 +1042,7 @@ const Claims = () => {
                     <VisuallyHidden>
                       <DialogTitle>Individual Expert Reviews</DialogTitle>
                     </VisuallyHidden>
-                    <ExpertReviewsReel reviewCards={reviewCards} />
+                    <ExpertReviewsReel reviewCards={reviewCards} onClose={() => setShowReelClaim(null)} />
                   </div>
                 ) : (
                   <div className="text-center text-sm text-muted-foreground">No reviews available.</div>

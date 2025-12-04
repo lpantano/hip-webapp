@@ -41,6 +41,7 @@ export type ExpertReviewCard = {
 
 interface ExpertReviewsReelProps {
   reviewCards: ExpertReviewCard[];
+  onClose?: () => void;
 }
 
 // Individual Review Card Component
@@ -315,7 +316,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
 
 // TranscriptText component removed - feature to be added later
 
-const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) => {
+const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onClose }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   if (!reviewCards || reviewCards.length === 0) {
@@ -346,6 +347,26 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards }) =>
             totalCards={reviewCards.length}
           />
         ))}
+
+        {/* End card with close button */}
+        {onClose && (
+          <div className="snap-start snap-always h-screen sm:h-[95vh] sm:max-h-[800px] flex flex-col items-center justify-center bg-background border-t border-border">
+            <div className="text-center px-6 max-w-md space-y-6">
+              <div className="text-xl font-semibold text-foreground">
+                You've reached the end
+              </div>
+              <div className="text-base text-muted-foreground">
+                You've viewed all {reviewCards.length} expert review{reviewCards.length === 1 ? '' : 's'} for this claim.
+              </div>
+              <button
+                onClick={onClose}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-md"
+              >
+                Close Reviews
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

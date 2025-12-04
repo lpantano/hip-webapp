@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { calculateClaimStateLabel } from '@/lib/claim-state-calculator';
 import {
   Dialog,
   DialogContent,
@@ -256,11 +257,51 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       const wasUpdate = !!existingReview;
       toast.success(wasUpdate ? 'Review updated' : 'Review submitted', {
         description: `Your publication review has been ${wasUpdate ? 'updated' : 'saved'} successfully.`
       });
+
+      // Recalculate evidence status for the claim
+      try {
+        // First, get the claim_id from the publication
+        const { data: pubData } = await supabase
+          .from('publications')
+          .select('claim_id')
+          .eq('id', publication.id)
+          .single();
+
+        if (pubData?.claim_id) {
+          // Fetch full claim data with publications and reviews
+          const { data: claimData } = await supabase
+            .from('claims')
+            .select(`
+              id,
+              publications (
+                id,
+                stance,
+                publication_scores (
+                  review_data
+                )
+              )
+            `)
+            .eq('id', pubData.claim_id)
+            .single();
+
+          if (claimData) {
+            const evidenceStatus = calculateClaimStateLabel(claimData);
+            await supabase
+              .from('claims')
+              .update({ evidence_status: evidenceStatus })
+              .eq('id', pubData.claim_id);
+          }
+        }
+      } catch (statusError) {
+        console.error('Failed to update evidence status:', statusError);
+        // Don't fail the entire submission if status update fails
+      }
+
       queryClient.invalidateQueries({ queryKey: ['publication-review'] });
       queryClient.invalidateQueries({ queryKey: ['publication-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['claims'] });

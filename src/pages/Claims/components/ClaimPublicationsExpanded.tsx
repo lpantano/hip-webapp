@@ -46,7 +46,12 @@ const ClaimPublicationsExpanded: React.FC<{
         )}
 
         <div className="space-y-4">
-          {publications.map((pub, pubIndex) => {
+          {publications.length === 0 ? (
+            <div className="text-center py-6 text-sm text-muted-foreground">
+              No papers yet for this stance
+            </div>
+          ) : (
+            publications.map((pub, pubIndex) => {
             const agg = aggregatePublicationReviewData({ rawScores: pub.rawScores });
             return (
               <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
@@ -139,7 +144,8 @@ const ClaimPublicationsExpanded: React.FC<{
                 </div>
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </div>
     </CardContent>
