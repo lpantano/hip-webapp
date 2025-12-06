@@ -924,7 +924,7 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(0)}
                     disabled={currentPage === 0 || loading}
-                    className="min-w-[40px] sm:min-w-[44px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
                     aria-label="First page"
                   >
                     {loading && currentPage === 0 ? (
@@ -938,7 +938,7 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0 || loading}
-                    className="min-w-[40px] sm:min-w-[44px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
                     aria-label="Previous page"
                   >
                     {loading ? (
@@ -955,7 +955,7 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={!hasMoreClaims || loading}
-                    className="min-w-[40px] sm:min-w-[44px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
                     aria-label="Next page"
                   >
                     {loading ? (
@@ -969,7 +969,7 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1)}
                     disabled={!hasMoreClaims || loading || currentPage === Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1}
-                    className="min-w-[40px] sm:min-w-[44px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
                     aria-label="Last page"
                   >
                     {loading && !hasMoreClaims ? (
