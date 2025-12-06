@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -938,12 +938,13 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0 || loading}
-                    className="min-w-[70px] sm:min-w-[80px]"
+                    className="min-w-[40px] sm:min-w-[44px]"
+                    aria-label="Previous page"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      <span className="text-xs sm:text-sm">Previous</span>
+                      <ChevronLeft className="w-4 h-4" />
                     )}
                   </Button>
                   <div className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-background rounded border min-w-[80px] sm:min-w-[100px] text-center">
@@ -954,12 +955,13 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={!hasMoreClaims || loading}
-                    className="min-w-[70px] sm:min-w-[80px]"
+                    className="min-w-[40px] sm:min-w-[44px]"
+                    aria-label="Next page"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      <span className="text-xs sm:text-sm">Next</span>
+                      <ChevronRight className="w-4 h-4" />
                     )}
                   </Button>
                   <Button
