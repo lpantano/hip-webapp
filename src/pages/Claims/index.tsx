@@ -653,7 +653,7 @@ const Claims = () => {
                 </div>
               )}
               {user && filteredAndSortedClaims.map((claim) => (
-              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
+              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
@@ -672,7 +672,7 @@ const Claims = () => {
                       variant={userVotes.has(claim.id) ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleVote(claim.id)}
-                      className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7"
+                      className="flex items-center gap-1 [@media(hover:hover)]:hover:bg-primary [@media(hover:hover)]:hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7 touch-manipulation"
                       disabled={!user}
                     >
                       <ChevronUp className="w-3 h-3" />
@@ -750,10 +750,10 @@ const Claims = () => {
                               e.stopPropagation();
                               startEditing(claim);
                             }}
-                            className="h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-8 px-2 opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity touch-manipulation"
                             title="Edit claim title"
                           >
-                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            <Pencil className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-foreground" />
                           </Button>
                         )}
                       </>
@@ -784,7 +784,7 @@ const Claims = () => {
 
                           <div className="space-y-1">
                             <div
-                              className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors"
+                              className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
                               onClick={() => handleStanceClick(claim.id, 'supporting')}
                             >
                               <span className="font-semibold text-xs">
@@ -810,7 +810,7 @@ const Claims = () => {
                           </div>
                           <div className="space-y-1">
                             <div
-                              className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors"
+                              className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
                               onClick={() => handleStanceClick(claim.id, 'contradicting')}
                             >
                               <span className="font-semibold text-xs">
@@ -864,7 +864,7 @@ const Claims = () => {
                             variant="default"
                             size="sm"
                             onClick={() => setShowReelClaim(claim.id)}
-                            className="flex items-center gap-2 shadow-md whitespace-nowrap"
+                            className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
                           >
                             <Eye className="w-4 h-4" />
                             <span className="hidden sm:inline">See Comments</span>
@@ -874,7 +874,7 @@ const Claims = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => setShowPaperForm(claim.id)}
-                            className="flex items-center gap-2 whitespace-nowrap"
+                            className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
                           >
                             <FileText className="hidden sm:inline w-4 h-4" />
                             <Plus className="sm:hidden w-4 h-4" />
@@ -890,7 +890,7 @@ const Claims = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowSourceForm(claim.id)}
-                                    className="flex items-center gap-2 whitespace-nowrap"
+                                    className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
                                   >
                                     <Link className="hidden sm:inline w-4 h-4" />
                                     <Plus className="sm:hidden w-4 h-4" />
