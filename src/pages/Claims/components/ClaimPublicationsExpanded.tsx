@@ -1,12 +1,13 @@
 import React from 'react';
 import { CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FileText, ExternalLink } from 'lucide-react';
 import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
-import { getCategoryBackgroundColor, getStudyTagColor } from '@/lib/classification-categories';
+import { getCategoryBackgroundColor, getStudyTagColor, getCategoryDescription, getStudyTagDescription } from '@/lib/classification-categories';
 import ClaimLinksSection from './ClaimLinksSection';
 import type { PublicationScoreRow } from '../types';
+import type { ReviewCategory } from '@/types/review';
 
 type Publication = {
   id: string;
@@ -46,7 +47,12 @@ const ClaimPublicationsExpanded: React.FC<{
         )}
 
         <div className="space-y-4">
-          {publications.map((pub, pubIndex) => {
+          {publications.length === 0 ? (
+            <div className="text-center py-6 text-sm text-muted-foreground">
+              No papers yet for this stance
+            </div>
+          ) : (
+            publications.map((pub, pubIndex) => {
             const agg = aggregatePublicationReviewData({ rawScores: pub.rawScores });
             return (
               <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
@@ -85,27 +91,60 @@ const ClaimPublicationsExpanded: React.FC<{
                           </>
                         )}
                       </p>
-                      {/* Badges: inline on desktop, stacked on mobile */}
+                      {/* Labels: inline on desktop, stacked on mobile */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-1.5">
                         {Object.entries(agg.classificationCounts).map(([label, count]) => (
-                          <Badge key={label} className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getCategoryBackgroundColor(label)} pointer-events-none transition-none`}>
-                            {label} ({count})
-                          </Badge>
+                          <Popover key={label}>
+                            <PopoverTrigger asChild>
+                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${getCategoryBackgroundColor(label)} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}>
+                                <span className="break-words">{label}</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({count})</span>
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                              <div className="font-semibold mb-1">{label}</div>
+                              <div>{getCategoryDescription(label as ReviewCategory)}</div>
+                            </PopoverContent>
+                          </Popover>
                         ))}
                         {agg.womenNotIncludedCount > 0 && (
-                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('women not included')} pointer-events-none transition-none`}>
-                            Women Not Included ({agg.womenNotIncludedCount})
-                          </Badge>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden cursor-pointer`}>
+                                <span className="break-words">Women Not Included</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({agg.womenNotIncludedCount})</span>
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                              {getStudyTagDescription('Women Not Included')}
+                            </PopoverContent>
+                          </Popover>
                         )}
                         {agg.observationalCount > 0 && (
-                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('observational')} pointer-events-none transition-none`}>
-                            Observational ({agg.observationalCount})
-                          </Badge>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden cursor-pointer`}>
+                                <span className="break-words">Observational</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({agg.observationalCount})</span>
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                              {getStudyTagDescription('Observational')}
+                            </PopoverContent>
+                          </Popover>
                         )}
                         {agg.clinicalTrialCount > 0 && (
-                          <Badge className={`text-xs sm:text-xs px-2.5 sm:px-2 py-1 sm:py-0.5 w-fit ${getStudyTagColor('clinical trial')} pointer-events-none transition-none`}>
-                            Clinical Trial ({agg.clinicalTrialCount})
-                          </Badge>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical trial')} overflow-hidden cursor-pointer`}>
+                                <span className="break-words">Clinical Trial</span>
+                                <span className="ml-1 sm:ml-2 flex-shrink-0">({agg.clinicalTrialCount})</span>
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                              {getStudyTagDescription('Clinical Trial')}
+                            </PopoverContent>
+                          </Popover>
                         )}
                       </div>
                     </div>
@@ -139,7 +178,8 @@ const ClaimPublicationsExpanded: React.FC<{
                 </div>
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </div>
     </CardContent>

@@ -106,6 +106,8 @@ interface ClaimUI {
   comments?: ClaimCommentRow[];
   // DB-backed status values (exposed directly)
   status: 'proposed' | 'pending' | 'verified' | 'disputed' | 'needs more evidence' | 'under review';
+  // Evidence-based status calculated from publications and reviews
+  evidence_status?: 'Awaiting Evidence' | 'Evidence Supports' | 'Evidence Disproves' | 'Inconclusive' | null;
 }
 
 

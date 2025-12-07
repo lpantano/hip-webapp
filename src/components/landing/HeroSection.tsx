@@ -10,7 +10,7 @@ const HeroSection = () => {
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3">
             <div className="flex flex-col items-center">
               <div className="w-full flex justify-end">
-                <span className="text-sm sm:text-base md:text-xl text-primary font-bold m-3 sm:m-2">Women Edition</span>
+                <span className="text-sm sm:text-base md:text-xl  text-muted font-bold m-3 sm:m-2">Women Edition</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight m-1 p-2">
                 The Health Integrity Project
@@ -20,7 +20,7 @@ const HeroSection = () => {
 
           </div>
           <div className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 ">
-            Evidence-based Insights for <a href="/claims" className="inline-flex items-center mt-4 text-primary underline font-bold hover:text-primary transition-colors">
+            Evidence-based Insights for <a href="/claims" className="inline-flex items-center mt-4 text-accent-secondary underline font-bold hover:text-primary transition-colors">
               Health Claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
           </a>
           </div>

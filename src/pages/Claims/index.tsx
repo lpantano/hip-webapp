@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -26,10 +26,10 @@ import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-import { humanize, getStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { humanize, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
-import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, CLAIM_STATUS, SEARCH_DEBOUNCE_MS } from './constants';
+import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [claims, setClaims] = useState<ClaimUI[]>([]);
@@ -46,9 +46,8 @@ const Claims = () => {
   const [showSourceForm, setShowSourceForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
-  const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
+  const [expandedStance, setExpandedStance] = useState<{ claimId: string; stance: 'supporting' | 'contradicting' } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
 
@@ -60,10 +59,6 @@ const Claims = () => {
     revertVote,
     setUserVotes
   } = useOptimisticVote(setClaims);
-
-  // Confirmation dialog state for toggling claim status
-  const [confirmToggleClaimId, setConfirmToggleClaimId] = useState<string | null>(null);
-  const [confirmToggleRawStatus, setConfirmToggleRawStatus] = useState<string | null>(null);
 
   // State for inline title editing
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
@@ -218,7 +213,8 @@ const Claims = () => {
           comments: commentsByClaim[c.id] || [],
           // preserve DB enum/status values directly as requested
           rawStatus: c.status,
-          status: c.status as ClaimUI['status']
+          status: c.status as ClaimUI['status'],
+          evidence_status: 'evidence_status' in c ? (c.evidence_status as ClaimUI['evidence_status']) : null
         };
       });
 
@@ -372,45 +368,14 @@ const Claims = () => {
     }
   };
 
-  const toggleClaimStatus = async (claimId: string, rawStatus?: string) => {
-    if (!user) return;
-    // Only allow toggle between 'proposed' and 'under review'
-    if (rawStatus !== CLAIM_STATUS.PROPOSED && rawStatus !== CLAIM_STATUS.UNDER_REVIEW) return;
-
-    const newStatus = rawStatus === CLAIM_STATUS.PROPOSED ? CLAIM_STATUS.UNDER_REVIEW : CLAIM_STATUS.PROPOSED;
-    try {
-      setUpdatingStatus(claimId);
-      const { error } = await sb.from('claims').update({ status: newStatus }).eq('id', claimId);
-      if (error) throw error;
-      // Refresh data
-      await fetchData(currentPage);
-      toast.success('Status updated', { description: `Claim status set to ${newStatus}.` });
-    } catch (e: unknown) {
-      console.error('Failed to update claim status', e);
-      const msg = e instanceof Error ? e.message : 'Failed to update status';
-      toast.error('Update failed', { description: msg });
-    } finally {
-      setUpdatingStatus(null);
+  const handleStanceClick = (claimId: string, stance: 'supporting' | 'contradicting') => {
+    // Toggle: if clicking same stance on same claim, collapse it
+    if (expandedStance?.claimId === claimId && expandedStance?.stance === stance) {
+      setExpandedStance(null);
+    } else {
+      // Otherwise expand the clicked stance
+      setExpandedStance({ claimId, stance });
     }
-  };
-
-  // Confirm + toggle flow: user clicks badge -> open dialog -> confirmAndToggle calls toggleClaimStatus
-  const confirmAndToggle = async () => {
-    if (!confirmToggleClaimId || !confirmToggleRawStatus) {
-      setConfirmToggleClaimId(null);
-      setConfirmToggleRawStatus(null);
-      return;
-    }
-    try {
-      await toggleClaimStatus(confirmToggleClaimId, confirmToggleRawStatus);
-    } finally {
-      setConfirmToggleClaimId(null);
-      setConfirmToggleRawStatus(null);
-    }
-  };
-
-  const toggleClaimExpansion = (claimId: string) => {
-    setExpandedClaim(expandedClaim === claimId ? null : claimId);
   };
 
   // Permission check for editing claim titles
@@ -688,7 +653,7 @@ const Claims = () => {
                 </div>
               )}
               {user && filteredAndSortedClaims.map((claim) => (
-              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
+              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
                 <CardHeader className="pb-2">
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
@@ -696,27 +661,9 @@ const Claims = () => {
                       <Badge className={`${getCategoryColor(claim.category)} pointer-events-none transition-none`}>
                         {humanize(claim.category)}
                       </Badge>
-                      {(
-                        // Allow experts/researchers to request a status toggle between proposed <-> under review
-                        isExpert && (claim.rawStatus === 'proposed' || claim.rawStatus === 'under review')
-                      ) ? (
-                        <button
-                          onClick={() => {
-                            // open confirmation dialog instead of toggling immediately
-                            setConfirmToggleClaimId(claim.id);
-                            setConfirmToggleRawStatus(claim.rawStatus || null);
-                          }}
-                          className="inline-flex items-center"
-                          aria-label={`Toggle status for claim ${claim.id}`}
-                          disabled={updatingStatus === claim.id}
-                        >
-                          <Badge className={getStatusColor(claim.status)} >
-                            {updatingStatus === claim.id ? 'Updating...' : claim.status.replace('_', ' ')}
-                          </Badge>
-                        </button>
-                      ) : (
-                        <Badge className={getStatusColor(claim.status)}>
-                          {claim.status.replace('_', ' ')}
+                      {claim.evidence_status && (
+                        <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
+                          {claim.evidence_status}
                         </Badge>
                       )}
                     </div>
@@ -725,7 +672,7 @@ const Claims = () => {
                       variant={userVotes.has(claim.id) ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleVote(claim.id)}
-                      className="flex items-center gap-1 hover:bg-primary hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7"
+                      className="flex items-center gap-1 [@media(hover:hover)]:hover:bg-primary [@media(hover:hover)]:hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7 touch-manipulation"
                       disabled={!user}
                     >
                       <ChevronUp className="w-3 h-3" />
@@ -782,21 +729,16 @@ const Claims = () => {
                     ) : (
                       // View mode: show title with optional edit button
                       <>
-                        <div className="flex-1 cursor-pointer" onClick={() => toggleClaimExpansion(claim.id)}>
-                          <CardTitle className="text-lg mb-1 hover:text-primary transition-colors">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg mb-1">
                             {claim.claim}
-                            <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                            <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                               <span>
                                 {claim.publications.length === 0
                                   ? 'waiting for papers'
                                   : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
                                 }
                               </span>
-                              {expandedClaim === claim.id ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
                             </span>
                           </CardTitle>
                         </div>
@@ -808,10 +750,10 @@ const Claims = () => {
                               e.stopPropagation();
                               startEditing(claim);
                             }}
-                            className="h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-8 px-2 opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity touch-manipulation"
                             title="Edit claim title"
                           >
-                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            <Pencil className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-foreground" />
                           </Button>
                         )}
                       </>
@@ -841,9 +783,18 @@ const Claims = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
 
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div title="Supporting evidence">{getStanceIcon('supporting')}</div>
-                              <span className="font-semibold text-xs">Reported to Support</span>
+                            <div
+                              className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
+                              onClick={() => handleStanceClick(claim.id, 'supporting')}
+                            >
+                              <span className="font-semibold text-xs">
+                                Reported to Support ({claim.publications.filter(p => p.stance === 'supporting').length})
+                              </span>
+                              {expandedStance?.claimId === claim.id && expandedStance?.stance === 'supporting' ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
                             </div>
                             <div>
                               <ClaimLabelsStack
@@ -858,9 +809,18 @@ const Claims = () => {
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div title="Contradicting evidence">{getStanceIcon('contradicting')}</div>
-                              <span className="font-semibold text-xs">Reported to Disproof</span>
+                            <div
+                              className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
+                              onClick={() => handleStanceClick(claim.id, 'contradicting')}
+                            >
+                              <span className="font-semibold text-xs">
+                                Reported to Disprove ({claim.publications.filter(p => p.stance === 'contradicting').length})
+                              </span>
+                              {expandedStance?.claimId === claim.id && expandedStance?.stance === 'contradicting' ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
                             </div>
                             {/* Use a normal div, not flex-col, so children do not stretch */}
                             <div>
@@ -882,9 +842,9 @@ const Claims = () => {
                   </div>
                 </CardHeader>
                 {/* Expanded view with individual reviews (moved to component) */}
-                {expandedClaim === claim.id && (
+                {expandedStance?.claimId === claim.id && (
                   <ClaimPublicationsExpanded
-                    publications={claim.publications}
+                    publications={claim.publications.filter(p => p.stance === expandedStance.stance)}
                     links={claim.links}
                     isExpert={isExpert}
                     user={user}
@@ -904,19 +864,20 @@ const Claims = () => {
                             variant="default"
                             size="sm"
                             onClick={() => setShowReelClaim(claim.id)}
-                            className="flex items-center gap-2 shadow-md whitespace-nowrap"
+                            className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
                           >
                             <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">Full Review</span>
-                            <span className="sm:hidden">Reviews</span>
+                            <span className="hidden sm:inline">See Comments</span>
+                            <span className="sm:hidden">Comments</span>
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setShowPaperForm(claim.id)}
-                            className="flex items-center gap-2 whitespace-nowrap"
+                            className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
                           >
-                            <FileText className="w-4 h-4" />
+                            <FileText className="hidden sm:inline w-4 h-4" />
+                            <Plus className="sm:hidden w-4 h-4" />
                             <span className="hidden sm:inline">Add Paper</span>
                             <span className="sm:hidden">Paper</span>
                           </Button>
@@ -929,9 +890,10 @@ const Claims = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowSourceForm(claim.id)}
-                                    className="flex items-center gap-2 whitespace-nowrap"
+                                    className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
                                   >
-                                    <Link className="w-4 h-4" />
+                                    <Link className="hidden sm:inline w-4 h-4" />
+                                    <Plus className="sm:hidden w-4 h-4" />
                                     <span className="hidden sm:inline">Add Source</span>
                                     <span className="sm:hidden">Source</span>
                                   </Button>
@@ -962,7 +924,7 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(0)}
                     disabled={currentPage === 0 || loading}
-                    className="min-w-[40px] sm:min-w-[44px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
                     aria-label="First page"
                   >
                     {loading && currentPage === 0 ? (
@@ -976,12 +938,13 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0 || loading}
-                    className="min-w-[70px] sm:min-w-[80px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
+                    aria-label="Previous page"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      <span className="text-xs sm:text-sm">Previous</span>
+                      <ChevronLeft className="w-4 h-4" />
                     )}
                   </Button>
                   <div className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-background rounded border min-w-[80px] sm:min-w-[100px] text-center">
@@ -992,12 +955,13 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={!hasMoreClaims || loading}
-                    className="min-w-[70px] sm:min-w-[80px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
+                    aria-label="Next page"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      <span className="text-xs sm:text-sm">Next</span>
+                      <ChevronRight className="w-4 h-4" />
                     )}
                   </Button>
                   <Button
@@ -1005,7 +969,7 @@ const Claims = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1)}
                     disabled={!hasMoreClaims || loading || currentPage === Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1}
-                    className="min-w-[40px] sm:min-w-[44px]"
+                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
                     aria-label="Last page"
                   >
                     {loading && !hasMoreClaims ? (
@@ -1060,24 +1024,6 @@ const Claims = () => {
             />
           )}
 
-          {/* Confirmation Dialog for toggling claim status */}
-          {user && (
-            <Dialog open={!!confirmToggleClaimId} onOpenChange={(open) => { if (!open) { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); } }}>
-              <DialogContent className="max-w-[95vw] sm:max-w-md">
-                <DialogTitle>Confirm status change</DialogTitle>
-                <p className="text-sm text-muted-foreground">
-                  {`Are you sure you want to change the status from "${confirmToggleRawStatus ? confirmToggleRawStatus.replace('_', ' ') : ''}" to "${confirmToggleRawStatus === 'proposed' ? 'under review' : 'proposed'}"?`}
-                </p>
-                <div className="flex gap-2 justify-end mt-4">
-                  <Button variant="outline" size="sm" onClick={() => { setConfirmToggleClaimId(null); setConfirmToggleRawStatus(null); }}>Cancel</Button>
-                  <Button size="sm" onClick={confirmAndToggle} disabled={updatingStatus === confirmToggleClaimId}>
-                    {updatingStatus === confirmToggleClaimId ? 'Updating...' : 'Confirm'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
           {/* Expert Reviews Reel Dialog */}
           {user && (
             <>
@@ -1098,7 +1044,7 @@ const Claims = () => {
                     <VisuallyHidden>
                       <DialogTitle>Individual Expert Reviews</DialogTitle>
                     </VisuallyHidden>
-                    <ExpertReviewsReel reviewCards={reviewCards} />
+                    <ExpertReviewsReel reviewCards={reviewCards} onClose={() => setShowReelClaim(null)} />
                   </div>
                 ) : (
                   <div className="text-center text-sm text-muted-foreground">No reviews available.</div>

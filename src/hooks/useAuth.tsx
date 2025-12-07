@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/claims`;
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -226,7 +226,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`
+        redirectTo: `${window.location.origin}/claims`
       }
     });
 
@@ -240,7 +240,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signInWithMagicLink = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/claims`;
 
     const { error } = await supabase.auth.signInWithOtp({
       email,

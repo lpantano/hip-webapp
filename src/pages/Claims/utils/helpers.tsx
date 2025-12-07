@@ -24,6 +24,19 @@ export const getStatusColor = (status: string): string => {
 };
 
 /**
+ * Get Tailwind classes for evidence status badges
+ */
+export const getEvidenceStatusColor = (evidenceStatus: string): string => {
+  const colors: Record<string, string> = {
+    'Awaiting Evidence': 'bg-gray-100 text-gray-700 border border-gray-300',
+    'Evidence Supports': 'bg-green-100 text-green-800 border border-green-300',
+    'Evidence Disproves': 'bg-red-100 text-red-800 border border-red-300',
+    'Inconclusive': 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+  };
+  return colors[evidenceStatus] || 'bg-gray-100 text-gray-700 border border-gray-300';
+};
+
+/**
  * Get icon component for publication stance
  */
 export const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined): JSX.Element | null => {

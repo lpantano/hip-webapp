@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { usePublicationFetch } from '@/hooks/usePublicationFetch';
+import { calculateClaimStateLabel } from '@/lib/claim-state-calculator';
 
 interface PaperSubmissionFormProps {
   claimId: string;
@@ -155,7 +156,63 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
 
       if (insertError) throw insertError;
 
-      logger.log('Paper inserted successfully, calling onSuccess...');
+      logger.log('Paper inserted successfully, recalculating evidence status...');
+
+      // Recalculate evidence status for the claim
+      try {
+        const { data: claimData } = await supabase
+          .from('claims')
+          .select(`
+            id,
+            publications (
+              id,
+              stance,
+              publication_scores (
+                review_data
+              )
+            )
+          `)
+          .eq('id', claimId)
+          .single();
+
+        if (claimData) {
+          // Transform data to match calculator interface
+          type PublicationFromDB = {
+            id: string;
+            stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+            publication_scores: Array<{
+              review_data: {
+                category?: string;
+                studyType?: {
+                  observational?: boolean;
+                  clinicalTrial?: boolean;
+                };
+                womenNotIncluded?: boolean;
+              };
+            }>;
+          };
+
+          const transformedClaimData = {
+            id: claimData.id,
+            publications: claimData.publications?.map((pub: PublicationFromDB) => ({
+              id: pub.id,
+              stance: pub.stance || undefined,
+              rawScores: pub.publication_scores || []
+            })) || []
+          };
+
+          const evidenceStatus = calculateClaimStateLabel(transformedClaimData);
+          await supabase
+            .from('claims')
+            .update({ evidence_status: evidenceStatus })
+            .eq('id', claimId);
+        }
+      } catch (statusError) {
+        logger.error('Failed to update evidence status:', statusError);
+        // Don't fail the entire submission if status update fails
+      }
+
+      logger.log('Calling onSuccess...');
       toast.success('Paper submitted successfully! It will be reviewed by experts before appearing on the claim.');
       onSuccess();
     } catch (err: unknown) {
