@@ -36,6 +36,7 @@ export type ExpertReviewCard = {
     womenNotIncluded?: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reviewData?: any;
+    stance?: 'supporting' | 'contradicting' | null;
   };
 };
 
@@ -112,28 +113,40 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
         <h2 className="text-lg sm:text-lg font-bold leading-tight mb-2 text-foreground break-words">
           {reviewCard.publication.title}
         </h2>
-        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
-          <span className="font-medium">{reviewCard.publication.year}</span>
-          {reviewCard.publication.journal && (
-            <>
-              <span className="text-muted-foreground/50">•</span>
-              <span>{reviewCard.publication.journal}</span>
-            </>
-          )}
-          {reviewCard.publication.source && (
-            <>
-              <span className="text-muted-foreground/50">•</span>
-              <a
-                href={reviewCard.publication.source}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
-                title="View source"
-              >
-                Source
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
+            <span className="font-medium">{reviewCard.publication.year}</span>
+            {reviewCard.publication.journal && (
+              <>
+                <span className="text-muted-foreground/50">•</span>
+                <span>{reviewCard.publication.journal}</span>
+              </>
+            )}
+            {reviewCard.publication.source && (
+              <>
+                <span className="text-muted-foreground/50">•</span>
+                <a
+                  href={reviewCard.publication.source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
+                  title="View source"
+                >
+                  Source
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </>
+            )}
+          </div>
+          {/* Stance Chip */}
+          {reviewCard.expert.stance && (
+            <div className={`inline-flex items-center rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold flex-shrink-0 ${
+              reviewCard.expert.stance === 'supporting'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            }`}>
+              {reviewCard.expert.stance === 'supporting' ? 'Support' : 'Disprove'}
+            </div>
           )}
         </div>
       </div>
@@ -327,6 +340,14 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
     );
   }
 
+  // Sort review cards: Supporting first, then Contradicting, then null stance
+  const sortedReviewCards = [...reviewCards].sort((a, b) => {
+    const stanceOrder = { supporting: 0, contradicting: 1, null: 2 };
+    const aStance = a.expert.stance || null;
+    const bStance = b.expert.stance || null;
+    return stanceOrder[aStance as keyof typeof stanceOrder] - stanceOrder[bStance as keyof typeof stanceOrder];
+  });
+
   return (
     <div className="relative w-full h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
       <div
@@ -339,7 +360,7 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
         role="list"
         aria-label="Expert reviews"
       >
-        {reviewCards.map((reviewCard, index) => (
+        {sortedReviewCards.map((reviewCard, index) => (
           <ReviewCard
             key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`}
             reviewCard={reviewCard}
@@ -356,7 +377,7 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
                 You've reached the end
               </div>
               <div className="text-base text-muted-foreground">
-                You've viewed all {reviewCards.length} expert review{reviewCards.length === 1 ? '' : 's'} for this claim.
+                You've viewed all {sortedReviewCards.length} expert review{sortedReviewCards.length === 1 ? '' : 's'} for this claim.
               </div>
               <button
                 onClick={onClose}

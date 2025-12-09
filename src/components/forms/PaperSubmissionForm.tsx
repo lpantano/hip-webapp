@@ -344,7 +344,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
                 <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="contradicting" id="contradicting" />
                   <Label htmlFor="contradicting" className="cursor-pointer flex-1">
-                    <div className="font-medium text-orange-700 dark:text-orange-400">Reported to Disproof</div>
+                    <div className="font-medium text-orange-700 dark:text-orange-400">Reported to Disprove</div>
                     <div className="text-sm text-muted-foreground">This paper was used to provide evidence that contradicts the claim</div>
                   </Label>
                 </div>

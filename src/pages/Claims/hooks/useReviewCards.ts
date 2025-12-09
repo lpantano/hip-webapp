@@ -20,6 +20,9 @@ export const useReviewCards = (
     const reviewCards: ExpertReviewCard[] = [];
 
     claim.publications.forEach(pub => {
+      // The stance comes from the publication itself
+      const publicationStance = pub.stance as 'supporting' | 'contradicting' | null;
+
       // Group scores by expert
       const scoresByExpert: Record<string, PublicationScoreRow[]> = {};
       (pub.rawScores || []).forEach(score => {
@@ -83,7 +86,8 @@ export const useReviewCards = (
             classification: latestRow?.review_data?.category ?? null,
             tags: latestRow?.review_data?.tags ?? null,
             womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
-            reviewData: latestRow?.review_data ?? null
+            reviewData: latestRow?.review_data ?? null,
+            stance: publicationStance
           }
         });
       });
