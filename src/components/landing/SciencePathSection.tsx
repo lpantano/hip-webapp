@@ -177,7 +177,7 @@ const SciencePathSection = () => {
                           <ul className="space-y-2">
                             {step.detailedContent.strengths.map((strength, i) => (
                               <li key={i} className="flex items-start gap-2">
-                                <span className="text-green-600 mt-1">•</span>
+                                <span className="text-green-600 text-sm">•</span>
                                 <span className="text-muted-foreground text-sm">{strength}</span>
                               </li>
                             ))}
@@ -192,7 +192,7 @@ const SciencePathSection = () => {
                           <ul className="space-y-2">
                             {step.detailedContent.limitations.map((limitation, i) => (
                               <li key={i} className="flex items-start gap-2">
-                                <span className="text-amber-600 mt-1">•</span>
+                                <span className="text-amber-600 text-sm">•</span>
                                 <span className="text-muted-foreground text-sm">{limitation}</span>
                               </li>
                             ))}
