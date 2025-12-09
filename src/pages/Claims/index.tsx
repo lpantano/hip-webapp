@@ -496,10 +496,6 @@ const Claims = () => {
 
                 {legendOpen && (
                   <div className="mt-3">
-                    <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">
-                      Legend: Click labels to learn more
-                    </div>
-
                     {/* Categories Legend (moved to component) */}
                     <div className="mb-3">
                       <CategoriesLegend />
