@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check, Info } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -48,6 +48,7 @@ const Claims = () => {
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedStance, setExpandedStance] = useState<{ claimId: string; stance: 'supporting' | 'contradicting' } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
+  const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
 
@@ -662,9 +663,21 @@ const Claims = () => {
                         {humanize(claim.category)}
                       </Badge>
                       {claim.evidence_status && (
-                        <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                          {claim.evidence_status}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
+                            {claim.evidence_status}
+                          </Badge>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEvidenceInfo(claim.id);
+                            }}
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="Learn about evidence status"
+                          >
+                            <Info className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -1065,6 +1078,61 @@ const Claims = () => {
                 fetchData(currentPage);
               }}
             />
+          )}
+
+          {/* Evidence Info Dialog */}
+          {user && showEvidenceInfo && (
+            <Dialog open={!!showEvidenceInfo} onOpenChange={() => setShowEvidenceInfo(null)}>
+              <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogTitle>Understanding Evidence</DialogTitle>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h3 className="font-semibold mb-2">Evidence Status</h3>
+                    <p className="text-muted-foreground mb-3">
+                      The evidence status badge indicates the overall quality and reliability of evidence for this claim based on expert reviews:
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Awaiting Evidence')} pointer-events-none transition-none flex-shrink-0`}>
+                          Awaiting Evidence
+                        </Badge>
+                        <span className="text-muted-foreground">This claim has not yet been reviewed by experts or lacks supporting publications.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Evidence Supports')} pointer-events-none transition-none flex-shrink-0`}>
+                          Evidence Supports
+                        </Badge>
+                        <span className="text-muted-foreground">Expert reviews indicate that scientific evidence supports this claim.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Evidence Disproves')} pointer-events-none transition-none flex-shrink-0`}>
+                          Evidence Disproves
+                        </Badge>
+                        <span className="text-muted-foreground">Expert reviews indicate that scientific evidence contradicts this claim.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Inconclusive')} pointer-events-none transition-none flex-shrink-0`}>
+                          Inconclusive
+                        </Badge>
+                        <span className="text-muted-foreground">Expert reviews show mixed or insufficient evidence for this claim.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold mb-2">Paper Stances</h3>
+                    <div className="space-y-3 text-muted-foreground">
+                      <div>
+                        <strong>Reported to Support:</strong> Papers that have been reported by sources to support this claim.
+                      </div>
+                      <div>
+                        <strong>Reported to Disprove:</strong> Papers that have been reported by sources to disprove or contradict this claim.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </main>
