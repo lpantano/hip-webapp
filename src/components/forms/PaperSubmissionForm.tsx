@@ -81,6 +81,7 @@ export const PaperSubmissionForm = ({ claimId, claimTitle, onSuccess, onCancel }
 
   const fetchFromDOI = async () => {
     setFetchSuccess(false);
+    setError(null);
     await fetchPublicationData(formData.doi);
   };
 
