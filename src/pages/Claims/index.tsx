@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,7 @@ import { useReviewCards } from './hooks/useReviewCards';
 import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
+  const [searchParams] = useSearchParams();
   const [claims, setClaims] = useState<ClaimUI[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
@@ -51,6 +53,15 @@ const Claims = () => {
   const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
+
+  // Read search parameter from URL on mount
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Use custom hook for optimistic vote updates
   const {

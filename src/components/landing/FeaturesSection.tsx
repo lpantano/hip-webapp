@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const FeaturesSection = () => {
   return (
@@ -33,20 +34,26 @@ const FeaturesSection = () => {
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Endometriosis</h4>
+                    <Link to="/claims?search=Endometriosis" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-primary transition-colors cursor-pointer">Endometriosis <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Tissue growing outside the uterus, affecting up to 10% of reproductive-age women.</p> */}
                   </div>
 
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Perimenopause</h4>
+                    <Link to="/claims?search=Perimenopause" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-primary transition-colors cursor-pointer">Perimenopause <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Transitional period with significant hormonal changes affecting quality of life.</p> */}
                   </div>
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Pregnancy</h4>
+                    <Link to="/claims?search=Pregnancy" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-primary transition-colors cursor-pointer">Pregnancy <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Evidence-based hormonal therapies for various women's health conditions.</p> */}
                   </div>
                 </div>
@@ -63,20 +70,26 @@ const FeaturesSection = () => {
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Supplements</h4>
+                    <Link to="/claims?search=Supplements" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-accent transition-colors cursor-pointer">Supplements <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Well-researched supplement supporting muscle strength and cognitive function in women.</p> */}
                   </div>
 
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Fitness</h4>
+                    <Link to="/claims?search=Fitness" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-accent transition-colors cursor-pointer">Fitness <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Resistance exercise with proven benefits for bone health and metabolic function.</p> */}
                   </div>
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Nutrition</h4>
+                    <Link to="/claims?search=Nutrition" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-accent transition-colors cursor-pointer">Nutrition <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Resistance exercise with proven benefits for bone health and metabolic function.</p> */}
                   </div>
                 </div>
@@ -93,20 +106,26 @@ const FeaturesSection = () => {
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">ADHD/Autism</h4>
+                    <Link to="/claims?search=ADHD" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-primary transition-colors cursor-pointer">ADHD <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Attention-deficit/hyperactivity disorder often underdiagnosed in women due to presentation differences.</p> */}
                   </div>
 
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Anxiety</h4>
+                    <Link to="/claims?search=Anxiety" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-primary transition-colors cursor-pointer">Anxiety <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Anxiety disorders affect women at twice the rate of men, with unique triggers and manifestations.</p> */}
                   </div>
                 </div>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm sm:text-base mb-1">Depression</h4>
+                    <Link to="/claims?search=Depression" className="block">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 hover:text-primary transition-colors cursor-pointer">Depression <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" /></h4>
+                    </Link>
                     {/* <p className="text-muted-foreground text-sm">Major depressive disorder with strong links to hormonal changes and reproductive health in women.</p> */}
                   </div>
                 </div>
