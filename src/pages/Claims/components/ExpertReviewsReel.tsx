@@ -331,6 +331,33 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
 
 const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onClose }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+  // Sort review cards: Supporting first, then Contradicting, then null stance
+  const sortedReviewCards = (reviewCards || []).length > 0 ? [...reviewCards].sort((a, b) => {
+    const stanceOrder = { supporting: 0, contradicting: 1, null: 2 };
+    const aStance = a.expert.stance || null;
+    const bStance = b.expert.stance || null;
+    return stanceOrder[aStance as keyof typeof stanceOrder] - stanceOrder[bStance as keyof typeof stanceOrder];
+  }) : [];
+
+  // Hide scroll indicator when user scrolls
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || sortedReviewCards.length <= 1) return;
+
+    const handleScroll = () => {
+      // Hide indicator after scrolling past 10% of viewport height
+      if (container.scrollTop > window.innerHeight * 0.1) {
+        setShowScrollIndicator(false);
+      } else {
+        setShowScrollIndicator(true);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [sortedReviewCards.length]);
 
   if (!reviewCards || reviewCards.length === 0) {
     return (
@@ -339,14 +366,6 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
       </div>
     );
   }
-
-  // Sort review cards: Supporting first, then Contradicting, then null stance
-  const sortedReviewCards = [...reviewCards].sort((a, b) => {
-    const stanceOrder = { supporting: 0, contradicting: 1, null: 2 };
-    const aStance = a.expert.stance || null;
-    const bStance = b.expert.stance || null;
-    return stanceOrder[aStance as keyof typeof stanceOrder] - stanceOrder[bStance as keyof typeof stanceOrder];
-  });
 
   return (
     <div className="relative w-full max-w-[700px] mx-auto h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
@@ -389,6 +408,15 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
           </div>
         )}
       </div>
+
+      {/* Scroll Indicator */}
+      {showScrollIndicator && sortedReviewCards.length > 1 && (
+        <div className="absolute bottom-6 right-6 pointer-events-none animate-fade-in z-10">
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-muted-foreground  flex items-center gap-2">
+            <span>↓ Scroll for more reviews</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

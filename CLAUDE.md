@@ -12,6 +12,8 @@ Evidence Decoded is a React-based web application built with:
 - **Routing**: React Router v6
 - **Forms**: React Hook Form + Zod validation
 
+gh is installed here: /Users/lop354/.local/bin/gh
+
 ## Code Style and Conventions
 
 ### TypeScript
