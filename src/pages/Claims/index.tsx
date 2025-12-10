@@ -859,6 +859,7 @@ const Claims = () => {
                     user={user}
                     setReviewPublication={setReviewPublication}
                     getStanceIcon={getStanceIcon}
+                    expertProfiles={expertProfiles}
                   />
                 )}
 
