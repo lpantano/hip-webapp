@@ -118,8 +118,8 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
             <span className="font-medium">{reviewCard.publication.year}</span>
             {reviewCard.publication.journal && (
               <>
-                <span className="text-muted-foreground/50">•</span>
-                <span>{reviewCard.publication.journal}</span>
+                {/* <span className="text-muted-foreground/50">•</span> */}
+                {/* <span>{reviewCard.publication.journal}</span> */}
               </>
             )}
             {reviewCard.publication.source && (
@@ -145,7 +145,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                 : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
             }`}>
-              {reviewCard.expert.stance === 'supporting' ? 'Support' : 'Disprove'}
+              {reviewCard.expert.stance === 'supporting' ? 'Reported to Support' : 'Reported to Disprove'}
             </div>
           )}
         </div>
@@ -194,7 +194,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-650 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
                         aria-label="Classification reasons"
                       >
                         <Info className="w-4 h-4" />
@@ -349,7 +349,7 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
   });
 
   return (
-    <div className="relative w-full h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
+    <div className="relative w-full max-w-[700px] mx-auto h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
       <div
         ref={containerRef}
         className="h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth"

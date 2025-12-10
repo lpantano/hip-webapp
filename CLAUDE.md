@@ -121,8 +121,7 @@ src/
 
 ### Testing Changes
 
-- Run `npm run dev` to test locally
-- Check the build with `npm run build`
+- Tell user to run `npm run dev` to test locally
 - Verify linting with `npm run lint`
 - Test on mobile viewports (the app should be mobile-friendly)
 
@@ -131,7 +130,11 @@ src/
 - Main branch: `main`
 - Development branch: `devel`
 - Create feature branches from `devel`
-- Follow conventional commit messages
+- Make sure there is an issue associated to this change
+  - read docs/NEW_ISSUES.md for examples
+  - issues are always tag to milestones
+  - be concise
+- Follow conventional commit messages and be concise
 - When creating commits, include:
   ```
   🤖 Generated with [Claude Code](https://claude.com/claude-code)
