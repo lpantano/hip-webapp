@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Markdown editor styles */
+@import '@uiw/react-md-editor/markdown-editor.css';
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
@@ -156,5 +159,32 @@ All colors MUST be HSL.
       /* Add padding at bottom for keyboard clearance on newer iPhones */
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
+  }
+
+  /* Markdown editor custom styles */
+  .markdown-editor .w-md-editor {
+    @apply rounded-lg border border-input shadow-sm;
+  }
+
+  .markdown-editor .w-md-editor-toolbar {
+    @apply bg-muted/50 border-b border-input;
+  }
+
+  .markdown-editor .w-md-editor-toolbar button {
+    @apply hover:bg-accent/10 transition-colors;
+  }
+
+  .markdown-editor .w-md-editor-text-pre,
+  .markdown-editor .w-md-editor-text-input {
+    @apply text-sm;
+  }
+
+  /* Dark mode support for markdown editor */
+  [data-color-mode="dark"] .w-md-editor {
+    @apply bg-background text-foreground;
+  }
+
+  [data-color-mode="dark"] .w-md-editor-toolbar {
+    @apply bg-muted/30;
   }
 }
