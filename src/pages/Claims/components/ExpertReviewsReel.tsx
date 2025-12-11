@@ -5,6 +5,7 @@ import { getCategoryBackgroundColor, getStudyTagDescription, getQualityCheckDesc
 import { isProblematicCategory } from '@/lib/classification-categories';
 import { getClassificationReasons } from '@/types/review';
 import quality from '@/lib/quality-colors';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
 export type ExpertReviewCard = {
   publication: {
@@ -167,9 +168,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                     day: 'numeric'
                   })}
                 </div>
-                <div className="text-base sm:text-base leading-relaxed text-foreground font-normal">
-                  {comment.content}
-                </div>
+                <MarkdownRenderer
+                  content={comment.content}
+                  className="text-base sm:text-base leading-relaxed"
+                />
               </div>
             ))}
           </div>
