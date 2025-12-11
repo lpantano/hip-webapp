@@ -1,16 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Download, Smartphone, AlertCircle } from "lucide-react";
+import { Download, AlertCircle } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 interface PWAInstallButtonProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
-  showDebug?: boolean; // For testing purposes
+  showDebug?: boolean;
 }
 
 const PWAInstallButton = ({ variant = "default", size = "default", className = "", showDebug = false }: PWAInstallButtonProps) => {
-  const { isInstallable, isInstalled, installApp } = usePWAInstall();
+  const { isInstallable, isInstalled, installApp, browserType } = usePWAInstall();
 
   const handleInstall = async () => {
     console.log('Install button clicked');
@@ -22,20 +22,18 @@ const PWAInstallButton = ({ variant = "default", size = "default", className = "
     }
   };
 
-  // Debug logging
-  console.log('PWA Button State:', { isInstallable, isInstalled, showDebug });
+  console.log('PWA Button State:', { isInstallable, isInstalled, showDebug, browserType });
 
+  // Don't show button if already installed
   if (isInstalled) {
-    return (
-      <Button variant="outline" size={size} className={`${className} cursor-default`} disabled>
-        <Smartphone className="w-4 h-4 mr-2" />
-        App Installed
-      </Button>
-    );
+    return null;
   }
 
-  // Show debug button or check if installable
-  if (!isInstallable && !showDebug) {
+  // Only show button for supported mobile browsers
+  const supportedMobileBrowsers = ['ios-safari', 'ios-chrome', 'ios-firefox', 'android-chrome', 'android-firefox'];
+  const isSupportedMobile = supportedMobileBrowsers.includes(browserType);
+
+  if (!isSupportedMobile && !showDebug) {
     return null;
   }
 
@@ -49,14 +47,14 @@ const PWAInstallButton = ({ variant = "default", size = "default", className = "
   }
 
   return (
-    <Button 
-      variant={variant} 
-      size={size} 
+    <Button
+      variant={variant}
+      size={size}
       className={`${className} bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg`}
       onClick={handleInstall}
     >
       <Download className="w-4 h-4 mr-2" />
-      {showDebug ? 'Install App (Debug)' : 'Install App'}
+      {showDebug ? 'Install Mobile App (Debug)' : 'Install Mobile App'}
     </Button>
   );
 };

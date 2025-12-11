@@ -15,29 +15,54 @@ declare global {
   }
 }
 
+export type BrowserType = 'ios-safari' | 'ios-chrome' | 'ios-firefox' | 'android-chrome' | 'android-firefox' | 'desktop-chrome' | 'desktop-firefox' | 'desktop-safari' | 'unknown';
+
+export const detectBrowser = (): BrowserType => {
+  const ua = navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isAndroid = /android/.test(ua);
+  const isSafari = /safari/.test(ua) && !/chrome|chromium|crios|fxios/.test(ua);
+  const isChrome = /chrome|chromium|crios/.test(ua);
+  const isFirefox = /firefox|fxios/.test(ua);
+  const isMobile = isIOS || isAndroid;
+
+  if (isIOS && isChrome) return 'ios-chrome';
+  if (isIOS && isFirefox) return 'ios-firefox';
+  if (isIOS && isSafari) return 'ios-safari';
+  if (isAndroid && isChrome) return 'android-chrome';
+  if (isAndroid && isFirefox) return 'android-firefox';
+  if (!isMobile && isChrome) return 'desktop-chrome';
+  if (!isMobile && isFirefox) return 'desktop-firefox';
+  if (!isMobile && isSafari) return 'desktop-safari';
+
+  return 'unknown';
+};
+
 export const usePWAInstall = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [browserType, setBrowserType] = useState<BrowserType>('unknown');
 
   useEffect(() => {
+    // Detect browser type
+    setBrowserType(detectBrowser());
+
     // Check if app is already installed
     const checkIfInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isWebKit = 'standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true;
       const installed = isStandalone || isWebKit;
-      console.log('PWA Install Status Check:', { isStandalone, isWebKit, installed });
+      console.log('PWA Install Status Check:', { isStandalone, isWebKit, installed, browserType: detectBrowser() });
       setIsInstalled(installed);
     };
 
     checkIfInstalled();
 
-    // Listen for the beforeinstallprompt event
+    // Listen for the beforeinstallprompt event (Chrome-based browsers)
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       console.log('beforeinstallprompt event fired');
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
-      // Stash the event so it can be triggered later
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
@@ -62,18 +87,15 @@ export const usePWAInstall = () => {
     if (!deferredPrompt) return false;
 
     try {
-      // Show the install prompt
       await deferredPrompt.prompt();
-      
-      // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
-      
+
       if (outcome === 'accepted') {
         setIsInstallable(false);
         setDeferredPrompt(null);
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error installing PWA:', error);
@@ -84,6 +106,8 @@ export const usePWAInstall = () => {
   return {
     isInstallable: isInstallable && !isInstalled,
     isInstalled,
-    installApp
+    installApp,
+    browserType,
+    canAutoInstall: !!deferredPrompt
   };
 };
