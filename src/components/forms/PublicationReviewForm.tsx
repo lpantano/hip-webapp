@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -1260,12 +1260,19 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               {/* Comments & Review Status */}
               <div className="space-y-2 mt-2">
                 <Label className="text-xs sm:text-sm font-medium">Comments</Label>
-                <Textarea
-                  placeholder="Additional notes or assessment..."
+                <p className="text-xs text-muted-foreground">
+                  Use markdown for formatting: **bold**, [links](url), bullet points with -, etc.
+                </p>
+                <MarkdownEditor
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                  className="text-base sm:text-sm resize-none"
+                  onChange={setComment}
+                  placeholder={`Additional notes or assessment...
+
+**Bold text** for emphasis
+- Bullet points for lists
+[Link text](https://example.com) for links`}
+                  height={150}
+                  className="text-base sm:text-sm"
                 />
                 {existingReview && (
                   <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300 mt-1 flex items-center gap-1">
