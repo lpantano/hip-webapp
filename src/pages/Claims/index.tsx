@@ -27,6 +27,7 @@ import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
+import { BROAD_CATEGORIES_WITH_ALL } from '@/constants/broadCategories';
 import { humanize, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
@@ -40,6 +41,7 @@ const Claims = () => {
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
+  const [filterByBroadCategory, setFilterByBroadCategory] = useState<Database['public']['Enums']['broad_category_type'] | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -137,6 +139,11 @@ const Claims = () => {
         claimsQuery = claimsQuery.eq('category', filterByCategory);
       }
 
+      // Apply broad category filter
+      if (filterByBroadCategory !== 'all') {
+        claimsQuery = claimsQuery.eq('broad_category', filterByBroadCategory);
+      }
+
       // Apply search filter
       if (debouncedSearchQuery.trim()) {
         claimsQuery = claimsQuery.ilike('title', `%${debouncedSearchQuery.trim()}%`);
@@ -218,6 +225,7 @@ const Claims = () => {
           claim: c.title || c.description || '',
           user_id: c.user_id,
           category: c.category,
+          broad_category: c.broad_category,
           votes: c.vote_count || 0,
           created_at: c.created_at,
           publications: pubs,
@@ -307,7 +315,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, sortBy, debouncedSearchQuery, setUserVotes]);
+  }, [sb, user, filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -348,7 +356,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, sortBy, debouncedSearchQuery]);
+  }, [filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -581,21 +589,23 @@ const Claims = () => {
                     )}
                   </div>
 
-                  <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
+                  <Select value={filterByBroadCategory} onValueChange={(value) => setFilterByBroadCategory(value as typeof filterByBroadCategory)}>
                     <SelectTrigger className="w-full sm:w-[180px] h-9">
                       <div className="flex items-center gap-2">
                         <Filter className="w-4 h-4" />
-                        <SelectValue />
+                        <SelectValue placeholder="Broad Category" />
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      {categoryOptions.map((option) => (
+                      {BROAD_CATEGORIES_WITH_ALL.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+
+
 
                   <Button
                     variant={sortBy === 'votes' ? 'default' : 'outline'}

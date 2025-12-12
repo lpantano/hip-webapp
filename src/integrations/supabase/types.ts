@@ -141,6 +141,7 @@ export type Database = {
       claims: {
         Row: {
           category: Database["public"]["Enums"]["claim_category"]
+          broad_category: Database["public"]["Enums"]["broad_category_type"]
           created_at: string
           description: string
           evidence_status:
@@ -155,6 +156,7 @@ export type Database = {
         }
         Insert: {
           category: Database["public"]["Enums"]["claim_category"]
+          broad_category?: Database["public"]["Enums"]["broad_category_type"]
           created_at?: string
           description: string
           evidence_status?:
@@ -169,6 +171,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["claim_category"]
+          broad_category?: Database["public"]["Enums"]["broad_category_type"]
           created_at?: string
           description?: string
           evidence_status?:
@@ -818,6 +821,7 @@ export type Database = {
         | "Evidence Supports"
         | "Evidence Disproves"
         | "Inconclusive"
+      broad_category_type: "Health" | "Wellness" | "Mind"
       expertise_area:
         | "Health"
         | "Fitness"
@@ -1018,6 +1022,7 @@ export const Constants = {
         "Evidence Disproves",
         "Inconclusive",
       ],
+      broad_category_type: ["Health", "Wellness", "Mind"],
       expertise_area: [
         "Health",
         "Fitness",

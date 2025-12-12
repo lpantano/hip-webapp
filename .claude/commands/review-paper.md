@@ -13,6 +13,8 @@ The user will provide:
 
 Follow the Evidence Decoded classification workflow to evaluate the paper and generate a structured review. This review will be used by an expert who will read it, edit it, and submit it to the system.
 
+You SHOULD stop at every step to ask the expert for feedback or continue. If the expert as a question, answer and ask if more feedback is needed or you can continue. USe this strategy until expert says to stop or you finish with all the steps.
+
 ## Classification Workflow (Decision Tree)
 
 Follow these steps in order:
@@ -22,6 +24,7 @@ Check if ANY of these apply (if yes → Invalid/Misinformation):
 
 1. **Conflict of Interest**: Does the study have funding from a company that benefits from positive results? Do authors have financial ties?
 2. **Review Study**: Is this a review paper (not original research)? Does it summarize other studies?
+  - This is only in the case they don't reanalyze data. If it is review only and they don't do any statistical analysis, then is invalid, other wise is valid.
 3. **Categorical Meta-Analysis**: Is this a categorical meta-analysis (qualitative summary without quantitative data pooling)?
 4. **Overstates Evidence**: Does the claim overstate or misinterpret what the paper actually shows?
 
@@ -137,12 +140,16 @@ Generate a structured review in the following format:
 #### Research Question
 [What question was this study trying to answer? Be specific.]
 
+Stop here to get expert feedback and ask to continue to the next step.
+
 #### Key Findings (with Evidence)
 [Summarize main results with direct quotes from the paper. Use actual numbers, statistics, and methods described in the paper. Example format:]
 
 > "Quote from paper showing key result" (Section/Figure reference)
 
 [2-3 key findings with quotes]
+
+you SHOULD stop after each finding and quotes that support the finding to ask for the expert feedback and/or continue with the next finding.
 
 #### Limitations of the study (with Evidence)
 [Enumerate the limitations of the study to make it clear to the expert. Type of population, metric measured, cofounding factors, no blinded study.]
