@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapPin, Calendar, Users, ExternalLink, MessageSquare, ThumbsUp, FileText, Linkedin, Instagram, Globe, Mail, Twitter, Youtube, Facebook, Hash, Podcast, Link } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 interface CommunityMember {
   id: string;
   user_id: string;
-  expertise_area: string;
+  expertise_text?: string;
+  expertise_area?: string; // Deprecated: kept for backward compatibility during migration
   education: string;
   motivation: string;
   website?: string;
@@ -37,15 +38,16 @@ const Community = () => {
   const [allMembers, setAllMembers] = useState<CommunityMember[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCommunityMembers();
-  }, []);
+  // Helper function to get expertise value (handles migration from expertise_area to expertise_text)
+  const getExpertise = (member: CommunityMember): string => {
+    return member.expertise_text || member.expertise_area || '';
+  };
 
-  const fetchCommunityMembers = async () => {
+  const fetchCommunityMembers = useCallback(async () => {
     try {
-      // Fetch from expert_stats view (now includes member_type)
+      // Fetch from expert_stats_dev view (uses expertise_text column)
       const { data: membersData, error: membersError } = await supabase
-        .from('expert_stats')
+        .from('expert_stats_dev')
         .select('*')
 
       if (membersError) throw membersError;
@@ -53,17 +55,17 @@ const Community = () => {
       const members = membersData || [];
 
       // Sort members to show experts first, then researchers
-      const sortedMembers = members.sort((a, b) => {
-        const aMemberType = (a as CommunityMember).member_type;
-        const bMemberType = (b as CommunityMember).member_type;
+      const sortedMembers = (members as unknown as CommunityMember[]).sort((a, b) => {
+        const aMemberType = a.member_type;
+        const bMemberType = b.member_type;
 
         // Experts first (including fallback for existing data without member_type)
         if ((aMemberType === 'expert' || !aMemberType) && bMemberType === 'researcher') return -1;
         if (aMemberType === 'researcher' && (bMemberType === 'expert' || !bMemberType)) return 1;
 
-        // Within same type, sort by display name or expertise area
-        const aName = (a as CommunityMember).display_name || (a as CommunityMember).expertise_area;
-        const bName = (b as CommunityMember).display_name || (b as CommunityMember).expertise_area;
+        // Within same type, sort by display name or expertise text
+        const aName = a.display_name || getExpertise(a);
+        const bName = b.display_name || getExpertise(b);
         return aName.localeCompare(bName);
       });
 
@@ -74,14 +76,11 @@ const Community = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const formatExpertiseArea = (area: string) => {
-    return area
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
+  useEffect(() => {
+    fetchCommunityMembers();
+  }, [fetchCommunityMembers]);
 
   const getYearsOnPlatform = (createdAt: string) => {
     const created = new Date(createdAt);
@@ -130,9 +129,10 @@ const Community = () => {
   };
 
   const MemberCard = ({ member }: { member: CommunityMember }) => {
-    const displayName = member.display_name || `${formatExpertiseArea(member.expertise_area)} ${member.member_type === 'expert' ? 'Expert' : 'Researcher'}`;
+    const expertise = getExpertise(member);
+    const displayName = member.display_name || `${expertise} ${member.member_type === 'expert' ? 'Expert' : 'Researcher'}`;
     const avatarUrl = member.profile_avatar_url || member.avatar_url;
-    const title = formatExpertiseArea(member.expertise_area) + ` ${member.member_type === 'expert' ? 'Specialist' : 'Researcher'}`;
+    const title = expertise + ` ${member.member_type === 'expert' ? 'Specialist' : 'Researcher'}`;
     const yearsOnPlatform = getYearsOnPlatform(member.created_at);
     const contributorBadge = getContributorBadge(member);
 
@@ -186,7 +186,7 @@ const Community = () => {
           )}
           <div className="flex flex-wrap gap-1 mt-2">
             <Badge variant="secondary" className="text-xs">
-              {formatExpertiseArea(member.expertise_area)}
+              {expertise}
             </Badge>
           </div>
           <div className="flex gap-1 mt-2">
@@ -280,25 +280,27 @@ const Community = () => {
       {/* Community Member Profile Dialog */}
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedMember && (
+          {selectedMember && (() => {
+            const selectedExpertise = getExpertise(selectedMember);
+            return (
             <>
               <DialogHeader>
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="w-16 h-16">
-                    <AvatarImage src={selectedMember.profile_avatar_url || selectedMember.avatar_url} alt={selectedMember.display_name || `${formatExpertiseArea(selectedMember.expertise_area)} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`} />
+                    <AvatarImage src={selectedMember.profile_avatar_url || selectedMember.avatar_url} alt={selectedMember.display_name || `${selectedExpertise} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`} />
                     <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">
-                      {selectedMember.display_name ? selectedMember.display_name.split(' ').map(n => n[0]).join('') : formatExpertiseArea(selectedMember.expertise_area).split(' ').map(n => n[0]).join('')}
+                      {selectedMember.display_name ? selectedMember.display_name.split(' ').map(n => n[0]).join('') : selectedExpertise.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <DialogTitle className="text-2xl">{selectedMember.display_name || `${formatExpertiseArea(selectedMember.expertise_area)} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`}</DialogTitle>
+                      <DialogTitle className="text-2xl">{selectedMember.display_name || `${selectedExpertise} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`}</DialogTitle>
                       <Badge variant={selectedMember.member_type === 'expert' ? 'default' : 'secondary'}>
                         {selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}
                       </Badge>
                     </div>
                     <DialogDescription className="text-lg text-primary font-medium">
-                      {formatExpertiseArea(selectedMember.expertise_area)} {selectedMember.member_type === 'expert' ? 'Specialist' : 'Researcher'} • {getContributorBadge(selectedMember).description}
+                      {selectedExpertise} {selectedMember.member_type === 'expert' ? 'Specialist' : 'Researcher'} • {getContributorBadge(selectedMember).description}
                     </DialogDescription>
                     {selectedMember.location && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
@@ -328,9 +330,7 @@ const Community = () => {
                 {/* Expertise */}
                 <div>
                   <h4 className="font-semibold mb-3">Area of Expertise</h4>
-                  <Badge variant="secondary">
-                    {formatExpertiseArea(selectedMember.expertise_area)}
-                  </Badge>
+                  <p className="text-muted-foreground">{selectedExpertise}</p>
                 </div>
 
                 <Separator />
@@ -394,7 +394,8 @@ const Community = () => {
                 )}
               </div>
             </>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

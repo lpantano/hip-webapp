@@ -8,19 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Constants } from '@/integrations/supabase/types';
 import { Separator } from '@/components/ui/separator';
-import { User, Shield, FileText, MapPin, Calendar, Lock } from 'lucide-react';
+import { User, Shield, FileText, Calendar, Lock } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import type { Database } from '@/integrations/supabase/types';
 
 const Profile = () => {
-  // Dynamically get claim_category options from types
-  const claimCategoryOptions = Constants.public.Enums.claim_category;
   const { user, session, updatePassword, hasPasswordAuth } = useAuth();
   const queryClient = useQueryClient();
 
@@ -36,7 +32,7 @@ const Profile = () => {
   const [location, setLocation] = useState('');
   const [website, setWebsite] = useState('');
   const [yearsOfExperience, setYearsOfExperience] = useState('');
-  const [expertiseArea, setExpertiseArea] = useState('');
+  const [expertiseText, setExpertiseText] = useState('');
   // Social media links for expert profile
   const [socialLinks, setSocialLinks] = useState<{ id?: string; platform: string; url: string }[]>([]);
 
@@ -117,7 +113,7 @@ const Profile = () => {
       setLocation(expertData.location || '');
       setWebsite(expertData.website || '');
       setYearsOfExperience(expertData.years_of_experience?.toString() || '');
-      setExpertiseArea(expertData.expertise_area || '');
+      setExpertiseText(expertData.expertise_text || '');
     }
   }, [expertData]);
 
@@ -232,7 +228,7 @@ const Profile = () => {
           location: location,
           website: website,
           years_of_experience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
-          expertise_area: expertiseArea as Database['public']['Enums']['claim_category']
+          expertise_text: expertiseText
         }, { onConflict: 'user_id' })
         .select()
         .maybeSingle();
@@ -387,22 +383,31 @@ const Profile = () => {
                   <CardDescription>Manage your expert credentials and specializations</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-3">
                     <div>
-                      <Label htmlFor="expertiseArea">Expertise Area</Label>
-                      <Select value={expertiseArea} onValueChange={setExpertiseArea}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your expertise" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {claimCategoryOptions.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="City, Country"
+                      />
                     </div>
+                    <div>
+                      <Label htmlFor="expertiseText">Expertise Area</Label>
+                      <Input
+                        id="expertiseText"
+                        value={expertiseText}
+                        onChange={(e) => setExpertiseText(e.target.value)}
+                        placeholder="e.g., Menopause hormonal therapy"
+                        maxLength={40}
+                      />
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                        <span>10-40 characters</span>
+                        <span>{expertiseText?.length || 0}/40</span>
+                      </div>
+                    </div>
+
                     <div>
                       <Label htmlFor="yearsOfExperience">Years of Experience</Label>
                       <Input
@@ -418,15 +423,7 @@ const Profile = () => {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        placeholder="City, Country"
-                      />
-                    </div>
+
                     <div>
                       <Label htmlFor="website">Website</Label>
                       <Input

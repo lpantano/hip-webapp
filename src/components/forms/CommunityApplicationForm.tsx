@@ -18,7 +18,9 @@ import { useAuth } from "@/hooks/useAuth";
 const communityApplicationSchema = z.object({
   role: z.enum(["expert", "researcher"]),
   education: z.string().min(10, "Please provide detailed education (minimum 10 characters)"),
-  expertiseArea: z.enum(["nutrition", "fitness", "mental_health", "pregnancy", "menopause", "general_health", "perimenopause"]),
+  expertiseText: z.string()
+    .min(10, "Please provide at least 10 characters")
+    .max(40, "Expertise description must be under 40 characters"),
   yearsOfExperience: z.number().min(0, "Years of experience must be 0 or greater").max(50, "Please enter a realistic number of years"),
   motivation: z.string().min(50, "Please provide detailed motivation (minimum 50 characters)"),
   website: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
@@ -61,7 +63,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     }
   });
 
-  const watchedExpertiseArea = watch("expertiseArea");
+  const watchedExpertiseText = watch("expertiseText");
   const watchedRole = watch("role");
 
   // Debug: Log errors when they change
@@ -105,7 +107,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
           user_id: user.id,
           member_type: data.role,
           education: data.education,
-          expertise_area: data.expertiseArea,
+          expertise_text: data.expertiseText,
           years_of_experience: data.yearsOfExperience,
           motivation: data.motivation,
           website: data.website || null,
@@ -152,16 +154,6 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const expertiseAreaLabels = {
-    nutrition: "Nutrition",
-    fitness: "Fitness", 
-    mental_health: "Mental Health",
-    pregnancy: "Pregnancy",
-    menopause: "Menopause",
-    general_health: "General Health",
-    perimenopause: "Perimenopause",
   };
 
   return (
@@ -222,23 +214,20 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
               </div>
               {/* Expertise Area */}
               <div className="space-y-2">
-                <Label htmlFor="expertiseArea">Area of Expertise *</Label>
-                <Select onValueChange={(value) => setValue("expertiseArea", value as "nutrition" | "fitness" | "mental_health" | "pregnancy" | "menopause" | "general_health" | "perimenopause", { shouldDirty: true, shouldTouch: true })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your primary expertise area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nutrition">Nutrition</SelectItem>
-                    <SelectItem value="fitness">Fitness</SelectItem>
-                    <SelectItem value="mental_health">Mental Health</SelectItem>
-                    <SelectItem value="pregnancy">Pregnancy</SelectItem>
-                    <SelectItem value="menopause">Menopause</SelectItem>
-                    <SelectItem value="general_health">General Health</SelectItem>
-                    <SelectItem value="perimenopause">Perimenopause</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.expertiseArea && (
-                  <p className="text-sm text-destructive font-medium">{errors.expertiseArea.message}</p>
+                <Label htmlFor="expertiseText">Area of Expertise *</Label>
+                <Input
+                  id="expertiseText"
+                  {...register("expertiseText")}
+                  placeholder="e.g., Menopause hormonal therapy"
+                  maxLength={40}
+                  className={errors.expertiseText ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Describe your area of expertise (10-40 characters)</span>
+                  <span>{watchedExpertiseText?.length || 0}/40</span>
+                </div>
+                {errors.expertiseText && (
+                  <p className="text-sm text-destructive font-medium">{errors.expertiseText.message}</p>
                 )}
               </div>
 
@@ -368,7 +357,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                   </p>
                   <ul className="list-disc list-inside text-sm text-destructive space-y-1">
                     {errors.role && <li>Role selection is required</li>}
-                    {errors.expertiseArea && <li>Expertise area is required</li>}
+                    {errors.expertiseText && <li>{errors.expertiseText.message}</li>}
                     {errors.yearsOfExperience && <li>{errors.yearsOfExperience.message}</li>}
                     {errors.education && <li>{errors.education.message}</li>}
                     {errors.motivation && <li>{errors.motivation.message}</li>}

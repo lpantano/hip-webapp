@@ -14,24 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      mailing_list_signups: {
-        Row: {
-          id: string;
-          email: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          email: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
       claim_comments: {
         Row: {
           claim_id: string
@@ -66,8 +48,8 @@ export type Database = {
           description: string | null
           expert_user_id: string
           id: string
-          link_type: string
-          title: string
+          link_type: string | null
+          title: string | null
           updated_at: string
           url: string
         }
@@ -77,8 +59,8 @@ export type Database = {
           description?: string | null
           expert_user_id: string
           id?: string
-          link_type?: string
-          title: string
+          link_type?: string | null
+          title?: string | null
           updated_at?: string
           url: string
         }
@@ -88,8 +70,8 @@ export type Database = {
           description?: string | null
           expert_user_id?: string
           id?: string
-          link_type?: string
-          title?: string
+          link_type?: string | null
+          title?: string | null
           updated_at?: string
           url?: string
         }
@@ -125,13 +107,6 @@ export type Database = {
             referencedRelation: "claims"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "claim_reactions_claim_id_fkey"
-            columns: ["claim_id"]
-            isOneToOne: false
-            referencedRelation: "claims_full"
-            referencedColumns: ["id"]
-          },
         ]
       }
       claim_votes: {
@@ -161,13 +136,6 @@ export type Database = {
             referencedRelation: "claims"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "claim_votes_claim_id_fkey"
-            columns: ["claim_id"]
-            isOneToOne: false
-            referencedRelation: "claims_full"
-            referencedColumns: ["id"]
-          },
         ]
       }
       claims: {
@@ -175,7 +143,9 @@ export type Database = {
           category: Database["public"]["Enums"]["claim_category"]
           created_at: string
           description: string
-          evidence_status: Database["public"]["Enums"]["evidence_status_type"] | null
+          evidence_status:
+            | Database["public"]["Enums"]["evidence_status_type"]
+            | null
           id: string
           status: Database["public"]["Enums"]["claim_status"]
           title: string
@@ -187,7 +157,9 @@ export type Database = {
           category: Database["public"]["Enums"]["claim_category"]
           created_at?: string
           description: string
-          evidence_status?: Database["public"]["Enums"]["evidence_status_type"] | null
+          evidence_status?:
+            | Database["public"]["Enums"]["evidence_status_type"]
+            | null
           id?: string
           status?: Database["public"]["Enums"]["claim_status"]
           title: string
@@ -199,7 +171,9 @@ export type Database = {
           category?: Database["public"]["Enums"]["claim_category"]
           created_at?: string
           description?: string
-          evidence_status?: Database["public"]["Enums"]["evidence_status_type"] | null
+          evidence_status?:
+            | Database["public"]["Enums"]["evidence_status_type"]
+            | null
           id?: string
           status?: Database["public"]["Enums"]["claim_status"]
           title?: string
@@ -209,49 +183,15 @@ export type Database = {
         }
         Relationships: []
       }
-      expert_contributions: {
-        Row: {
-          contribution_type: string
-          created_at: string
-          expert_id: string
-          id: string
-        }
-        Insert: {
-          contribution_type: string
-          created_at?: string
-          expert_id: string
-          id?: string
-        }
-        Update: {
-          contribution_type?: string
-          created_at?: string
-          expert_id?: string
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expert_contributions_expert_id_fkey"
-            columns: ["expert_id"]
-            isOneToOne: false
-            referencedRelation: "expert_stats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expert_contributions_expert_id_fkey"
-            columns: ["expert_id"]
-            isOneToOne: false
-            referencedRelation: "experts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       experts: {
         Row: {
           created_at: string
           education: string
           expertise_area: Database["public"]["Enums"]["claim_category"]
+          expertise_text: string
           id: string
           location: string | null
+          member_type: Database["public"]["Enums"]["member_type"]
           motivation: string
           status: string
           updated_at: string
@@ -262,9 +202,11 @@ export type Database = {
         Insert: {
           created_at?: string
           education: string
-          expertise_area: Database["public"]["Enums"]["claim_category"]
+          expertise_area?: Database["public"]["Enums"]["claim_category"]
+          expertise_text: string
           id?: string
           location?: string | null
+          member_type?: Database["public"]["Enums"]["member_type"]
           motivation: string
           status?: string
           updated_at?: string
@@ -276,8 +218,10 @@ export type Database = {
           created_at?: string
           education?: string
           expertise_area?: Database["public"]["Enums"]["claim_category"]
+          expertise_text?: string
           id?: string
           location?: string | null
+          member_type?: Database["public"]["Enums"]["member_type"]
           motivation?: string
           status?: string
           updated_at?: string
@@ -373,12 +317,30 @@ export type Database = {
           },
         ]
       }
+      mailing_list_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
-          cached_avatar_url: string | null
           cached_avatar_updated_at: string | null
+          cached_avatar_url: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -388,8 +350,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
-          cached_avatar_url?: string | null
           cached_avatar_updated_at?: string | null
+          cached_avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -399,8 +361,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
-          cached_avatar_url?: string | null
           cached_avatar_updated_at?: string | null
+          cached_avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -416,7 +378,7 @@ export type Database = {
           expert_user_id: string
           id: string
           publication_id: string
-          review_data: Json
+          review_data: Json | null
           updated_at: string
         }
         Insert: {
@@ -425,7 +387,7 @@ export type Database = {
           expert_user_id: string
           id?: string
           publication_id: string
-          review_data?: Json
+          review_data?: Json | null
           updated_at?: string
         }
         Update: {
@@ -434,7 +396,7 @@ export type Database = {
           expert_user_id?: string
           id?: string
           publication_id?: string
-          review_data?: Json
+          review_data?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -456,7 +418,8 @@ export type Database = {
           id: string
           journal: string
           publication_year: number
-          stance: Database["public"]["Enums"]["publication_stance"]
+          source: string | null
+          stance: Database["public"]["Enums"]["publication_stance"] | null
           status: string
           submitted_by: string | null
           title: string
@@ -470,7 +433,8 @@ export type Database = {
           id?: string
           journal: string
           publication_year: number
-          stance?: Database["public"]["Enums"]["publication_stance"]
+          source?: string | null
+          stance?: Database["public"]["Enums"]["publication_stance"] | null
           status?: string
           submitted_by?: string | null
           title: string
@@ -484,7 +448,8 @@ export type Database = {
           id?: string
           journal?: string
           publication_year?: number
-          stance?: Database["public"]["Enums"]["publication_stance"]
+          source?: string | null
+          stance?: Database["public"]["Enums"]["publication_stance"] | null
           status?: string
           submitted_by?: string | null
           title?: string
@@ -496,13 +461,6 @@ export type Database = {
             columns: ["claim_id"]
             isOneToOne: false
             referencedRelation: "claims"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "publications_claim_id_fkey"
-            columns: ["claim_id"]
-            isOneToOne: false
-            referencedRelation: "claims_full"
             referencedColumns: ["id"]
           },
         ]
@@ -607,6 +565,13 @@ export type Database = {
             foreignKeyName: "social_media_links_expert_id_fkey"
             columns: ["expert_id"]
             isOneToOne: false
+            referencedRelation: "expert_stats_dev"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "social_media_links_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
             referencedRelation: "experts"
             referencedColumns: ["user_id"]
           },
@@ -660,14 +625,28 @@ export type Database = {
             referencedRelation: "claims"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "sources_claim_id_fkey"
-            columns: ["claim_id"]
-            isOneToOne: false
-            referencedRelation: "claims_full"
-            referencedColumns: ["id"]
-          },
         ]
+      }
+      user_contributions: {
+        Row: {
+          contribution_type: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          contribution_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          contribution_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -690,24 +669,20 @@ export type Database = {
         }
         Relationships: []
       }
-    }
-    Views: {
-      claims_full: {
+      whitelist: {
         Row: {
-          category: Database["public"]["Enums"]["claim_category"] | null
-          claim_reactions: Json | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          publications: Json | null
-          status: Database["public"]["Enums"]["claim_status"] | null
-          title: string | null
-          updated_at: string | null
-          user_id: string | null
-          vote_count: number | null
+          email: string
+        }
+        Insert: {
+          email: string
+        }
+        Update: {
+          email?: string
         }
         Relationships: []
       }
+    }
+    Views: {
       expert_stats: {
         Row: {
           avatar_url: string | null
@@ -718,8 +693,42 @@ export type Database = {
           education: string | null
           expertise_area: Database["public"]["Enums"]["claim_category"] | null
           id: string | null
+          location: string | null
+          member_type: Database["public"]["Enums"]["member_type"] | null
+          motivation: string | null
+          new_claims: number | null
+          papers_added: number | null
+          publication_reviews: number | null
+          social_media_links: Json | null
+          status: string | null
+          total_contributions: number | null
+          user_id: string | null
+          website: string | null
+          years_of_experience: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experts_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      expert_stats_dev: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          contributor_level: string | null
+          created_at: string | null
+          display_name: string | null
+          education: string | null
+          expertise_text: string | null
+          id: string | null
           links_added: number | null
           location: string | null
+          member_type: Database["public"]["Enums"]["member_type"] | null
           motivation: string | null
           new_claims: number | null
           publication_reviews: number | null
@@ -780,30 +789,49 @@ export type Database = {
       claim_category:
         | "nutrition"
         | "fitness"
-        | "mental_heath"
+        | "mental_health"
         | "pregnancy"
-        | "menopause"
+        | "postmenopause"
         | "general_health"
         | "perimenopause"
-        | "mental_health"
+        | "period"
+        | "menopause"
       claim_status:
         | "proposed"
-        | "pending"
-        | "verified"
-        | "disputed"
-        | "needs_more_evidence"
+        | "Awaiting Evidence"
+        | "Evidence Supports"
+        | "Evidence Disproves"
+        | "Inconclusive"
         | "under review"
+      evidence_classification:
+        | "early"
+        | "preliminary"
+        | "strong"
+        | "established"
+      evidence_score_category:
+        | "study_size"
+        | "population"
+        | "consensus"
+        | "interpretation"
       evidence_status_type:
         | "Awaiting Evidence"
         | "Evidence Supports"
         | "Evidence Disproves"
         | "Inconclusive"
-      // evidence_score_category:
-      //   | "study_size"
-      //   | "population"
-      //   | "consensus"
-      //   | "interpretation"
-      expertise_area: "health" | "fitness" | "nutrition" | "mental_health"
+      expertise_area:
+        | "Health"
+        | "Fitness"
+        | "Nutrition"
+        | "Mental Health"
+        | "Data Science"
+        | "Immunology"
+        | "Molecular biology"
+        | "Pharmacology"
+        | "Epidemiology"
+        | "Neuroscience"
+        | "Endocrinology"
+        | "Oncology"
+      member_type: "expert" | "researcher"
       publication_stance: "supporting" | "contradicting" | "neutral" | "mixed"
       source_type:
         | "webpage"
@@ -956,19 +984,27 @@ export const Constants = {
       claim_category: [
         "nutrition",
         "fitness",
-        "mental_heath",
+        "mental_health",
         "pregnancy",
-        "menopause",
+        "postmenopause",
         "general_health",
         "perimenopause",
-        "mental_health",
+        "period",
+        "menopause",
       ],
       claim_status: [
         "proposed",
-        "pending",
-        "verified",
-        "disputed",
-        "needs_more_evidence",
+        "Awaiting Evidence",
+        "Evidence Supports",
+        "Evidence Disproves",
+        "Inconclusive",
+        "under review",
+      ],
+      evidence_classification: [
+        "early",
+        "preliminary",
+        "strong",
+        "established",
       ],
       evidence_score_category: [
         "study_size",
@@ -976,7 +1012,28 @@ export const Constants = {
         "consensus",
         "interpretation",
       ],
-      expertise_area: ["health", "fitness", "nutrition", "mental_health"],
+      evidence_status_type: [
+        "Awaiting Evidence",
+        "Evidence Supports",
+        "Evidence Disproves",
+        "Inconclusive",
+      ],
+      expertise_area: [
+        "Health",
+        "Fitness",
+        "Nutrition",
+        "Mental Health",
+        "Data Science",
+        "Immunology",
+        "Molecular biology",
+        "Pharmacology",
+        "Epidemiology",
+        "Neuroscience",
+        "Endocrinology",
+        "Oncology",
+      ],
+      member_type: ["expert", "researcher"],
+      publication_stance: ["supporting", "contradicting", "neutral", "mixed"],
       source_type: [
         "webpage",
         "instagram",
