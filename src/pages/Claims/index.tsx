@@ -8,7 +8,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check, Info } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check, Info, ThumbsUp } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -698,16 +698,22 @@ const Claims = () => {
                       )}
                     </div>
 
-                    <Button
-                      variant={userVotes.has(claim.id) ? "default" : "outline"}
-                      size="sm"
+                    <button
                       onClick={() => handleVote(claim.id)}
-                      className="flex items-center gap-1 [@media(hover:hover)]:hover:bg-primary [@media(hover:hover)]:hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7 touch-manipulation"
                       disabled={!user}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all touch-manipulation ${
+                        userVotes.has(claim.id)
+                          ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105'
+                          : 'border-border hover:border-primary hover:bg-primary/5'
+                      }`}
                     >
-                      <ChevronUp className="w-3 h-3" />
-                      {claim.votes}
-                    </Button>
+                      <ThumbsUp className={`w-4 h-4 transition-all ${
+                        userVotes.has(claim.id) ? 'fill-current' : ''
+                      }`} />
+                      <span className="font-bold text-sm min-w-[20px] text-center">
+                        {claim.votes}
+                      </span>
+                    </button>
                   </div>
 
                   {/* Second row: Claim title */}

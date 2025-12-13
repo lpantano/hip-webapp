@@ -153,7 +153,7 @@ const Community = () => {
 
         {/* Member type badge */}
         <div className="absolute top-2 right-2">
-          <Badge variant={member.member_type === 'expert' ? 'default' : 'secondary'} className="text-[11px] font-bold">
+          <Badge variant="outline" className="text-[11px] font-bold text-primary  border-primary">
             {member.member_type === 'expert' ? 'Expert' : 'Researcher'}
           </Badge>
         </div>
@@ -295,7 +295,7 @@ const Community = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <DialogTitle className="text-2xl">{selectedMember.display_name || `${selectedExpertise} ${selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}`}</DialogTitle>
-                      <Badge variant={selectedMember.member_type === 'expert' ? 'default' : 'secondary'}>
+                      <Badge variant="outline">
                         {selectedMember.member_type === 'expert' ? 'Expert' : 'Researcher'}
                       </Badge>
                     </div>
