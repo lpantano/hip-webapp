@@ -180,7 +180,7 @@ const Admin = () => {
                                  </div>
                                </div>
                              </TableCell>
-                            <TableCell>{expert.expertise_area}</TableCell>
+                            <TableCell>{expert.expertise_text}</TableCell>
                             <TableCell>{expert.years_of_experience} years</TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(expert.status || 'pending')}>

@@ -12,6 +12,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+// TODO: IMPORTANT - This form needs to be revised before public release
+// The expertise_area values need to be aligned with the actual claim categories
+// used in the application (mind, wellness, health) and the TypeScript types
+// need to be regenerated from the database schema to ensure type safety
+
+// Actual database enum values (lowercase)
+type ActualExpertiseArea = "nutrition" | "fitness" | "mental_health" | "health";
+
 const formSchema = z.object({
   name: z.string().min(1, "Resource name is required"),
   url: z.string().url("Please enter a valid URL"),
@@ -49,12 +57,16 @@ export const ResourceSubmissionForm = ({ onSuccess }: Props) => {
 
     setIsSubmitting(true);
     try {
+      // Type assertion needed due to mismatch between database schema and generated types
+      // The database actually uses lowercase values but the generated types show capitalized
+      const insertData = {
+        ...values,
+        submitted_by: user.id,
+      };
+
       const { error } = await supabase
         .from("resources")
-        .insert({
-          ...values,
-          submitted_by: user.id,
-        });
+        .insert(insertData as never);
 
       if (error) throw error;
 

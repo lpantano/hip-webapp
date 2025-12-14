@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -7,20 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CLAIM_CATEGORIES } from '@/constants/categories';
+import { BROAD_CATEGORIES, getBroadCategory } from '@/constants/broadCategories';
 import { usePublicationFetch } from '@/hooks/usePublicationFetch';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
   description: z.string().optional(),
   category: z.enum(['nutrition', 'fitness', 'mental_health', 'pregnancy', 'menopause', 'general_health', 'perimenopause']),
+  broad_category: z.enum(['Health', 'Wellness', 'Mind']).optional(),
   sources: z.array(z.object({
     source_url: z.string().url('Please enter a valid URL'),
     source_type: z.string().optional(),
@@ -67,6 +67,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       title: '',
       description: '',
       category: 'general_health',
+      broad_category: 'Health',
       sources: [],
       publications: [],
     },
@@ -81,6 +82,20 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     control: form.control,
     name: 'sources',
   });
+
+  // Auto-update category when broad_category changes
+  const selectedBroadCategory = form.watch('broad_category');
+  useEffect(() => {
+    if (selectedBroadCategory) {
+      // Set default granular category based on broad category
+      const defaultCategory = selectedBroadCategory === 'Health'
+        ? 'general_health'
+        : selectedBroadCategory === 'Wellness'
+        ? 'nutrition'
+        : 'mental_health';
+      form.setValue('category', defaultCategory);
+    }
+  }, [selectedBroadCategory, form]);
 
   const { fetchPublicationData: fetchPubData } = usePublicationFetch({
     onSuccess: (data, index?: number) => {
@@ -142,6 +157,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
           title: data.title,
           description: data.description,
           category: data.category,
+          broad_category: data.broad_category || getBroadCategory(data.category),
         })
         .select()
         .single();
@@ -226,39 +242,28 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     }
   };
 
-  const categoryOptions = CLAIM_CATEGORIES;
-
   if (authLoading) {
     return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />
-          <span>Loading...</span>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+        <span>Loading...</span>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="w-full max-w-xs mx-auto">
-        <Alert className="mb-3">
-          <AlertCircle className="h-4 w-3" />
-          <AlertDescription>
-        You must be signed in to submit a claim. Please sign in and try again.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert className="mb-3">
+        <AlertCircle className="h-4 w-3" />
+        <AlertDescription>
+      You must be signed in to submit a claim. Please sign in and try again.
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl">Submit New Claim</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
+    <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
@@ -292,49 +297,50 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categoryOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex flex-col md:flex-row gap-4 md:items-end">
+              <FormField
+                control={form.control}
+                name="broad_category"
+                render={({ field }) => (
+                  <FormItem className="flex-2">
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {BROAD_CATEGORIES.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendSource({ source_url: '' })}
+                className="md:mb-0.5"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Source
+              </Button>
+            </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <FormLabel className="text-base">Additional Sources</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendSource({ source_url: '' })}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Source
-                </Button>
-              </div>
 
               {sourceFields.map((field, index) => {
                 const source = form.watch(`sources.${index}`);
                 return (
-                  <Card key={field.id} className="p-4 bg-muted/20">
+                  <div key={field.id} className="p-4 bg-muted/20 rounded-lg border">
                     <div className="space-y-4">
                       <div className="flex gap-2">
                         <FormField
@@ -387,7 +393,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                         </div>
                       )}
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
@@ -424,7 +430,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
               {fields.map((field, index) => {
                 const publication = form.watch(`publications.${index}`);
                 return (
-                  <Card key={field.id} className="p-4 bg-muted/20">
+                  <div key={field.id} className="p-4 bg-muted/20 rounded-lg border">
                     <div className="space-y-4">
                       <div className="flex gap-2">
                         <FormField
@@ -493,7 +499,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                         </div>
                       )}
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
@@ -529,7 +535,5 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
             </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
   );
 };

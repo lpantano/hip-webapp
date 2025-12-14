@@ -14,27 +14,37 @@ export class DOIService {
   private static readonly OPENALEX_API = 'https://api.openalex.org/works/';
   private static readonly PUBMED_ESUMMARY_API = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi';
   private static readonly PUBMED_EFETCH_API = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
+  private static readonly ID_CONVERTER_API = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/';
 
   static async fetchPublicationData(input: string): Promise<PublicationData | null> {
     if (!input) return null;
 
-    // Check if input is a PubMed URL
-    const pmid = this.extractPMID(input);
-    if (pmid) {
-      return await this.fetchFromPubMed(pmid);
-    }
-
-    // Clean DOI
-    const cleanDoi = input.replace(/^(https?:\/\/)?(dx\.)?doi\.org\//, '');
+    const parsed = this.parseInput(input);
+    if (!parsed) return null;
 
     try {
-      // Try Crossref first (more reliable for DOI lookups)
-      const crossrefData = await this.fetchFromCrossref(cleanDoi);
-      if (crossrefData) return crossrefData;
+      if (parsed.type === 'PMID') {
+        return await this.fetchFromPubMed(parsed.id);
+      }
 
-      // Fallback to OpenAlex
-      const openAlexData = await this.fetchFromOpenAlex(cleanDoi);
-      if (openAlexData) return openAlexData;
+      if (parsed.type === 'PMC') {
+        const pmid = await this.convertPMCToPMID(parsed.id);
+        if (pmid) {
+          return await this.fetchFromPubMed(pmid);
+        }
+        // If conversion fails, we could try OpenAlex with PMC ID
+        // But for now, let's rely on conversion as it's most reliable for PubMed content
+      }
+
+      if (parsed.type === 'DOI') {
+        // Try Crossref first (more reliable for DOI lookups)
+        const crossrefData = await this.fetchFromCrossref(parsed.id);
+        if (crossrefData) return crossrefData;
+
+        // Fallback to OpenAlex
+        const openAlexData = await this.fetchFromOpenAlex(parsed.id);
+        if (openAlexData) return openAlexData;
+      }
 
       return null;
     } catch (error) {
@@ -43,27 +53,63 @@ export class DOIService {
     }
   }
 
-  private static extractPMID(input: string): string | null {
-    // Match various PubMed URL formats
-    const pubmedPatterns = [
-      /(?:https?:\/\/)?(?:www\.)?pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?/i,
-      /(?:https?:\/\/)?(?:www\.)?ncbi\.nlm\.nih\.gov\/pubmed\/(\d+)\/?/i,
-      /pmid:?\s*(\d+)/i,
-    ];
+  private static parseInput(input: string): { type: 'DOI' | 'PMID' | 'PMC', id: string } | null {
+    const clean = input.trim();
 
-    for (const pattern of pubmedPatterns) {
-      const match = input.match(pattern);
-      if (match) {
-        return match[1];
-      }
+    // 1. Check for URLs
+    // PubMed URL
+    const pubmedUrlMatch = clean.match(/(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/(\d+)/i);
+    if (pubmedUrlMatch) return { type: 'PMID', id: pubmedUrlMatch[1] };
+
+    // PMC URL
+    const pmcUrlMatch = clean.match(/ncbi\.nlm\.nih\.gov\/pmc\/articles\/(PMC\d+)/i);
+    if (pmcUrlMatch) return { type: 'PMC', id: pmcUrlMatch[1] };
+
+    // DOI URL
+    const doiUrlMatch = clean.match(/(?:doi\.org|dx\.doi\.org)\/(10\.\d{4,}\/[^#\s]+)/i);
+    if (doiUrlMatch) return { type: 'DOI', id: doiUrlMatch[1] };
+
+    // 2. Check for explicit IDs with prefixes or raw formats
+    
+    // DOI (starts with 10.)
+    const doiMatch = clean.match(/^(?:doi:?\s*)?(10\.\d{4,}\/[^#\s]+)$/i);
+    if (doiMatch) return { type: 'DOI', id: doiMatch[1] };
+
+    // PMC ID (PMC12345 or PMC: 12345)
+    // Matches "PMC12345", "PMC:12345", "PMC 12345"
+    const pmcMatch = clean.match(/^(?:PMC:?\s*)?(PMC\d+)|(?:PMC:?\s*)(\d+)$/i);
+    if (pmcMatch) {
+      // If matched group 1 (PMC12345), use it. If group 2 (12345), prepend PMC.
+      const id = pmcMatch[1] || `PMC${pmcMatch[2]}`;
+      return { type: 'PMC', id: id.toUpperCase() };
     }
 
-    // Check if input is just a PMID number
-    if (/^\d+$/.test(input.trim())) {
-      return input.trim();
-    }
+    // PMID (12345 or PMID: 12345)
+    const pmidMatch = clean.match(/^(?:PMID:?\s*)?(\d+)$/i);
+    if (pmidMatch) return { type: 'PMID', id: pmidMatch[1] };
 
     return null;
+  }
+
+  private static async convertPMCToPMID(pmcId: string): Promise<string | null> {
+    try {
+      const response = await fetch(
+        `${this.ID_CONVERTER_API}?tool=evidence-decoded&email=evidence-decoded@example.com&ids=${pmcId}&format=json`
+      );
+      
+      if (!response.ok) return null;
+      
+      const data = await response.json();
+      if (data.records && data.records.length > 0) {
+        const record = data.records[0];
+        if (record.pmid) return record.pmid;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.error('Error converting PMC to PMID:', error);
+      return null;
+    }
   }
 
   private static async fetchFromCrossref(doi: string): Promise<PublicationData | null> {

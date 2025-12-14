@@ -5,6 +5,7 @@ import { getCategoryBackgroundColor, getStudyTagDescription, getQualityCheckDesc
 import { isProblematicCategory } from '@/lib/classification-categories';
 import { getClassificationReasons } from '@/types/review';
 import quality from '@/lib/quality-colors';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
 export type ExpertReviewCard = {
   publication: {
@@ -36,6 +37,7 @@ export type ExpertReviewCard = {
     womenNotIncluded?: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reviewData?: any;
+    stance?: 'supporting' | 'contradicting' | null;
   };
 };
 
@@ -112,28 +114,40 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
         <h2 className="text-lg sm:text-lg font-bold leading-tight mb-2 text-foreground break-words">
           {reviewCard.publication.title}
         </h2>
-        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
-          <span className="font-medium">{reviewCard.publication.year}</span>
-          {reviewCard.publication.journal && (
-            <>
-              <span className="text-muted-foreground/50">•</span>
-              <span>{reviewCard.publication.journal}</span>
-            </>
-          )}
-          {reviewCard.publication.source && (
-            <>
-              <span className="text-muted-foreground/50">•</span>
-              <a
-                href={reviewCard.publication.source}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
-                title="View source"
-              >
-                Source
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
+            <span className="font-medium">{reviewCard.publication.year}</span>
+            {reviewCard.publication.journal && (
+              <>
+                {/* <span className="text-muted-foreground/50">•</span> */}
+                {/* <span>{reviewCard.publication.journal}</span> */}
+              </>
+            )}
+            {reviewCard.publication.source && (
+              <>
+                <span className="text-muted-foreground/50">•</span>
+                <a
+                  href={reviewCard.publication.source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
+                  title="View source"
+                >
+                  Source
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </>
+            )}
+          </div>
+          {/* Stance Chip */}
+          {reviewCard.expert.stance && (
+            <div className={`inline-flex items-center rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold flex-shrink-0 ${
+              reviewCard.expert.stance === 'supporting'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            }`}>
+              {reviewCard.expert.stance === 'supporting' ? 'Reported to Support' : 'Reported to Disprove'}
+            </div>
           )}
         </div>
       </div>
@@ -154,9 +168,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                     day: 'numeric'
                   })}
                 </div>
-                <div className="text-base sm:text-base leading-relaxed text-foreground font-normal">
-                  {comment.content}
-                </div>
+                <MarkdownRenderer
+                  content={comment.content}
+                  className="text-base sm:text-base leading-relaxed"
+                />
               </div>
             ))}
           </div>
@@ -181,7 +196,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-650 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
                         aria-label="Classification reasons"
                       >
                         <Info className="w-4 h-4" />
@@ -318,6 +333,33 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
 
 const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onClose }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+  // Sort review cards: Supporting first, then Contradicting, then null stance
+  const sortedReviewCards = (reviewCards || []).length > 0 ? [...reviewCards].sort((a, b) => {
+    const stanceOrder = { supporting: 0, contradicting: 1, null: 2 };
+    const aStance = a.expert.stance || null;
+    const bStance = b.expert.stance || null;
+    return stanceOrder[aStance as keyof typeof stanceOrder] - stanceOrder[bStance as keyof typeof stanceOrder];
+  }) : [];
+
+  // Hide scroll indicator when user scrolls
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || sortedReviewCards.length <= 1) return;
+
+    const handleScroll = () => {
+      // Hide indicator after scrolling past 10% of viewport height
+      if (container.scrollTop > window.innerHeight * 0.1) {
+        setShowScrollIndicator(false);
+      } else {
+        setShowScrollIndicator(true);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [sortedReviewCards.length]);
 
   if (!reviewCards || reviewCards.length === 0) {
     return (
@@ -328,7 +370,7 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
   }
 
   return (
-    <div className="relative w-full h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
+    <div className="relative w-full max-w-[700px] mx-auto h-screen sm:h-[95vh] sm:max-h-[800px] overflow-hidden">
       <div
         ref={containerRef}
         className="h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth"
@@ -339,7 +381,7 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
         role="list"
         aria-label="Expert reviews"
       >
-        {reviewCards.map((reviewCard, index) => (
+        {sortedReviewCards.map((reviewCard, index) => (
           <ReviewCard
             key={`${reviewCard.publication.id}-${reviewCard.expert.expert_user_id}`}
             reviewCard={reviewCard}
@@ -356,7 +398,7 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
                 You've reached the end
               </div>
               <div className="text-base text-muted-foreground">
-                You've viewed all {reviewCards.length} expert review{reviewCards.length === 1 ? '' : 's'} for this claim.
+                You've viewed all {sortedReviewCards.length} expert review{sortedReviewCards.length === 1 ? '' : 's'} for this claim.
               </div>
               <button
                 onClick={onClose}
@@ -368,6 +410,15 @@ const ExpertReviewsReel: React.FC<ExpertReviewsReelProps> = ({ reviewCards, onCl
           </div>
         )}
       </div>
+
+      {/* Scroll Indicator */}
+      {showScrollIndicator && sortedReviewCards.length > 1 && (
+        <div className="absolute bottom-6 right-6 pointer-events-none animate-fade-in z-10">
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-muted-foreground  flex items-center gap-2">
+            <span>↓ Scroll for more reviews</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

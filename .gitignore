@@ -30,3 +30,6 @@ supabase/.temp*
 # Local Netlify folder
 .netlify
 stack-client_secret_964089196274-hpi5hhr7315b0r3b12lck36jb7vepaec.apps.googleusercontent.com.json
+
+
+.data/*

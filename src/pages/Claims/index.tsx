@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check, Info, ThumbsUp } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -26,18 +27,21 @@ import { SourceFormDialog } from './components/SourceFormDialog';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-import { humanize, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { BROAD_CATEGORIES_WITH_ALL } from '@/constants/broadCategories';
+import { getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
 import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
+  const [searchParams] = useSearchParams();
   const [claims, setClaims] = useState<ClaimUI[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
+  const [filterByBroadCategory, setFilterByBroadCategory] = useState<Database['public']['Enums']['broad_category_type'] | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -48,8 +52,18 @@ const Claims = () => {
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [expandedStance, setExpandedStance] = useState<{ claimId: string; stance: 'supporting' | 'contradicting' } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
+  const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
+
+  // Read search parameter from URL on mount
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Use custom hook for optimistic vote updates
   const {
@@ -123,6 +137,11 @@ const Claims = () => {
       // Apply category filter
       if (filterByCategory !== 'all') {
         claimsQuery = claimsQuery.eq('category', filterByCategory);
+      }
+
+      // Apply broad category filter
+      if (filterByBroadCategory !== 'all') {
+        claimsQuery = claimsQuery.eq('broad_category', filterByBroadCategory);
       }
 
       // Apply search filter
@@ -206,6 +225,7 @@ const Claims = () => {
           claim: c.title || c.description || '',
           user_id: c.user_id,
           category: c.category,
+          broad_category: c.broad_category,
           votes: c.vote_count || 0,
           created_at: c.created_at,
           publications: pubs,
@@ -295,7 +315,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, sortBy, debouncedSearchQuery, setUserVotes]);
+  }, [sb, user, filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -336,7 +356,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, sortBy, debouncedSearchQuery]);
+  }, [filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -495,10 +515,6 @@ const Claims = () => {
 
                 {legendOpen && (
                   <div className="mt-3">
-                    <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">
-                      Legend: Click labels to learn more
-                    </div>
-
                     {/* Categories Legend (moved to component) */}
                     <div className="mb-3">
                       <CategoriesLegend />
@@ -573,21 +589,23 @@ const Claims = () => {
                     )}
                   </div>
 
-                  <Select value={filterByCategory} onValueChange={(value) => setFilterByCategory(value as typeof filterByCategory)}>
+                  <Select value={filterByBroadCategory} onValueChange={(value) => setFilterByBroadCategory(value as typeof filterByBroadCategory)}>
                     <SelectTrigger className="w-full sm:w-[180px] h-9">
                       <div className="flex items-center gap-2">
                         <Filter className="w-4 h-4" />
-                        <SelectValue />
+                        <SelectValue placeholder="Broad Category" />
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      {categoryOptions.map((option) => (
+                      {BROAD_CATEGORIES_WITH_ALL.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+
+
 
                   <Button
                     variant={sortBy === 'votes' ? 'default' : 'outline'}
@@ -658,26 +676,44 @@ const Claims = () => {
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex flex-wrap gap-2">
-                      <Badge className={`${getCategoryColor(claim.category)} pointer-events-none transition-none`}>
-                        {humanize(claim.category)}
+                      <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
+                        {claim.broad_category}
                       </Badge>
                       {claim.evidence_status && (
-                        <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                          {claim.evidence_status}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
+                            {claim.evidence_status}
+                          </Badge>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEvidenceInfo(claim.id);
+                            }}
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                            aria-label="Learn about evidence status"
+                          >
+                            <Info className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
-                    <Button
-                      variant={userVotes.has(claim.id) ? "default" : "outline"}
-                      size="sm"
+                    <button
                       onClick={() => handleVote(claim.id)}
-                      className="flex items-center gap-1 [@media(hover:hover)]:hover:bg-primary [@media(hover:hover)]:hover:text-primary-foreground flex-shrink-0 text-xs px-2 py-1 h-7 touch-manipulation"
                       disabled={!user}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all touch-manipulation ${
+                        userVotes.has(claim.id)
+                          ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105'
+                          : 'border-border hover:border-primary hover:bg-primary/5'
+                      }`}
                     >
-                      <ChevronUp className="w-3 h-3" />
-                      {claim.votes}
-                    </Button>
+                      <ThumbsUp className={`w-4 h-4 transition-all ${
+                        userVotes.has(claim.id) ? 'fill-current' : ''
+                      }`} />
+                      <span className="font-bold text-sm min-w-[20px] text-center">
+                        {claim.votes}
+                      </span>
+                    </button>
                   </div>
 
                   {/* Second row: Claim title */}
@@ -850,6 +886,7 @@ const Claims = () => {
                     user={user}
                     setReviewPublication={setReviewPublication}
                     getStanceIcon={getStanceIcon}
+                    expertProfiles={expertProfiles}
                   />
                 )}
 
@@ -1033,7 +1070,7 @@ const Claims = () => {
                 }
               `}</style>
               <Dialog open={!!showReelClaim} onOpenChange={() => setShowReelClaim(null)}>
-                <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] w-screen h-screen sm:w-auto sm:h-[95vh] sm:max-h-[800px] max-w-none max-h-none sm:max-w-[90vw] p-0 m-0 rounded-none sm:rounded-lg overflow-hidden">
+                <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] w-screen h-screen sm:w-auto sm:h-[95vh] sm:max-h-[800px] max-w-none max-h-none sm:max-w-[650px] p-0 m-0 rounded-none sm:rounded-lg overflow-hidden">
                   {/* Custom close button with dark transparent background */}
                   <DialogClose className="absolute right-4 top-4 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/70 transition-colors">
                     <X className="h-5 w-5 text-white" />
@@ -1065,6 +1102,61 @@ const Claims = () => {
                 fetchData(currentPage);
               }}
             />
+          )}
+
+          {/* Evidence Info Dialog */}
+          {user && showEvidenceInfo && (
+            <Dialog open={!!showEvidenceInfo} onOpenChange={() => setShowEvidenceInfo(null)}>
+              <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogTitle>Understanding Evidence</DialogTitle>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h3 className="font-semibold mb-2">Evidence Status</h3>
+                    <p className="text-muted-foreground mb-3">
+                      The evidence status badge indicates the overall quality and reliability of evidence for this claim based on expert reviews:
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Awaiting Evidence')} pointer-events-none transition-none flex-shrink-0`}>
+                          Awaiting Evidence
+                        </Badge>
+                        <span className="text-muted-foreground">This claim has not yet been reviewed by experts or lacks supporting publications.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Evidence Supports')} pointer-events-none transition-none flex-shrink-0`}>
+                          Evidence Supports
+                        </Badge>
+                        <span className="text-muted-foreground">Expert reviews indicate that scientific evidence supports this claim.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Evidence Disproves')} pointer-events-none transition-none flex-shrink-0`}>
+                          Evidence Disproves
+                        </Badge>
+                        <span className="text-muted-foreground">Expert reviews indicate that scientific evidence contradicts this claim.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Badge className={`${getEvidenceStatusColor('Inconclusive')} pointer-events-none transition-none flex-shrink-0`}>
+                          Inconclusive
+                        </Badge>
+                        <span className="text-muted-foreground">Expert reviews show mixed or insufficient evidence for this claim.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold mb-2">Paper Stances</h3>
+                    <div className="space-y-3 text-muted-foreground">
+                      <div>
+                        <strong>Reported to Support:</strong> Papers that have been reported by sources to support this claim.
+                      </div>
+                      <div>
+                        <strong>Reported to Disprove:</strong> Papers that have been reported by sources to disprove or contradict this claim.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </main>

@@ -110,7 +110,7 @@ serve(async (req: Request) => {
             <p><strong>Your Application Summary:</strong></p>
             <ul>
                 <li><strong>Role:</strong> ${memberTypeCapitalized}</li>
-                <li><strong>Expertise Area:</strong> ${record.expertise_area.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</li>
+                <li><strong>Expertise Area:</strong> ${record.expertise_text}</li>
                 <li><strong>Experience:</strong> ${record.years_of_experience} years</li>
                 ${record.location ? `<li><strong>Location:</strong> ${record.location}</li>` : ''}
                 ${record.website ? `<li><strong>Website:</strong> <a href="${record.website}">${record.website}</a></li>` : ''}
@@ -179,7 +179,7 @@ serve(async (req: Request) => {
             
             <div class="field">
                 <span class="field-label">🧠 Expertise Area:</span>
-                <span class="field-value">${record.expertise_area.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                <span class="field-value">${record.expertise_text}</span>
             </div>
             
             <div class="field">
