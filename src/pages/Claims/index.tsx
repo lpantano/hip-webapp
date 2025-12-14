@@ -28,7 +28,7 @@ import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 import { BROAD_CATEGORIES_WITH_ALL } from '@/constants/broadCategories';
-import { humanize, getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
 import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
@@ -676,8 +676,8 @@ const Claims = () => {
                   {/* First row: Category/Status badges and vote button */}
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex flex-wrap gap-2">
-                      <Badge className={`${getCategoryColor(claim.category)} pointer-events-none transition-none`}>
-                        {humanize(claim.category)}
+                      <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
+                        {claim.broad_category}
                       </Badge>
                       {claim.evidence_status && (
                         <div className="flex items-center gap-1">
