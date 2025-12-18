@@ -11,6 +11,7 @@ import About from "./pages/About";
 import Team from "./pages/Team";
 import Community from "./pages/Community";
 import Claims from "./pages/Claims";
+import ClaimDetail from "./pages/ClaimDetail";
 import Legal from "./pages/Legal";
 import Roadmap from "./pages/Roadmap";
 import FeatureRequests from "./pages/FeatureRequests";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/team" element={<Team />} />
             <Route path="/community" element={<Community />} />
             <Route path="/claims" element={<Claims />} />
+            <Route path="/claims/:id" element={<ClaimDetail />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/features" element={<FeatureRequests />} />
