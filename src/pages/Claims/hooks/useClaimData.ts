@@ -84,6 +84,7 @@ export const useClaimData = (claimId: string | null): UseClaimDataResult => {
         user_id: claimData.user_id,
         category: claimData.category,
         broad_category: claimData.broad_category,
+        labels: claimData.labels || [],
         votes: claimData.vote_count || 0,
         created_at: claimData.created_at,
         publications: pubs,

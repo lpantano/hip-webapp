@@ -93,6 +93,62 @@ View the current sprint status and upcoming work.
 
 ---
 
+### `populate-claim-labels.ts`
+
+One-time population script to automatically infer and assign topic labels to existing claims.
+
+**Purpose:** Analyzes claim titles and descriptions using keyword matching to intelligently infer appropriate topic labels (like pregnancy, nutrition, exercise, etc.) and updates the database.
+
+**Prerequisites:**
+- Node.js and npm installed
+- `tsx` package for running TypeScript: `npm install -g tsx`
+- `.env.local` file with Supabase credentials:
+  - `SUPABASE_URL` or `VITE_SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY` (required for bypassing RLS)
+
+**Usage:**
+```bash
+# Dry run (preview changes without saving)
+tsx scripts/populate-claim-labels.ts --dry-run
+
+# Live run (apply changes to database)
+tsx scripts/populate-claim-labels.ts
+```
+
+**What it does:**
+1. Fetches all claims from the database
+2. Analyzes each claim's title and description for keywords
+3. Infers appropriate labels based on 90+ keyword mappings across 36 labels
+4. Updates the `labels` column in the database
+5. Provides detailed statistics and summary
+
+**Label Categories:**
+- **Reproductive & Lifecycle** (10 labels): pregnancy, fertility, menopause, etc.
+- **Nutrition & Diet** (4 labels): nutrition, supplements, diet, etc.
+- **Physical Health & Fitness** (5 labels): exercise, sleep, fitness, etc.
+- **Body Systems** (8 labels): heart-health, bone-health, hormone-health, etc.
+- **Mental & Cognitive Health** (5 labels): mental-health, stress, anxiety, etc.
+- **General** (3 labels): general-health, chronic-pain, aging
+
+**Behavior:**
+- Updates claims even if they already have labels (overwrites)
+- Skips claims where no labels can be inferred
+- Shows preview of old vs new labels when updating
+
+**Example Output:**
+```
+✓ [a1b2c3d4...] NEW [3 labels]: "Does exercise during pregnancy improve outcomes?"
+   Labels: [pregnancy, exercise, general-health]
+
+↻ [e5f6g7h8...] UPDATE [2 labels]: "Vitamin D supplementation for bone health"
+   Old: [nutrition]
+   New: [nutrition, supplements, bone-health]
+```
+
+**Time saved:** Manually categorizing hundreds of claims would take hours
+
+---
+
 ### Other Scripts
 
 #### `debug-claim-state.ts`

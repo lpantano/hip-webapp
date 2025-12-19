@@ -14,13 +14,16 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BROAD_CATEGORIES, getBroadCategory } from '@/constants/broadCategories';
+import { CLAIM_LABELS } from '@/constants/labels';
 import { usePublicationFetch } from '@/hooks/usePublicationFetch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
   description: z.string().optional(),
   category: z.enum(['nutrition', 'fitness', 'mental_health', 'pregnancy', 'menopause', 'general_health', 'perimenopause']),
   broad_category: z.enum(['Health', 'Wellness', 'Mind']).optional(),
+  labels: z.array(z.string()).optional(),
   sources: z.array(z.object({
     source_url: z.string().url('Please enter a valid URL'),
     source_type: z.string().optional(),
@@ -68,6 +71,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       description: '',
       category: 'general_health',
       broad_category: 'Health',
+      labels: [],
       sources: [],
       publications: [],
     },
@@ -158,6 +162,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
           description: data.description,
           category: data.category,
           broad_category: data.broad_category || getBroadCategory(data.category),
+          labels: data.labels || [],
         })
         .select()
         .single();
@@ -334,6 +339,57 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                 Add Source
               </Button>
             </div>
+
+            <FormField
+              control={form.control}
+              name="labels"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className="text-base">Topic Labels (Optional)</FormLabel>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Select labels that describe what this claim is about
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto p-4 bg-muted/20 rounded-lg border">
+                    {CLAIM_LABELS.map((item) => (
+                      <FormField
+                        key={item.value}
+                        control={form.control}
+                        name="labels"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={item.value}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(item.value)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...(field.value || []), item.value])
+                                      : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== item.value
+                                          )
+                                        )
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal cursor-pointer">
+                                {item.label}
+                              </FormLabel>
+                            </FormItem>
+                          )
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="space-y-4">
 

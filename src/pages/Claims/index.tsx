@@ -23,6 +23,7 @@ import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 import { BROAD_CATEGORIES_WITH_ALL } from '@/constants/broadCategories';
+import { CLAIM_LABELS } from '@/constants/labels';
 import { getEvidenceStatusColor, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
@@ -37,6 +38,7 @@ const Claims = () => {
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [filterByBroadCategory, setFilterByBroadCategory] = useState<Database['public']['Enums']['broad_category_type'] | 'all'>('all');
+  const [filterByLabel, setFilterByLabel] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -138,6 +140,11 @@ const Claims = () => {
         claimsQuery = claimsQuery.eq('broad_category', filterByBroadCategory);
       }
 
+      // Apply label filter
+      if (filterByLabel !== 'all') {
+        claimsQuery = claimsQuery.contains('labels', [filterByLabel]);
+      }
+
       // Apply search filter
       if (debouncedSearchQuery.trim()) {
         claimsQuery = claimsQuery.ilike('title', `%${debouncedSearchQuery.trim()}%`);
@@ -220,6 +227,7 @@ const Claims = () => {
           user_id: c.user_id,
           category: c.category,
           broad_category: c.broad_category,
+          labels: c.labels || [],
           votes: c.vote_count || 0,
           created_at: c.created_at,
           publications: pubs,
@@ -309,7 +317,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery, setUserVotes]);
+  }, [sb, user, filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -350,7 +358,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery]);
+  }, [filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -571,7 +579,22 @@ const Claims = () => {
                     </SelectContent>
                   </Select>
 
-
+                  <Select value={filterByLabel} onValueChange={setFilterByLabel}>
+                    <SelectTrigger className="w-full sm:w-[180px] h-9">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4" />
+                        <SelectValue placeholder="Topic Label" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">All Labels</SelectItem>
+                      {CLAIM_LABELS.map((label) => (
+                        <SelectItem key={label.value} value={label.value}>
+                          {label.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
                   <Button
                     variant={sortBy === 'votes' ? 'default' : 'outline'}
