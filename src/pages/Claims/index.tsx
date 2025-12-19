@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Filter, Lock, LogIn, X, Search } from 'lucide-react';
 import Header from '@/components/layout/Header';
@@ -428,7 +429,6 @@ const Claims = () => {
         description: 'Claim title has been updated successfully.'
       });
       setEditingClaimId(null);
-      setEditedTitle('');
     } catch (e: unknown) {
       console.error('Failed to update claim title', e);
       const msg = e instanceof Error ? e.message : 'Failed to update title';

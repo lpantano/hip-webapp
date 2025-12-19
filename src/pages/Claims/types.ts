@@ -8,6 +8,7 @@ interface ClaimRow {
   product?: string | null;
   category: Database['public']['Enums']['claim_category'];
   broad_category: Database['public']['Enums']['broad_category_type'];
+  labels: string[];
   condition?: string | null;
   stage?: string | null;
   vote_count: number;
