@@ -38,9 +38,7 @@ const PurposeSection = () => {
               >
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-12 h-12 ${purpose.bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`h-6 w-6 ${purpose.color}`} />
-                    </div>
+
                     <h3 className="text-xl font-semibold text-foreground">
                       {purpose.title}
                     </h3>

@@ -2,13 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Eye,  Plus, Filter, FileText, Lock, LogIn, Link, X, Search, Pencil, Check, Info, ThumbsUp } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Filter, Lock, LogIn, X, Search } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
@@ -17,10 +16,7 @@ import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
-import ClaimLabelsStack from '@/pages/Claims/components/ClaimLabelsStack';
-import { getCategoryColor } from '@/lib/getCategoryColor';
-import ClaimPublicationsExpanded from './components/ClaimPublicationsExpanded';
+import { ClaimCard } from './components/ClaimCard';
 import CategoriesLegend from './components/Legend';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
@@ -28,7 +24,8 @@ import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
 import { BROAD_CATEGORIES_WITH_ALL } from '@/constants/broadCategories';
-import { getEvidenceStatusColor, getStanceIcon, groupBy } from './utils/helpers';
+import { CLAIM_LABELS } from '@/constants/labels';
+import { getEvidenceStatusColor, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
 import { useReviewCards } from './hooks/useReviewCards';
 import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
@@ -42,6 +39,7 @@ const Claims = () => {
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [filterByBroadCategory, setFilterByBroadCategory] = useState<Database['public']['Enums']['broad_category_type'] | 'all'>('all');
+  const [filterByLabel, setFilterByLabel] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -76,7 +74,6 @@ const Claims = () => {
 
   // State for inline title editing
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
-  const [editedTitle, setEditedTitle] = useState('');
   const [updatingTitle, setUpdatingTitle] = useState<string | null>(null);
 
   // component-scoped Supabase client
@@ -142,6 +139,11 @@ const Claims = () => {
       // Apply broad category filter
       if (filterByBroadCategory !== 'all') {
         claimsQuery = claimsQuery.eq('broad_category', filterByBroadCategory);
+      }
+
+      // Apply label filter
+      if (filterByLabel !== 'all') {
+        claimsQuery = claimsQuery.contains('labels', [filterByLabel]);
       }
 
       // Apply search filter
@@ -226,6 +228,7 @@ const Claims = () => {
           user_id: c.user_id,
           category: c.category,
           broad_category: c.broad_category,
+          labels: c.labels || [],
           votes: c.vote_count || 0,
           created_at: c.created_at,
           publications: pubs,
@@ -315,7 +318,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery, setUserVotes]);
+  }, [sb, user, filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -356,7 +359,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, filterByBroadCategory, sortBy, debouncedSearchQuery]);
+  }, [filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -398,34 +401,6 @@ const Claims = () => {
     }
   };
 
-  // Permission check for editing claim titles
-  const canEditClaim = (claim: ClaimUI) => {
-    // Experts/researchers can always edit
-    if (isExpert) return true;
-
-    // Claim creator can edit if status is "proposed"
-    if (user && claim.user_id === user.id && claim.rawStatus === 'proposed') {
-      return true;
-    }
-
-    return false;
-  };
-
-  // Helper functions for inline title editing
-  const startEditing = (claim: ClaimUI) => {
-    setEditingClaimId(claim.id);
-    setEditedTitle(claim.claim);
-  };
-
-  const cancelEditing = () => {
-    setEditingClaimId(null);
-    setEditedTitle('');
-  };
-
-  const saveTitle = async (claimId: string) => {
-    await updateClaimTitle(claimId, editedTitle);
-  };
-
   // Update claim title with validation
   const updateClaimTitle = async (claimId: string, newTitle: string) => {
     if (!user) return;
@@ -454,7 +429,6 @@ const Claims = () => {
         description: 'Claim title has been updated successfully.'
       });
       setEditingClaimId(null);
-      setEditedTitle('');
     } catch (e: unknown) {
       console.error('Failed to update claim title', e);
       const msg = e instanceof Error ? e.message : 'Failed to update title';
@@ -605,7 +579,22 @@ const Claims = () => {
                     </SelectContent>
                   </Select>
 
-
+                  <Select value={filterByLabel} onValueChange={setFilterByLabel}>
+                    <SelectTrigger className="w-full sm:w-[180px] h-9">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4" />
+                        <SelectValue placeholder="Topic Label" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">All Labels</SelectItem>
+                      {CLAIM_LABELS.map((label) => (
+                        <SelectItem key={label.value} value={label.value}>
+                          {label.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
                   <Button
                     variant={sortBy === 'votes' ? 'default' : 'outline'}
@@ -671,282 +660,27 @@ const Claims = () => {
                 </div>
               )}
               {user && filteredAndSortedClaims.map((claim) => (
-              <Card key={claim.id} className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
-                <CardHeader className="pb-2">
-                  {/* First row: Category/Status badges and vote button */}
-                  <div className="flex items-center justify-between gap-4 mb-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
-                        {claim.broad_category}
-                      </Badge>
-                      {claim.evidence_status && (
-                        <div className="flex items-center gap-1">
-                          <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                            {claim.evidence_status}
-                          </Badge>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowEvidenceInfo(claim.id);
-                            }}
-                            className="text-muted-foreground hover:text-primary transition-colors"
-                            aria-label="Learn about evidence status"
-                          >
-                            <Info className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => handleVote(claim.id)}
-                      disabled={!user}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all touch-manipulation ${
-                        userVotes.has(claim.id)
-                          ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105'
-                          : 'border-border hover:border-primary hover:bg-primary/5'
-                      }`}
-                    >
-                      <ThumbsUp className={`w-4 h-4 transition-all ${
-                        userVotes.has(claim.id) ? 'fill-current' : ''
-                      }`} />
-                      <span className="font-bold text-sm min-w-[20px] text-center">
-                        {claim.votes}
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Second row: Claim title */}
-                  <div className="flex items-start gap-2">
-                    {editingClaimId === claim.id ? (
-                      // Edit mode: show input and save/cancel buttons
-                      <div className="flex-1 flex flex-col sm:flex-row items-start gap-2">
-                        <Input
-                          value={editedTitle}
-                          onChange={(e) => setEditedTitle(e.target.value)}
-                          className="flex-1 text-lg"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              saveTitle(claim.id);
-                            } else if (e.key === 'Escape') {
-                              e.preventDefault();
-                              cancelEditing();
-                            }
-                          }}
-                          disabled={updatingTitle === claim.id}
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => saveTitle(claim.id)}
-                            disabled={updatingTitle === claim.id}
-                            className="h-8"
-                          >
-                            {updatingTitle === claim.id ? (
-                              'Saving...'
-                            ) : (
-                              <Check className="h-4 w-4 text-green-600" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={cancelEditing}
-                            disabled={updatingTitle === claim.id}
-                            className="h-8"
-                          >
-                            <X className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      // View mode: show title with optional edit button
-                      <>
-                        <div className="flex-1">
-                          <CardTitle className="text-lg mb-1">
-                            {claim.claim}
-                            <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <span>
-                                {claim.publications.length === 0
-                                  ? 'waiting for papers'
-                                  : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
-                                }
-                              </span>
-                            </span>
-                          </CardTitle>
-                        </div>
-                        {canEditClaim(claim) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startEditing(claim);
-                            }}
-                            className="h-8 px-2 opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity touch-manipulation"
-                            title="Edit claim title"
-                          >
-                            <Pencil className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-foreground" />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  {/* Aggregated Category Labels from all expert reviews, separated by stance */}
-                  <div className="flex-col mt-2">
-                    {(() => {
-                      // Use the aggregation helper to compute counts and reasons
-                      const agg = aggregateLabelsForClaim(claim);
-                      const {
-                        classificationOrder,
-                        supportingLabelCounts,
-                        contradictingLabelCounts,
-                        supportingWomenNotIncluded,
-                        contradictingWomenNotIncluded,
-                        supportingObservationalCount,
-                        contradictingObservationalCount,
-                        supportingClinicalTrialCount,
-                        contradictingClinicalTrialCount,
-                        aggregatedReasons
-                      } = agg;
-
-                      // Build two columns: left for contradicting, right for supporting
-
-                      return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-
-                          <div className="space-y-1">
-                            <div
-                              className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
-                              onClick={() => handleStanceClick(claim.id, 'supporting')}
-                            >
-                              <span className="font-semibold text-xs">
-                                Reported to Support ({claim.publications.filter(p => p.stance === 'supporting').length})
-                              </span>
-                              {expandedStance?.claimId === claim.id && expandedStance?.stance === 'supporting' ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </div>
-                            <div>
-                              <ClaimLabelsStack
-                                classificationOrder={classificationOrder}
-                                labelCounts={supportingLabelCounts}
-                                womenNotIncludedCount={supportingWomenNotIncluded}
-                                observationalCount={supportingObservationalCount}
-                                clinicalTrialCount={supportingClinicalTrialCount}
-                                stance="supporting"
-                                aggregatedReasonsForStance={aggregatedReasons.supporting}
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div
-                              className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
-                              onClick={() => handleStanceClick(claim.id, 'contradicting')}
-                            >
-                              <span className="font-semibold text-xs">
-                                Reported to Disprove ({claim.publications.filter(p => p.stance === 'contradicting').length})
-                              </span>
-                              {expandedStance?.claimId === claim.id && expandedStance?.stance === 'contradicting' ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </div>
-                            {/* Use a normal div, not flex-col, so children do not stretch */}
-                            <div>
-                              <ClaimLabelsStack
-                                classificationOrder={classificationOrder}
-                                labelCounts={contradictingLabelCounts}
-                                womenNotIncludedCount={contradictingWomenNotIncluded}
-                                observationalCount={contradictingObservationalCount}
-                                clinicalTrialCount={contradictingClinicalTrialCount}
-                                stance="contradicting"
-                                aggregatedReasonsForStance={aggregatedReasons.contradicting}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                  </div>
-                </CardHeader>
-                {/* Expanded view with individual reviews (moved to component) */}
-                {expandedStance?.claimId === claim.id && (
-                  <ClaimPublicationsExpanded
-                    publications={claim.publications.filter(p => p.stance === expandedStance.stance)}
-                    links={claim.links}
-                    isExpert={isExpert}
-                    user={user}
-                    setReviewPublication={setReviewPublication}
-                    getStanceIcon={getStanceIcon}
-                    expertProfiles={expertProfiles}
-                  />
-                )}
-
-                {/* Bottom section with Review Reel and Add Paper buttons */}
-                <CardContent className="pt-2">
-                  {user && (
-                    <div className="border-t border-border pt-3">
-                      {/* Action buttons and date */}
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => setShowReelClaim(claim.id)}
-                            className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
-                          >
-                            <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">See Comments</span>
-                            <span className="sm:hidden">Comments</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowPaperForm(claim.id)}
-                            className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
-                          >
-                            <FileText className="hidden sm:inline w-4 h-4" />
-                            <Plus className="sm:hidden w-4 h-4" />
-                            <span className="hidden sm:inline">Add Paper</span>
-                            <span className="sm:hidden">Paper</span>
-                          </Button>
-                                {(
-                                  // Allow adding sources when: user is expert/researcher (isExpert) OR user is the claim owner
-                                  // AND the underlying DB status is exactly 'proposed'. We expose rawStatus on the mapped claim.
-                                  user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed'))
-                                ) && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setShowSourceForm(claim.id)}
-                                    className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
-                                  >
-                                    <Link className="hidden sm:inline w-4 h-4" />
-                                    <Plus className="sm:hidden w-4 h-4" />
-                                    <span className="hidden sm:inline">Add Source</span>
-                                    <span className="sm:hidden">Source</span>
-                                  </Button>
-                                )}
-                        </div>
-                        <div className="text-xs text-muted-foreground ml-auto">
-                          {new Date(claim.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-
-                {/* ReelsCarousel for expert reviews - moved to dialog. Do not render inline when card is expanded. */}
-                {/* The full review reel is available via the 'See Full Review' button which opens the dialog. */}
-              </Card>
+              <ClaimCard
+                key={claim.id}
+                claim={claim}
+                userVotes={userVotes}
+                expertProfiles={expertProfiles}
+                isExpert={isExpert}
+                user={user}
+                onVote={handleVote}
+                onStanceClick={handleStanceClick}
+                onTitleUpdate={updateClaimTitle}
+                onShowReel={setShowReelClaim}
+                onShowPaperForm={setShowPaperForm}
+                onShowSourceForm={setShowSourceForm}
+                onShowEvidenceInfo={setShowEvidenceInfo}
+                expandedStance={expandedStance}
+                editingClaimId={editingClaimId}
+                setEditingClaimId={setEditingClaimId}
+                updatingTitle={updatingTitle}
+                setReviewPublication={setReviewPublication}
+                showShareButton={false}
+              />
             ))}
 
             {/* Pagination Controls */}
