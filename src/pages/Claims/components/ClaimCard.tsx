@@ -125,15 +125,7 @@ export const ClaimCard = ({
         {/* First row: Category/Status badges and vote button */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap gap-2">
-            <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
-              {claim.broad_category}
-            </Badge>
-            {claim.evidence_status && (
-              <div className="flex items-center gap-1">
-                <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                  {claim.evidence_status}
-                </Badge>
-                <button
+            <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onShowEvidenceInfo(claim.id);
@@ -143,9 +135,20 @@ export const ClaimCard = ({
                 >
                   <Info className="w-4 h-4" />
                 </button>
+
+            {claim.evidence_status && (
+              <div className="flex items-center gap-1">
+
+                <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
+                  {claim.evidence_status}
+                </Badge>
+
               </div>
             )}
             {/* Topic Labels */}
+            <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
+              {claim.broad_category}
+            </Badge>
             {claim.labels && claim.labels.length > 0 && claim.labels.map((label) => (
               <Badge
                 key={label}
