@@ -13,6 +13,7 @@ Evidence Decoded is a React-based web application built with:
 - **Forms**: React Hook Form + Zod validation
 
 
+Try to find the npm command inside $HOME/.local/bin/npm
 
 ## Code Style and Conventions
 

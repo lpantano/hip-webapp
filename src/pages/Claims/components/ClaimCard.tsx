@@ -23,7 +23,8 @@ import ClaimLabelsStack from './ClaimLabelsStack';
 import ClaimPublicationsExpanded from './ClaimPublicationsExpanded';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import { getEvidenceStatusColor, getStanceIcon } from '../utils/helpers';
-import { getLabelDisplay } from '@/constants/labels';
+import { getLabelDisplay, getLabelColor } from '@/constants/labels';
+import { cn } from '@/lib/utils';
 import type { ClaimUI, PublicationScoreRow } from '../types';
 
 interface ExpertProfile {
@@ -153,7 +154,7 @@ export const ClaimCard = ({
               <Badge
                 key={label}
                 variant="outline"
-                className="bg-muted/50 text-xs"
+                className={cn("text-xs", getLabelColor(label).unselected)}
               >
                 {getLabelDisplay(label)}
               </Badge>

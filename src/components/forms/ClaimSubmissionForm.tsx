@@ -8,15 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BROAD_CATEGORIES, getBroadCategory } from '@/constants/broadCategories';
-import { CLAIM_LABELS } from '@/constants/labels';
+import { CLAIM_LABEL_GROUPS } from '@/constants/labels';
 import { usePublicationFetch } from '@/hooks/usePublicationFetch';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
@@ -343,7 +344,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
             <FormField
               control={form.control}
               name="labels"
-              render={() => (
+              render={({ field }) => (
                 <FormItem>
                   <div className="mb-4">
                     <FormLabel className="text-base">Topic Labels (Optional)</FormLabel>
@@ -351,39 +352,41 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                       Select labels that describe what this claim is about
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto p-4 bg-muted/20 rounded-lg border">
-                    {CLAIM_LABELS.map((item) => (
-                      <FormField
-                        key={item.value}
-                        control={form.control}
-                        name="labels"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={item.value}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(item.value)}
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([...(field.value || []), item.value])
-                                      : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== item.value
-                                          )
-                                        )
+                  <div className="space-y-3">
+                    {CLAIM_LABEL_GROUPS.map((group) => (
+                      <Collapsible key={group.id} defaultOpen={false}>
+                        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <span className="font-medium text-sm">{group.name}</span>
+                          <ChevronDown className="h-4 w-4 transition-transform duration-200 [.data-[state=open]>&]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-3">
+                          <div className="flex flex-wrap gap-2 px-2">
+                            {group.labels.map((label) => {
+                              const isSelected = field.value?.includes(label.value);
+                              return (
+                                <Badge
+                                  key={label.value}
+                                  variant="outline"
+                                  className={cn(
+                                    "cursor-pointer transition-all hover:scale-105",
+                                    isSelected ? group.color.selected : group.color.unselected
+                                  )}
+                                  onClick={() => {
+                                    const currentValues = field.value || [];
+                                    if (isSelected) {
+                                      field.onChange(currentValues.filter((v) => v !== label.value));
+                                    } else {
+                                      field.onChange([...currentValues, label.value]);
+                                    }
                                   }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal cursor-pointer">
-                                {item.label}
-                              </FormLabel>
-                            </FormItem>
-                          )
-                        }}
-                      />
+                                >
+                                  {label.label}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     ))}
                   </div>
                   <FormMessage />
