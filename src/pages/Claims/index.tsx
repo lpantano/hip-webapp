@@ -523,7 +523,7 @@ const Claims = () => {
                         <span className="sm:hidden">{user ? 'New' : 'Sign In'}</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
                       <DialogTitle>Submit a new claim</DialogTitle>
                       <ClaimSubmissionForm
                         onSuccess={() => {
@@ -762,7 +762,7 @@ const Claims = () => {
           {/* Paper Submission Dialog */}
           {user && showPaperForm && (
             <Dialog open={!!showPaperForm} onOpenChange={() => setShowPaperForm(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
                 {(() => {
                   const claim = filteredAndSortedClaims.find(c => c.id === showPaperForm);
                   return claim ? (
@@ -841,7 +841,7 @@ const Claims = () => {
           {/* Evidence Info Dialog */}
           {user && showEvidenceInfo && (
             <Dialog open={!!showEvidenceInfo} onOpenChange={() => setShowEvidenceInfo(null)}>
-              <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[600px] sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
                 <DialogTitle>Understanding Evidence</DialogTitle>
                 <div className="space-y-4 text-sm">
                   <div>
