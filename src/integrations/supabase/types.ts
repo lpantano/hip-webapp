@@ -107,6 +107,13 @@ export type Database = {
             referencedRelation: "claims"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "claim_reactions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "recent_claims_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       claim_votes: {
@@ -134,6 +141,13 @@ export type Database = {
             columns: ["claim_id"]
             isOneToOne: false
             referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_votes_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "recent_claims_public"
             referencedColumns: ["id"]
           },
         ]
@@ -475,6 +489,13 @@ export type Database = {
             referencedRelation: "claims"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "publications_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "recent_claims_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       resource_reviews: {
@@ -570,6 +591,13 @@ export type Database = {
             foreignKeyName: "social_media_links_expert_id_fkey"
             columns: ["expert_id"]
             isOneToOne: false
+            referencedRelation: "expert_profiles_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "social_media_links_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
             referencedRelation: "expert_stats"
             referencedColumns: ["user_id"]
           },
@@ -637,6 +665,13 @@ export type Database = {
             referencedRelation: "claims"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sources_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "recent_claims_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_contributions: {
@@ -695,6 +730,23 @@ export type Database = {
       }
     }
     Views: {
+      expert_profiles_public: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          display_name: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experts_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       expert_stats: {
         Row: {
           avatar_url: string | null
@@ -776,6 +828,69 @@ export type Database = {
           total_votes: number | null
           updated_at: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      publication_scores_public: {
+        Row: {
+          comments: string | null
+          created_at: string | null
+          expert_user_id: string | null
+          id: string | null
+          publication_id: string | null
+          review_data: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string | null
+          expert_user_id?: string | null
+          id?: string | null
+          publication_id?: string | null
+          review_data?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string | null
+          expert_user_id?: string | null
+          id?: string | null
+          publication_id?: string | null
+          review_data?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publication_scores_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recent_claims_public: {
+        Row: {
+          broad_category:
+            | Database["public"]["Enums"]["broad_category_type"]
+            | null
+          category: Database["public"]["Enums"]["claim_category"] | null
+          comment_count: number | null
+          comments: Json | null
+          created_at: string | null
+          description: string | null
+          evidence_status:
+            | Database["public"]["Enums"]["evidence_status_type"]
+            | null
+          id: string | null
+          labels: string[] | null
+          links: Json | null
+          publication_count: number | null
+          publications: Json | null
+          status: Database["public"]["Enums"]["claim_status"] | null
+          title: string | null
+          user_id: string | null
+          vote_count: number | null
         }
         Relationships: []
       }

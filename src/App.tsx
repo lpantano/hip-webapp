@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import DevRoleSelector from "./components/dev/DevRoleSelector";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
