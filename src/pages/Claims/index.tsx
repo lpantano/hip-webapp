@@ -56,11 +56,15 @@ const Claims = () => {
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
 
-  // Read search parameter from URL on mount
+  // Read search and label parameters from URL on mount
   useEffect(() => {
     const searchParam = searchParams.get('search');
     if (searchParam) {
       setSearchQuery(searchParam);
+    }
+    const labelParam = searchParams.get('label');
+    if (labelParam) {
+      setFilterByLabel(labelParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
