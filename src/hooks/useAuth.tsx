@@ -4,10 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
-// Define your custom error message part from the PostgreSQL trigger
-const CUSTOM_WHITELIST_ERROR_KEY = 'Signup not allowed';
-const CUSTOM_TOAST_MESSAGE = 'Access is by invitation while the platform is in development. Subscribe to our mailing list to get updates and an invitation.';
-
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -42,55 +38,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     // Handles server-side errors returned via URL redirect (OAuth or password login)
     const handleAuthErrorRedirect = () => {
       try {
-        // Raw full href (includes query and fragment). Useful because some providers encode errors in different places.
-        const href = window.location.href || '';
-        const hrefDecoded = decodeURIComponent(href || '').toLowerCase();
-
-        // Also inspect raw search and hash strings and params separately
+        // Check for generic error parameters in URL (common OAuth error pattern)
         const rawSearch = window.location.search || '';
         const rawHash = window.location.hash || '';
         const urlParams = new URLSearchParams(rawSearch);
         const fragmentParams = new URLSearchParams(rawHash.replace(/^#/, ''));
 
-        // Build a list of strings to inspect
-        const allEntries: Array<string> = [hrefDecoded, rawSearch.toLowerCase(), rawHash.toLowerCase()];
-        for (const [k, v] of urlParams.entries()) {
-          allEntries.push(k.toLowerCase());
-          if (v) allEntries.push(decodeURIComponent(v).toLowerCase());
-          allEntries.push(v.toLowerCase());
-        }
-        for (const [k, v] of fragmentParams.entries()) {
-          allEntries.push(k.toLowerCase());
-          if (v) allEntries.push(decodeURIComponent(v).toLowerCase());
-          allEntries.push(v.toLowerCase());
-        }
+        // Check for standard error parameters
+        const errorParam = urlParams.get('error') || fragmentParams.get('error');
+        const errorDescription = urlParams.get('error_description') || fragmentParams.get('error_description');
 
-        const needle = CUSTOM_WHITELIST_ERROR_KEY.toLowerCase();
-
-        // Also check more relaxed variants to be robust
-        const relaxedNeedles = [needle, 'not allowed', 'whitelist', 'signup not allowed', 'signup_not_allowed'];
-
-        const found = allEntries.some((s) => {
-          if (!s) return false;
-          return relaxedNeedles.some((n) => s.includes(n));
-        });
-
-        // Debug logs to help you inspect in the browser console
-        // console.info('[Auth] URL inspection for whitelist error', { href, rawSearch, rawHash, found });
-
-        if (found) {
-          // Display the user-friendly message using toast
-            toast.error('Working to open the platform to everybody.', {
-              description: CUSTOM_TOAST_MESSAGE,
-            });
+        if (errorParam || errorDescription) {
+          // Display generic error message
+          toast.error('Authentication Error', {
+            description: errorDescription || errorParam || 'An error occurred during authentication.',
+          });
 
           // Clean up the URL to prevent the toast on subsequent refreshes
           try {
-            const cleanUrl = window.location.pathname + window.location.search.replace(/([#].*)$/, '');
+            const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
           } catch (e) {
             // ignore
@@ -178,13 +147,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     if (error) {
-      // Check for custom whitelist error
-      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
-        ? CUSTOM_TOAST_MESSAGE
-        : error.message;
-
       toast.error('Sign In Error', {
-        description,
+        description: error.message,
       });
     }
 
@@ -203,13 +167,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     if (error) {
-      // 💡 NEW: Check for the custom whitelist error in the direct API response
-      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
-        ? CUSTOM_TOAST_MESSAGE
-        : error.message;
-
       toast.error('Sign Up Error', {
-        description: description,
+        description: error.message,
       });
     } else {
       toast.success('Check your email', {
@@ -250,13 +209,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     if (error) {
-      // Check for custom whitelist error
-      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
-        ? CUSTOM_TOAST_MESSAGE
-        : error.message;
-
       toast.error('Magic Link Error', {
-        description,
+        description: error.message,
       });
     } else {
       toast.success('Check your email', {
@@ -303,13 +257,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     if (error) {
-      // Check for custom whitelist error
-      const description = error.message.includes(CUSTOM_WHITELIST_ERROR_KEY)
-        ? CUSTOM_TOAST_MESSAGE
-        : error.message;
-
       toast.error('Password Reset Error', {
-        description,
+        description: error.message,
       });
     } else {
       toast.success('Reset link sent', {

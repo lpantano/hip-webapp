@@ -6,9 +6,11 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { SEO } from '@/components/SEO';
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Filter, Lock, LogIn, X, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Filter, X, Search } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import PublicClaimsPreview from '@/components/landing/PublicClaimsPreview';
 import { supabase } from '@/integrations/supabase/client';
 import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
@@ -455,6 +457,12 @@ const Claims = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
+      <SEO
+        title="Health Claims"
+        description="Community-driven claims about products and services for women's health conditions. Expert-reviewed scientific evidence and research."
+        url="/claims"
+        keywords="health claims, women's health, scientific evidence, expert reviews, health research, medical claims"
+      />
       <Header />
 
       <main className="pt-24 pb-16">
@@ -508,6 +516,11 @@ const Claims = () => {
 
             {/* Claims Tab */}
             <TabsContent value="claims" className="space-y-6">
+              {/* Show PublicClaimsPreview for anonymous users */}
+              {!user ? (
+                <PublicClaimsPreview />
+              ) : (
+                <>
               {/* Claims Controls */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
                 {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -625,32 +638,7 @@ const Claims = () => {
                 </div>
               )}
 
-              {!user && !loading && (
-                <div className="text-center py-16">
-                  <div className="max-w-md mx-auto">
-                    <div className="bg-card/60 backdrop-blur-sm rounded-lg p-8 border border-border shadow-lg">
-                      <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Login Required</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Please sign in to view community-reviewed health claims and expert insights.
-                      </p>
-                      <div className="space-y-3">
-                        <Button asChild className="w-full">
-                          <a href="/auth" className="flex items-center gap-2">
-                            <LogIn className="w-4 h-4" />
-                            Sign In
-                          </a>
-                        </Button>
-                        <p className="text-xs text-muted-foreground">
-                          Join our community of health enthusiasts and experts
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {user && filteredAndSortedClaims.length === 0 && !loading && (
+              {filteredAndSortedClaims.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>
                     {debouncedSearchQuery.trim()
@@ -659,7 +647,7 @@ const Claims = () => {
                   </p>
                 </div>
               )}
-              {user && filteredAndSortedClaims.map((claim) => (
+              {filteredAndSortedClaims.map((claim) => (
               <ClaimCard
                 key={claim.id}
                 claim={claim}
@@ -684,7 +672,7 @@ const Claims = () => {
             ))}
 
             {/* Pagination Controls */}
-            {user && totalClaims > 0 && (
+            {totalClaims > 0 && (
               <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
                 <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                   Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
@@ -752,6 +740,10 @@ const Claims = () => {
                 </div>
               </div>
             )}
+
+            {/* Anonymous User CTA - Removed since anonymous users now see PublicClaimsPreview */}
+              </>
+              )}
             </TabsContent>
 
             {/* <TabsContent value="trusted-resources" className="space-y-6">
