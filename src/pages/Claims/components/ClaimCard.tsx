@@ -181,11 +181,12 @@ export const ClaimCard = ({
             <button
               onClick={() => onVote(claim.id)}
               disabled={!user}
+              title={!user ? "Sign in to vote" : undefined}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all touch-manipulation ${
                 userVotes.has(claim.id)
                   ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105'
                   : 'border-border hover:border-primary hover:bg-primary/5'
-              }`}
+              } ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <ThumbsUp className={`w-4 h-4 transition-all ${
                 userVotes.has(claim.id) ? 'fill-current' : ''
@@ -369,7 +370,7 @@ export const ClaimCard = ({
 
       {/* Bottom section with action buttons */}
       <CardContent className="pt-2">
-        {user && (
+        {user ? (
           <div className="border-t border-border pt-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -394,7 +395,7 @@ export const ClaimCard = ({
                   <span className="hidden sm:inline">Add Paper</span>
                   <span className="sm:hidden">Paper</span>
                 </Button>
-                {user && (isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
+                {isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed') ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -406,9 +407,20 @@ export const ClaimCard = ({
                     <span className="hidden sm:inline">Add Source</span>
                     <span className="sm:hidden">Source</span>
                   </Button>
-                )}
+                ) : null}
               </div>
               <div className="text-xs text-muted-foreground ml-auto">
+                {new Date(claim.created_at).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="border-t border-border pt-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground text-center sm:text-left">
+                Sign in to interact with this claim
+              </p>
+              <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
               </div>
             </div>

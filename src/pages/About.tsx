@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Header from '@/components/layout/Header';
+import { SEO } from '@/components/SEO';
 import { Users, Eye, Building2 } from 'lucide-react';
 
 interface Founder {
@@ -49,6 +50,12 @@ const About = () => {
 
   return (
     <div className="min-h-screen ">
+      <SEO
+        title="About Us"
+        description="Learn about The Health Integrity Project team, our mission to provide science-backed evaluation of women's health products and services."
+        url="/about"
+        keywords="about, team, mission, women's health experts, health science"
+      />
       <Header />
 
       {/* Hero Section */}

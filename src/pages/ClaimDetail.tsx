@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { ArrowLeft, ExternalLink, X, Share2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, X, Share2, LogIn } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import { SEO } from '@/components/SEO';
 import { ClaimCard } from '@/pages/Claims/components/ClaimCard';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
@@ -116,12 +117,8 @@ const ClaimDetail = () => {
     fetchUserVote();
   }, [user, claim, setUserVotes]);
 
-  // Redirect unauthenticated users
-  useEffect(() => {
-    if (!user && !loading) {
-      navigate('/claims');
-    }
-  }, [user, loading, navigate]);
+  // Allow anonymous users to view claim details
+  // No redirect needed - they can view but not interact
 
   // Handle vote
   const handleVote = async (claimId: string) => {
@@ -263,6 +260,14 @@ const ClaimDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
+      <SEO
+        title={claim.claim}
+        description={`Expert-reviewed evidence for: ${claim.claim.substring(0, 150)}${claim.claim.length > 150 ? '...' : ''}`}
+        url={`/claims/${claim.id}`}
+        type="article"
+        keywords={`${claim.category}, ${claim.broad_category}, women's health, health claims, scientific evidence`}
+        publishedTime={claim.created_at}
+      />
       <Header />
 
       <main className="pt-24 pb-16">
@@ -315,6 +320,23 @@ const ClaimDetail = () => {
               onShare={handleShare}
             />
           </div>
+
+          {/* Anonymous User CTA */}
+          {!user && (
+            <div className="max-w-4xl mx-auto mt-8">
+              <div className="bg-card/60 backdrop-blur-sm rounded-lg p-6 border border-border text-center">
+                <p className="text-muted-foreground mb-4">
+                  Sign in to vote, comment, and contribute to this claim.
+                </p>
+                <Button asChild>
+                  <Link to="/auth" className="flex items-center gap-2 mx-auto">
+                    <LogIn className="w-4 h-4" />
+                    Sign In to Participate
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

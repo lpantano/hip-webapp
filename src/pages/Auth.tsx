@@ -109,11 +109,7 @@ const Auth = () => {
           <Link to="/" className="text-2xl font-bold text-primary hover:text-primary/80">
             Health Integrity Project
           </Link>
-            <p className="text-lg text-muted-foreground">
-              We’re building something great — the platform is under active development and open by invitation only.
-              <br />
-              <Link to="/#mailing-list" className="underline ml-1">Join our mailing list</Link> to get updates and an invitation when spots open.
-            </p>
+            
         </div>
 
         <Card className="border-border/50 shadow-lg">
