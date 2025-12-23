@@ -133,6 +133,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
+    // Use window.location.origin to preserve the current domain (devel vs production)
     const redirectUrl = `${window.location.origin}/claims`;
 
     const { error } = await supabase.auth.signUp({
@@ -159,6 +160,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signInWithGoogle = async () => {
     // Note: error object here is only returned if the initial redirect fails
     // The server-side error is handled in useEffect via URL parsing.
+    // Use window.location.origin to preserve the current domain (devel vs production)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -176,6 +178,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signInWithMagicLink = async (email: string) => {
+    // Use window.location.origin to preserve the current domain (devel vs production)
     const redirectUrl = `${window.location.origin}/claims`;
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -227,6 +230,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const resetPassword = async (email: string) => {
     // Use resetPasswordForEmail which sends a password reset link
     // The link will redirect to /reset-password page with token_hash in the URL
+    // Use window.location.origin to preserve the current domain (devel vs production)
     const redirectUrl = `${window.location.origin}/reset-password`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
