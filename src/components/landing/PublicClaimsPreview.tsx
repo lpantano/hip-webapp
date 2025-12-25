@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { ClaimCard } from '@/pages/Claims/components/ClaimCard';
 import { usePublicClaims } from '@/hooks/usePublicClaims';
 import { useAuth } from '@/hooks/useAuth';
@@ -119,17 +119,11 @@ const PublicClaimsPreview = () => {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button asChild size="lg" variant="default">
-            <Link to="/claims" className="flex items-center gap-2">
-              View All Claims
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </Button>
           {!user && (
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="default">
               <Link to="/auth" className="flex items-center gap-2">
                 <LogIn className="w-4 h-4" />
-                Sign In to Participate
+                Sign In to Browse All Health Claims
               </Link>
             </Button>
           )}
