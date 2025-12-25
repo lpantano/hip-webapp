@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail, Link as LinkIcon } from 'lucide-react';
+import { Mail, Link as LinkIcon, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Auth = () => {
@@ -395,6 +395,16 @@ const Auth = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        <div className="text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Continue without signing in
+          </Link>
+        </div>
       </div>
     </div>
   );
