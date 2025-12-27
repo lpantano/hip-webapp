@@ -8,6 +8,7 @@ interface ClaimRow {
   product?: string | null;
   category: Database['public']['Enums']['claim_category'];
   broad_category: Database['public']['Enums']['broad_category_type'];
+  labels: string[];
   condition?: string | null;
   stage?: string | null;
   vote_count: number;
@@ -83,6 +84,7 @@ interface ClaimUI {
   // show the raw DB category value (e.g. 'nutrition', 'fitness', 'menopause', etc.)
   category: Database['public']['Enums']['claim_category'];
   broad_category: Database['public']['Enums']['broad_category_type'];
+  labels?: string[];
   votes: number;
   created_at: string;
   publications: {

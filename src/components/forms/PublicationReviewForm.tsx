@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,6 +85,18 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     delay: 350,
     block: 'center'
   });
+
+  // Fix for Radix Dialog scroll lock not being properly cleaned up
+  // This ensures body scroll is restored when dialog closes
+  const handleClose = useCallback(() => {
+    onClose();
+    // Force reset body scroll lock after dialog animation completes
+    setTimeout(() => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      document.body.removeAttribute('data-scroll-locked');
+    }, 300);
+  }, [onClose]);
 
   // Fetch existing review for this publication by this expert
   const { data: existingReview } = useQuery({
@@ -327,11 +339,18 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
         // Don't fail the entire submission if status update fails
       }
 
-      queryClient.invalidateQueries({ queryKey: ['publication-review'] });
-      queryClient.invalidateQueries({ queryKey: ['publication-reviews'] });
-      queryClient.invalidateQueries({ queryKey: ['claims'] });
-      onReviewSubmitted?.();
-      onClose();
+      // Invalidate this form's own React Query cache immediately
+      queryClient.invalidateQueries({ queryKey: ['publication-review', publication.id, user.id] });
+
+      // Close the dialog using handleClose to ensure body scroll lock is reset
+      handleClose();
+
+      // Trigger parent refetch after dialog animation completes and scroll lock is reset
+      if (onReviewSubmitted) {
+        setTimeout(() => {
+          onReviewSubmitted();
+        }, 400);
+      }
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
@@ -534,7 +553,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl w-full h-[100dvh] sm:w-[90vw] sm:h-auto max-h-[100dvh] sm:max-h-[95vh] !top-0 !left-0 !right-0 sm:!top-[50%] sm:!left-[50%] sm:!right-auto !translate-x-0 !translate-y-0 sm:!translate-x-[-50%] sm:!translate-y-[-50%] !rounded-none sm:!rounded-lg overflow-hidden flex flex-col p-3 sm:p-6 border-0 sm:border !m-0 !fixed">
         <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -1287,7 +1306,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
         {/* Action Buttons - Fixed Footer */}
         <div className="flex gap-2 pt-3 sm:pt-4 border-t bg-background flex-shrink-0">
-          <Button variant="outline" onClick={onClose} className="px-3 sm:px-4 text-xs sm:text-sm flex-1 sm:flex-initial">
+          <Button variant="outline" onClick={handleClose} className="px-3 sm:px-4 text-xs sm:text-sm flex-1 sm:flex-initial">
             Cancel
           </Button>
           <Button

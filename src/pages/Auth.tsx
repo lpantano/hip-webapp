@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail, Link as LinkIcon } from 'lucide-react';
+import { Mail, Link as LinkIcon, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Auth = () => {
@@ -109,11 +109,7 @@ const Auth = () => {
           <Link to="/" className="text-2xl font-bold text-primary hover:text-primary/80">
             Health Integrity Project
           </Link>
-            <p className="text-lg text-muted-foreground">
-              We’re building something great — the platform is under active development and open by invitation only.
-              <br />
-              <Link to="/#mailing-list" className="underline ml-1">Join our mailing list</Link> to get updates and an invitation when spots open.
-            </p>
+            
         </div>
 
         <Card className="border-border/50 shadow-lg">
@@ -399,6 +395,16 @@ const Auth = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        <div className="text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Continue without signing in
+          </Link>
+        </div>
       </div>
     </div>
   );

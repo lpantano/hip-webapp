@@ -8,19 +8,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BROAD_CATEGORIES, getBroadCategory } from '@/constants/broadCategories';
+import { CLAIM_LABEL_GROUPS } from '@/constants/labels';
 import { usePublicationFetch } from '@/hooks/usePublicationFetch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
   description: z.string().optional(),
   category: z.enum(['nutrition', 'fitness', 'mental_health', 'pregnancy', 'menopause', 'general_health', 'perimenopause']),
   broad_category: z.enum(['Health', 'Wellness', 'Mind']).optional(),
+  labels: z.array(z.string()).optional(),
   sources: z.array(z.object({
     source_url: z.string().url('Please enter a valid URL'),
     source_type: z.string().optional(),
@@ -68,6 +72,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       description: '',
       category: 'general_health',
       broad_category: 'Health',
+      labels: [],
       sources: [],
       publications: [],
     },
@@ -158,6 +163,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
           description: data.description,
           category: data.category,
           broad_category: data.broad_category || getBroadCategory(data.category),
+          labels: data.labels || [],
         })
         .select()
         .single();
@@ -264,7 +270,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
   return (
     <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
             <FormField
               control={form.control}
               name="title"
@@ -334,6 +340,59 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                 Add Source
               </Button>
             </div>
+
+            <FormField
+              control={form.control}
+              name="labels"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className="text-base">Topic Labels (Optional)</FormLabel>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Select labels that describe what this claim is about
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {CLAIM_LABEL_GROUPS.map((group) => (
+                      <Collapsible key={group.id} defaultOpen={false}>
+                        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <span className="font-medium text-sm">{group.name}</span>
+                          <ChevronDown className="h-4 w-4 transition-transform duration-200 [.data-[state=open]>&]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-3">
+                          <div className="flex flex-wrap gap-2 px-2">
+                            {group.labels.map((label) => {
+                              const isSelected = field.value?.includes(label.value);
+                              return (
+                                <Badge
+                                  key={label.value}
+                                  variant="outline"
+                                  className={cn(
+                                    "cursor-pointer transition-all hover:scale-105",
+                                    isSelected ? group.color.selected : group.color.unselected
+                                  )}
+                                  onClick={() => {
+                                    const currentValues = field.value || [];
+                                    if (isSelected) {
+                                      field.onChange(currentValues.filter((v) => v !== label.value));
+                                    } else {
+                                      field.onChange([...currentValues, label.value]);
+                                    }
+                                  }}
+                                >
+                                  {label.label}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="space-y-4">
 

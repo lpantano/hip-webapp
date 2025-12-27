@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CATEGORY_DESCRIPTIONS, getStudyTagDescription, getCategoryBackgroundColor, getCategoryBorderColor, getStudyTagColor, getStudyTagBorderColor } from '@/lib/classification-categories';
 import Header from '../components/layout/Header';
+import { SEO } from '@/components/SEO';
 
 const ResearchWorkflow = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -257,6 +258,12 @@ const ResearchWorkflow = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
+      <SEO
+        title="Research Workflow"
+        description="Learn how we review and classify scientific research for women's health claims. Understand our expert review process and evidence evaluation methodology."
+        url="/workflow"
+        keywords="research workflow, evidence review, scientific methodology, expert review process, health research evaluation"
+      />
       <Header />
 
     <main className="pt-24 pb-16">
