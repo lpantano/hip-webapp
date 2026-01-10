@@ -1126,7 +1126,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[280px] sm:w-60 p-0" align="start">
+                          {/* Keep content inside the dialog tree so RemoveScroll doesn't swallow wheel events. */}
+                          <PopoverContent disablePortal className="w-[280px] sm:w-60 p-0" align="start">
                             <Command shouldFilter={true}>
                               <CommandInput placeholder="Search ethnicities..." className="h-9 text-base sm:text-xs" />
                               <CommandList className="max-h-[200px] overflow-y-scroll">
@@ -1206,7 +1207,8 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[200px] p-0" align="start">
+                          {/* Same approach as ethnicity list to preserve mouse/touch scrolling. */}
+                          <PopoverContent disablePortal className="w-[200px] p-0" align="start">
                             <Command shouldFilter={true}>
                               <CommandInput placeholder="Search ranges..." className="h-9 text-base sm:text-xs" />
                               <CommandList className="max-h-[240px] overflow-y-scroll">
