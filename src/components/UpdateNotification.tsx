@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, X } from 'lucide-react';
+
+const DISMISSED_UPDATE_KEY = 'sw-update-dismissed';
 
 interface UpdateNotificationProps {
   onUpdate: () => void;
@@ -74,9 +76,50 @@ interface UpdateNotificationManagerProps {
   serviceWorkerRegistration?: ServiceWorkerRegistration;
 }
 
+function getWorkerIdentifier(worker: ServiceWorker): string {
+  return worker.scriptURL;
+}
+
+function isDismissedVersion(worker: ServiceWorker): boolean {
+  const dismissed = localStorage.getItem(DISMISSED_UPDATE_KEY);
+  if (!dismissed) return false;
+
+  try {
+    const { scriptURL, timestamp } = JSON.parse(dismissed);
+    // Consider dismissal valid for 24 hours (user might want to see it again eventually)
+    const isExpired = Date.now() - timestamp > 24 * 60 * 60 * 1000;
+    if (isExpired) {
+      localStorage.removeItem(DISMISSED_UPDATE_KEY);
+      return false;
+    }
+    return scriptURL === getWorkerIdentifier(worker);
+  } catch {
+    localStorage.removeItem(DISMISSED_UPDATE_KEY);
+    return false;
+  }
+}
+
+function saveDismissedVersion(worker: ServiceWorker): void {
+  localStorage.setItem(DISMISSED_UPDATE_KEY, JSON.stringify({
+    scriptURL: getWorkerIdentifier(worker),
+    timestamp: Date.now()
+  }));
+}
+
+function clearDismissedVersion(): void {
+  localStorage.removeItem(DISMISSED_UPDATE_KEY);
+}
+
 export function UpdateNotificationManager({ serviceWorkerRegistration }: UpdateNotificationManagerProps) {
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+
+  const showNotificationIfNeeded = useCallback((worker: ServiceWorker) => {
+    if (!isDismissedVersion(worker)) {
+      setWaitingWorker(worker);
+      setShowUpdateNotification(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!serviceWorkerRegistration) return;
@@ -87,9 +130,9 @@ export function UpdateNotificationManager({ serviceWorkerRegistration }: UpdateN
 
       const handleStateChange = () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          // New service worker is available
-          setWaitingWorker(newWorker);
-          setShowUpdateNotification(true);
+          // New service worker is available - clear any previous dismissal for fresh updates
+          clearDismissedVersion();
+          showNotificationIfNeeded(newWorker);
         }
       };
 
@@ -100,17 +143,19 @@ export function UpdateNotificationManager({ serviceWorkerRegistration }: UpdateN
 
     // Check if there's already a waiting worker
     if (serviceWorkerRegistration.waiting) {
-      setWaitingWorker(serviceWorkerRegistration.waiting);
-      setShowUpdateNotification(true);
+      showNotificationIfNeeded(serviceWorkerRegistration.waiting);
     }
 
     return () => {
       serviceWorkerRegistration.removeEventListener('updatefound', handleUpdateFound);
     };
-  }, [serviceWorkerRegistration]);
+  }, [serviceWorkerRegistration, showNotificationIfNeeded]);
 
   const handleUpdate = () => {
     if (waitingWorker) {
+      // Clear dismissed version since user is updating
+      clearDismissedVersion();
+
       // Tell the new service worker to skip waiting
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
 
@@ -123,6 +168,9 @@ export function UpdateNotificationManager({ serviceWorkerRegistration }: UpdateN
   };
 
   const handleDismiss = () => {
+    if (waitingWorker) {
+      saveDismissedVersion(waitingWorker);
+    }
     setShowUpdateNotification(false);
   };
 
