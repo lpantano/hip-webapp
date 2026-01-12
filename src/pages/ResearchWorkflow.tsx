@@ -1056,6 +1056,191 @@ const ResearchWorkflow = () => {
             </ul>
           </div>
         </div>
+
+        {/* Expert Review Process - Detailed Guidelines */}
+        <div className="mt-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl shadow-md p-6 border border-blue-100">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">
+            Full Review Process
+          </h3>
+          <p className="text-gray-700 mb-6">
+            Each health and wellness claim submitted to Evidence Decoded is reviewed by one or more experts using this standardized workflow to ensure rigorous, transparent evaluation.
+          </p>
+
+          {/* Step 1: Validation */}
+          <div className="mb-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold">1</span>
+              Validation
+            </h4>
+            <p className="text-gray-700 mb-3">
+              <strong>Objective:</strong> Identify fundamental issues that may invalidate or limit the credibility of the research before deeper review.
+            </p>
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-3">
+              <p className="text-sm text-amber-900">
+                <strong>⚠️ Note:</strong> If any validation issue is found, the publication is marked as <strong>Invalid</strong> or <strong>Misinformation</strong> and further evaluation is not conducted.
+              </p>
+            </div>
+            <div className="space-y-3 text-sm text-gray-700">
+              <div>
+                <strong className="text-gray-900">Conflict of Interest:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Was the study funded by a company that would benefit from the results?</li>
+                  <li>Do authors receive personal fees or own shares in such companies?</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Review Study:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Is this a review, commentary, or editorial summarizing results across studies?</li>
+                  <li>Not a primary research article—conclusions based on qualitative interpretation</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Meta-analysis:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Evaluation without effect size estimates</li>
+                  <li>Summary statistic-based combined analysis</li>
+                  <li>Reanalysis of combined data</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Overstates Evidence:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Exaggerated or misleading claims (e.g., causal language unsupported by design)</li>
+                  <li>Claims based on results that don't meet statistical significance</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2: Quality Assessment */}
+          <div className="mb-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold">2</span>
+              Quality Assessment
+            </h4>
+            <p className="text-gray-700 mb-3">
+              <strong>Objective:</strong> Evaluate the methodological rigor of the study.
+            </p>
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-3">
+              <p className="text-sm text-amber-900">
+                <strong>⚠️ Note:</strong> If any quality criterion is not met, the publication is classified as <strong>Inconclusive</strong>.
+              </p>
+            </div>
+            <div className="space-y-3 text-sm text-gray-700">
+              <div>
+                <strong className="text-gray-900">Study Design:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Is the study design appropriate for the research question?</li>
+                  <li>Are outcomes clearly defined and consistently measured?</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Control Group:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Are control or comparison groups present and properly selected?</li>
+                  <li>May include wildtype, baseline, placebo, standard of care, or matched cohort</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Bias Addressed:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Were confounding variables identified and tracked?</li>
+                  <li>Important factors like age, sex, comorbidities, and socioeconomic factors considered</li>
+                  <li>Mitigation methods include randomization, blinding, balanced cohorts</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Statistics:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Were statistical tests appropriate for the study design and data type?</li>
+                  <li>Are assumptions stated and checked?</li>
+                  <li>Was multiple test correction applied?</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 3: Human Study Verification */}
+          <div className="mb-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold">3</span>
+              Human Study Verification
+            </h4>
+            <p className="text-gray-700 mb-3">
+              <strong>Objective:</strong> Determine whether findings are directly applicable to human populations.
+            </p>
+            <div className="space-y-2 text-sm text-gray-700">
+              <div><strong className="text-gray-900">Cell Culture:</strong> Studies using cell lines</div>
+              <div><strong className="text-gray-900">Animal Models:</strong> Studies using animal subjects</div>
+              <div><strong className="text-gray-900">Human Studies:</strong> Research conducted in human participants</div>
+            </div>
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-3">
+              <p className="text-sm text-blue-900">
+                Cell culture and animal model studies are categorized as <strong>Not Tested in Humans</strong> and require further human research.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 4: Study Type Classification */}
+          <div className="mb-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold">4</span>
+              Study Type Classification
+            </h4>
+            <p className="text-gray-700 mb-3">
+              <strong>Objective:</strong> Categorize based on specific study design components to guide interpretation of evidence strength.
+            </p>
+            <div className="space-y-3 text-sm text-gray-700">
+              <div>
+                <strong className="text-gray-900">Study Tags:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li><strong>Observational Study:</strong> Researchers observe participants without intervention (cohort, case-control, cross-sectional studies)</li>
+                  <li><strong>Clinical Trial:</strong> Experimental study with active intervention testing effectiveness and safety of treatments</li>
+                  <li><strong>Women Not Included:</strong> Tracks gender representation when women/females were excluded</li>
+                </ul>
+              </div>
+              <div>
+                <strong className="text-gray-900">Population Representation:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  <li>Ethnicity of study participants</li>
+                  <li>Age ranges of participants</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 5: Sample Size Classification */}
+          <div className="mb-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold">5</span>
+              Sample Size Classification
+            </h4>
+            <p className="text-gray-700 mb-3">
+              <strong>Objective:</strong> Assess robustness and generalizability based on participant numbers.
+            </p>
+            <div className="space-y-2 text-sm text-gray-700">
+              <div><strong className="text-gray-900">Less than 100 participants:</strong> Limited Tested in Humans</div>
+              <div><strong className="text-gray-900">100 to 500,000 participants:</strong> Tested in Humans</div>
+              <div><strong className="text-gray-900">More than 500,000 participants:</strong> Widely Tested in Humans</div>
+            </div>
+          </div>
+
+          {/* Expert Comments */}
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">
+              Expert Review Comments
+            </h4>
+            <p className="text-sm text-gray-700 mb-3">
+              After completing all five steps, experts provide a comprehensive summary including:
+            </p>
+            <ul className="list-disc ml-6 text-sm text-gray-700 space-y-1">
+              <li>Study overview: who/what is being tested, design (randomization, blinding, controls), overall conclusion</li>
+              <li>Classification rationale and limitations from each workflow step</li>
+              <li>Suggestions for improvement</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
     </main>
