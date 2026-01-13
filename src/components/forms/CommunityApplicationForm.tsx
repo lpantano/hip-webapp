@@ -380,7 +380,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-accent hover:bg-accent/90"
+                  className="flex-1 bg-accent hover:bg-accent/90 text-black"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>

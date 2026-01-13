@@ -22,7 +22,7 @@ const Team = () => {
     {
       name: "Meeta Mistry",
       role: "Chief Scientific Officer",
-      bio: "PhD in Data Science, specializing in health data analysis and women's health research.",
+      bio: "Seasoned bioinformatician with extensive experience in data analysis, training and science education.",
       avatar_url: "/team/meeta-mistry.jpg"
     },
     {

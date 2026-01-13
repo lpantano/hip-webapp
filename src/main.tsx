@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import App from './App.tsx'
 import './index.css'
 import { UpdateNotificationManager } from '@/components/UpdateNotification'
+import { useState, useEffect } from 'react';
 
 // Request persistent storage for PWA to prevent session loss
 if (navigator.storage && navigator.storage.persist) {
@@ -25,15 +26,15 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
-// Service worker registration and update management
-let swRegistration: ServiceWorkerRegistration | undefined;
+// Custom event for SW registration updates
+const SW_REGISTRATION_EVENT = 'sw-registration-ready';
 
+// Service worker registration and update management
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         logger.log('SW registered: ', registration);
-        swRegistration = registration;
 
         // Check for updates immediately
         registration.update();
@@ -43,8 +44,8 @@ if ('serviceWorker' in navigator) {
           registration.update();
         }, 60 * 60 * 1000);
 
-        // Re-render the app with the registration
-        renderApp();
+        // Dispatch custom event with registration
+        window.dispatchEvent(new CustomEvent(SW_REGISTRATION_EVENT, { detail: registration }));
       })
       .catch((registrationError) => {
         logger.log('SW registration failed: ', registrationError);
@@ -52,8 +53,23 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-function renderApp() {
-  createRoot(document.getElementById("root")!).render(
+function AppWithUpdateNotification() {
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | undefined>(undefined);
+
+  useEffect(() => {
+    const handleRegistration = (event: Event) => {
+      const customEvent = event as CustomEvent<ServiceWorkerRegistration>;
+      setSwRegistration(customEvent.detail);
+    };
+
+    window.addEventListener(SW_REGISTRATION_EVENT, handleRegistration);
+
+    return () => {
+      window.removeEventListener(SW_REGISTRATION_EVENT, handleRegistration);
+    };
+  }, []);
+
+  return (
     <>
       <App />
       <UpdateNotificationManager serviceWorkerRegistration={swRegistration} />
@@ -61,5 +77,5 @@ function renderApp() {
   );
 }
 
-// Initial render
-renderApp();
+// Single render
+createRoot(document.getElementById("root")!).render(<AppWithUpdateNotification />);

@@ -16,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedAge, setAcceptedAge] = useState(false);
   const { signIn, signUp, signInWithGoogle, signInWithMagicLink, user } = useAuth();
   const [showLegalSummary, setShowLegalSummary] = useState(false);
   const [summaryIndex, setSummaryIndex] = useState(0);
@@ -28,23 +29,23 @@ const Auth = () => {
   const summaries = [
     {
       title: 'Platform Purpose',
-      text: 'We provide research-backed insights focused on women\'s health and empowerment — bridging scientific research to practical, evidence-based guidance.'
+      text: 'We bridge science and public understanding of health information, with a focus on women\'s health. Our goal is transparency, clarity, and building trust through evidence-based content.'
     },
     {
-      title: 'Data & Usage',
-      text: 'We collect minimal data (email, usage analytics, preferences) to provide and improve services. Data is encrypted and used for personalization and communication.'
+      title: 'Data & Privacy',
+      text: 'We collect minimal data (email for regular users). We do NOT sell or rent your information. Experts provide additional credentials for verification. You must be 16+ to use our services.'
     },
     {
       title: 'User Responsibilities',
-      text: 'Use the platform respectfully. Research summaries are educational and not a substitute for professional medical or psychological advice.'
+      text: 'Use the platform respectfully. Content is educational only—not a substitute for professional medical advice. Consult healthcare professionals for medical concerns.'
     },
     {
-      title: 'Limits & Updates',
-      text: 'Content is educational only; we are not liable for individual outcomes. Terms and policies may change; continued use means acceptance.'
+      title: 'Data Usage & Third Parties',
+      text: 'We share minimal data with trusted services (Supabase, Google Auth, Netlify, Zoho) only as needed to operate the site. We use only essential cookies for authentication.'
     },
     {
       title: 'Your Rights',
-      text: 'You can access, correct, or delete your data, opt out of non-essential messages, and request your data in a portable format.'
+      text: 'You can access, correct, or delete your data anytime. Request portable data format. Opt out of non-essential communications. Contact us at legal@healthintegrityproject.org'
     }
   ];
 
@@ -131,7 +132,20 @@ const Auth = () => {
 
             <CardContent className="space-y-4">
               {authTab === 'signup' && (
-                <div className="space-y-2 mb-3">
+                <div className="space-y-3 mb-3">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      id="signup-age"
+                      type="checkbox"
+                      checked={acceptedAge}
+                      onChange={(e) => setAcceptedAge(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-muted-foreground text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="signup-age" className="text-sm text-muted-foreground">
+                      I confirm that I am at least 16 years old.
+                    </label>
+                  </div>
+
                   <div className="flex items-start space-x-3">
                     <input
                       id="signup-terms"
@@ -166,14 +180,14 @@ const Auth = () => {
                 variant="outline"
                 className="w-full"
                 onClick={handleGoogleAuth}
-                disabled={isLoading || (authTab === 'signup' && !acceptedTerms)}
+                disabled={isLoading || (authTab === 'signup' && (!acceptedTerms || !acceptedAge))}
               >
                 <Mail className="mr-2 h-4 w-4" />
                 Continue with Google
               </Button>
 
-              {authTab === 'signup' && !acceptedTerms && (
-                <p className="text-xs text-muted-foreground mt-2">Please accept the Terms and Privacy Policy above before creating an account with Google.</p>
+              {authTab === 'signup' && (!acceptedTerms || !acceptedAge) && (
+                <p className="text-xs text-muted-foreground mt-2">Please confirm your age and accept the Terms and Privacy Policy above before creating an account.</p>
               )}
 
               <div className="relative">
@@ -290,7 +304,7 @@ const Auth = () => {
                     <Button
                       type="submit"
                       className="w-full"
-                      disabled={isLoading || !email || !password || !acceptedTerms}
+                      disabled={isLoading || !email || !password || !acceptedTerms || !acceptedAge}
                     >
                       {isLoading ? 'Creating account...' : 'Create Account'}
                     </Button>
