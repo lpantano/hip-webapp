@@ -22,7 +22,6 @@ const Auth = () => {
   const [summaryIndex, setSummaryIndex] = useState(0);
   // Welcome dialog shown the first time the user attempts to sign up
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
-  const [welcomeStep, setWelcomeStep] = useState(1);
   const [welcomeAccepted, setWelcomeAccepted] = useState(false);
   // Track current tab so we can show the welcome dialog when switching to Sign Up
   const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signin');
@@ -119,7 +118,6 @@ const Auth = () => {
             const val = v as 'signin' | 'signup';
             setAuthTab(val);
             if (val === 'signup' && !welcomeAccepted) {
-              setWelcomeStep(1);
               setShowWelcomeDialog(true);
             }
           }} className="w-full">
@@ -349,63 +347,38 @@ const Auth = () => {
             </div>
           </DialogContent>
         </Dialog>
-        {/* Two-step welcome dialog shown before first sign-up */}
+        {/* Welcome dialog shown before first sign-up */}
         <Dialog open={showWelcomeDialog} onOpenChange={(v) => { setShowWelcomeDialog(v); }}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle>Welcome — why we started</DialogTitle>
+              <DialogTitle>Welcome to Health Integrity Project</DialogTitle>
               <DialogDescription>
-                A short introduction to our purpose. Read through and press "Start sign up" when you're ready.
+                Our mission and approach
               </DialogDescription>
             </DialogHeader>
 
             <div className="mt-4 space-y-4">
-              {welcomeStep === 1 ? (
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    We started this project to help people <strong>understand the scientific evidence</strong> behind health information they encounter in the media. Our aim is <strong>clarity and transparency</strong>: to build a <strong>bridge between the public and the scientific process</strong> so people can find information they can <strong>trust</strong>.
-                  </p>
-                  <div className="mt-6 flex justify-end space-x-2">
-                    <Button variant="ghost" onClick={() => setShowWelcomeDialog(false)}>Back</Button>
-                    <Button onClick={() => setWelcomeStep(2)}>Continue</Button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h3 className="text-base font-semibold">Our approach</h3>
-                  <div className="mt-2 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Science is a communal, iterative method</strong> — powerful but complex. When information doesn’t align with our methods, <strong>we don’t aim to shame or blame</strong>. Instead, we <strong>explain, learn, and improve together</strong>.
-                    </p>
+              <p className="text-sm text-muted-foreground">
+                We help people <strong>understand the scientific evidence</strong> behind health information in the media. Our aim is <strong>clarity and transparency</strong>: building a <strong>bridge between the public and science</strong> to find information you can <strong>trust</strong>.
+              </p>
 
-                    <p className="text-sm text-muted-foreground">
-                      We prioritize <strong>clarity, transparency, and a community-first mindset</strong>. We welcome <strong>feedback, corrections, and collaboration</strong> from both community members and experts. Your input helps us be more accurate and more useful.
-                    </p>
+              <p className="text-sm text-muted-foreground">
+                We prioritize a <strong>community-first mindset</strong> without shame or blame. We welcome <strong>feedback and collaboration</strong> from members and experts to be more accurate and useful.
+              </p>
 
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Thank you for joining us</strong> — together we can make <strong>trustworthy</strong> health information easier to understand. If you'd like to reach out, email us at <a href="mailto:hello@healthintegrityproject.org" className="underline text-primary">hello@healthintegrityproject.org</a>.
-                    </p>
-                  </div>
+              <p className="text-sm text-muted-foreground">
+                Questions? Email us at <a href="mailto:hello@healthintegrityproject.org" className="underline text-primary hover:text-primary/80">hello@healthintegrityproject.org</a>
+              </p>
 
-                  <div className="mt-6 flex items-center justify-between">
-                    <div>
-                      <Button variant="ghost" onClick={() => setWelcomeStep(1)}>Back</Button>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" onClick={() => setShowWelcomeDialog(false)}>Close</Button>
-                      <Button onClick={async () => {
-                        // mark as accepted for this session and proceed with signup
-                        setWelcomeAccepted(true);
-                        setShowWelcomeDialog(false);
-                        // Trigger signup using existing form values
-                        await handleEmailAuth(true);
-                      }}>
-                        Start sign up
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="mt-6 flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowWelcomeDialog(false)}>Close</Button>
+                <Button onClick={() => {
+                  setWelcomeAccepted(true);
+                  setShowWelcomeDialog(false);
+                }}>
+                  Continue to sign up
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
