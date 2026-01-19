@@ -22,6 +22,7 @@ import { ClaimCard } from './components/ClaimCard';
 import CategoriesLegend from './components/Legend';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
+import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
@@ -42,6 +43,11 @@ const Claims = () => {
   const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
   const [filterByBroadCategory, setFilterByBroadCategory] = useState<Database['public']['Enums']['broad_category_type'] | 'all'>('all');
   const [filterByLabel, setFilterByLabel] = useState<string>('all');
+  const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>([
+    'Evidence Supports',
+    'Evidence Disproves',
+    'Inconclusive'
+  ]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -156,6 +162,30 @@ const Claims = () => {
       if (debouncedSearchQuery.trim()) {
         claimsQuery = claimsQuery.ilike('title', `%${debouncedSearchQuery.trim()}%`);
       }
+
+      // Apply evidence status filter
+      if (selectedEvidenceStatuses.length > 0 && selectedEvidenceStatuses.length < 4) {
+        const hasAwaitingEvidence = selectedEvidenceStatuses.includes('Awaiting Evidence');
+        const otherStatuses = selectedEvidenceStatuses.filter(s => s !== 'Awaiting Evidence');
+
+        if (hasAwaitingEvidence && otherStatuses.length > 0) {
+          // Combine NULL check + enum values with OR
+          const statusList = otherStatuses.map(s => `"${s}"`).join(',');
+          claimsQuery = claimsQuery.or(
+            `evidence_status.is.null,evidence_status.eq.Awaiting Evidence,evidence_status.in.(${statusList})`
+          );
+        } else if (hasAwaitingEvidence) {
+          // Only awaiting evidence (includes NULL)
+          claimsQuery = claimsQuery.or('evidence_status.is.null,evidence_status.eq.Awaiting Evidence');
+        } else if (otherStatuses.length === 1) {
+          // Single specific status - use equality for efficiency
+          claimsQuery = claimsQuery.eq('evidence_status', otherStatuses[0] as Database['public']['Enums']['evidence_status_type']);
+        } else {
+          // Multiple specific statuses (not awaiting evidence)
+          claimsQuery = claimsQuery.in('evidence_status', otherStatuses as Database['public']['Enums']['evidence_status_type'][]);
+        }
+      }
+      // If all 4 selected or empty, no filter applied (shows all claims)
 
       // Apply sorting with secondary keys for stable pagination
       // Secondary sort keys ensure consistent ordering even when primary values change
@@ -324,7 +354,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, setUserVotes]);
+  }, [sb, user, filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -365,7 +395,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery]);
+  }, [filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -633,6 +663,17 @@ const Claims = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Evidence Status Filter - New horizontal row */}
+              <div className="flex justify-center mb-6">
+                <div className="w-full max-w-3xl px-4">
+                  <EvidenceStatusFilter
+                    selectedStatuses={selectedEvidenceStatuses}
+                    onStatusChange={setSelectedEvidenceStatuses}
+                  />
+                </div>
+              </div>
+
               {loading && (
                 <div className="text-center py-12">
                   <div className="inline-flex items-center px-4 py-2 text-sm text-muted-foreground">
