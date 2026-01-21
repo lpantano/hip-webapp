@@ -16,3 +16,15 @@ export const CLAIM_STATUS = {
 export type ClaimStatus = typeof CLAIM_STATUS[keyof typeof CLAIM_STATUS];
 
 export const SEARCH_DEBOUNCE_MS = 300;
+
+/**
+ * Evidence status filter options
+ */
+export const EVIDENCE_STATUS_OPTIONS = [
+  'Awaiting Evidence',
+  'Evidence Supports',
+  'Evidence Disproves',
+  'Inconclusive'
+] as const;
+
+export type EvidenceStatusOption = typeof EVIDENCE_STATUS_OPTIONS[number];
