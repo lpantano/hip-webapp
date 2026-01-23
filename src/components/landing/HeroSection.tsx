@@ -1,4 +1,3 @@
-import MailingListSignup from "./MailingListSignup";
 import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
@@ -28,26 +27,6 @@ const HeroSection = () => {
           Building trust through transparency. Learn how to evaluate and trust health information
             with confidence through expert-backed scientific insights and community wisdom.
           </p>
-
-
-        </div>
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-5 mt-8">
-          <div className="flex-shrink-0 order-2 lg:order-1 relative">
-            {/* <img
-              src="/example_claim.png"
-              alt="Example of a health claim review"
-              className="max-w-sm lg:max-w-md xl:max-w-lg rounded-lg shadow-lg"
-            /> */}
-            {/* <Link to="/claims">
-              <Button className="absolute bottom-4 right-4 bg-primary hover:bg-primary/90 text-white shadow-lg">
-                Browse All
-              </Button>
-            </Link> */}
-          </div>
-          <div className="order-1 lg:order-2">
-            <MailingListSignup />
-
-          </div>
         </div>
       </div>
     </section>
