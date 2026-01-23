@@ -149,6 +149,86 @@ tsx scripts/populate-claim-labels.ts
 
 ---
 
+### `claims-stats.ts`
+
+Generate comprehensive statistics about claims and publications in the database.
+
+**Purpose:** Provides a detailed statistical overview of all claims categorized by different attributes and publications/papers that have been evaluated by experts.
+
+**Prerequisites:**
+- Node.js and npm installed
+- `.env.local` file with Supabase credentials:
+  - `SUPABASE_URL` or `VITE_SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY` (recommended) or `VITE_SUPABASE_ANON_KEY`
+
+**Usage:**
+```bash
+# Using npm script (recommended)
+npm run stats
+
+# Or directly with tsx
+tsx scripts/claims-stats.ts
+```
+
+**What it displays:**
+
+**Claims Statistics:**
+- Total number of claims
+- Claims by category (nutrition, fitness, mental health, etc.)
+- Claims by broad category (Health, Wellness, Mind)
+- Claims by evidence status (Awaiting Evidence, Evidence Supports, etc.)
+- Claims by status (proposed, under review, etc.)
+
+**Publications Statistics:**
+- Total number of publications (papers)
+- Total paper evaluations
+- Unique papers that have been evaluated
+- Publications by stance (supporting, contradicting, neutral, mixed)
+- Publications by status
+
+**Example Output:**
+```
+═══════════════════════════════════════════════════════
+  Evidence Decoded - Claims & Publications Statistics
+═══════════════════════════════════════════════════════
+
+📊 Fetching Claims Statistics...
+
+🔢 Total Claims: 145
+
+📋 Claims by Category:
+  • nutrition: 45 (31.0%)
+  • fitness: 32 (22.1%)
+  • mental_health: 28 (19.3%)
+  ...
+
+✅ Claims by Evidence Status:
+  • Awaiting Evidence: 67 (46.2%)
+  • Evidence Supports: 48 (33.1%)
+  ...
+
+───────────────────────────────────────────────────────
+
+📚 Fetching Publication Statistics...
+
+🔢 Total Publications (Papers): 234
+
+📝 Total Paper Evaluations: 156
+
+📄 Unique Papers Evaluated: 89
+
+═══════════════════════════════════════════════════════
+```
+
+**Use cases:**
+- Dashboard metrics and analytics
+- Progress reporting to stakeholders
+- Understanding content distribution
+- Identifying content gaps
+- Quarterly/monthly reports
+
+---
+
 ### Other Scripts
 
 #### `debug-claim-state.ts`

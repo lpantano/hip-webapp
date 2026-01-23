@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapPin, Calendar, Users, ExternalLink, MessageSquare, ThumbsUp, FileText, Linkedin, Instagram, Globe, Mail, Twitter, Youtube, Facebook, Hash, Podcast, Link } from 'lucide-react';
+import { MapPin, Calendar, Users, ExternalLink, MessageSquare, ThumbsUp, FileText, Linkedin, Instagram, Globe, Mail, Twitter, Youtube, Facebook, Hash, Podcast, Link, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
 import Header from '@/components/layout/Header';
+import BadgeLegend from '@/components/community/BadgeLegend';
+import { getBadgeByLevel, getProgressToNextLevel } from '@/constants/badges';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CommunityMember {
@@ -112,16 +117,12 @@ const Community = () => {
 
   const getContributorBadge = (member: CommunityMember) => {
     const level = member.contributor_level || 'Seedling';
-
-    const badgeMap = {
-      'Luminary': { level: 'Luminary', emoji: '🌟', description: 'Top Contributor' },
-      'Architect': { level: 'Architect', emoji: '🏛️', description: 'Advanced Contributor' },
-      'Navigator': { level: 'Navigator', emoji: '🧭', description: 'Trusted Contributor' },
-      'Explorer': { level: 'Explorer', emoji: '🔬', description: 'Intermediate Contributor' },
-      'Seedling': { level: 'Seedling', emoji: '🌱', description: 'Entry / New Contributor' }
+    const badge = getBadgeByLevel(level);
+    return {
+      level: badge.level,
+      emoji: badge.emoji,
+      description: badge.description
     };
-
-    return badgeMap[level as keyof typeof badgeMap] || badgeMap['Seedling'];
   };
 
   const openProfile = (member: CommunityMember) => {
@@ -169,9 +170,20 @@ const Community = () => {
 
             {/* Contributor status dot at avatar bottom-right */}
             <div className="absolute -right-2 -bottom-2">
-              <div title={contributorBadge.description} className="flex items-center justify-center h-7 w-7 rounded-full bg-lime-200 text-white text-[12px] shadow-sm border-2 border-white">
-                <span className="leading-none">{contributorBadge.emoji}</span>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center justify-center h-7 w-7 rounded-full bg-lime-200 text-white text-[12px] shadow-sm border-2 border-white cursor-help">
+                      <span className="leading-none">{contributorBadge.emoji}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px]">
+                    <p className="font-semibold">{contributorBadge.level}</p>
+                    <p className="text-xs text-muted-foreground">{contributorBadge.description}</p>
+                    <p className="text-xs mt-1">{member.total_contributions || 0} contributions</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           <CardTitle className="text-sm truncate">{displayName}</CardTitle>
@@ -256,6 +268,17 @@ const Community = () => {
             <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
               <Users className="h-8 w-8 text-primary" />
               Community Members
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Info className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                    <span className="sr-only">Contributor badge information</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="center">
+                  <BadgeLegend />
+                </PopoverContent>
+              </Popover>
             </h2>
 
             {loading ? (
@@ -313,6 +336,56 @@ const Community = () => {
               </DialogHeader>
 
               <div className="space-y-6">
+                {/* Contribution Stats */}
+                {(() => {
+                  const badge = getContributorBadge(selectedMember);
+                  const totalContributions = selectedMember.total_contributions || 0;
+                  const { progress, remaining, nextLevel } = getProgressToNextLevel(badge.level, totalContributions);
+                  return (
+                    <div className="p-4 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-lime-200 text-xl">
+                          {badge.emoji}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{badge.level}</p>
+                          <p className="text-sm text-muted-foreground">{badge.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div className="text-center p-2 rounded bg-background">
+                          <p className="text-lg font-bold text-primary">{selectedMember.publication_reviews || 0}</p>
+                          <p className="text-xs text-muted-foreground">Reviews</p>
+                        </div>
+                        <div className="text-center p-2 rounded bg-background">
+                          <p className="text-lg font-bold text-primary">{selectedMember.new_claims || 0}</p>
+                          <p className="text-xs text-muted-foreground">Claims</p>
+                        </div>
+                        <div className="text-center p-2 rounded bg-background">
+                          <p className="text-lg font-bold text-primary">{selectedMember.links_added || 0}</p>
+                          <p className="text-xs text-muted-foreground">Papers</p>
+                        </div>
+                      </div>
+
+                      {nextLevel && (
+                        <div>
+                          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                            <span>{totalContributions} contributions</span>
+                            <span>{remaining} to {nextLevel.emoji} {nextLevel.level}</span>
+                          </div>
+                          <Progress value={progress} className="h-2" />
+                        </div>
+                      )}
+                      {!nextLevel && (
+                        <p className="text-xs text-center text-muted-foreground">🎉 Maximum level reached!</p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <Separator />
+
                 {/* Experience */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
