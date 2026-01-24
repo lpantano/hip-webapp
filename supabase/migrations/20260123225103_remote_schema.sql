@@ -12,6 +12,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
+
+
+
+
+
+
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
@@ -65,15 +72,26 @@ CREATE TYPE "public"."app_role" AS ENUM (
 ALTER TYPE "public"."app_role" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."broad_category_type" AS ENUM (
+    'Health',
+    'Wellness',
+    'Mind'
+);
+
+
+ALTER TYPE "public"."broad_category_type" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."claim_category" AS ENUM (
     'nutrition',
     'fitness',
-    'mental_heath',
+    'mental_health',
     'pregnancy',
-    'menopause',
+    'postmenopause',
     'general_health',
     'perimenopause',
-    'mental_health'
+    'period',
+    'menopause'
 );
 
 
@@ -82,10 +100,11 @@ ALTER TYPE "public"."claim_category" OWNER TO "postgres";
 
 CREATE TYPE "public"."claim_status" AS ENUM (
     'proposed',
-    'pending',
-    'verified',
-    'disputed',
-    'needs_more_evidence'
+    'Awaiting Evidence',
+    'Evidence Supports',
+    'Evidence Disproves',
+    'Inconclusive',
+    'under review'
 );
 
 
@@ -114,11 +133,30 @@ CREATE TYPE "public"."evidence_score_category" AS ENUM (
 ALTER TYPE "public"."evidence_score_category" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."evidence_status_type" AS ENUM (
+    'Awaiting Evidence',
+    'Evidence Supports',
+    'Evidence Disproves',
+    'Inconclusive'
+);
+
+
+ALTER TYPE "public"."evidence_status_type" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."expertise_area" AS ENUM (
-    'health',
-    'fitness',
-    'nutrition',
-    'mental_health'
+    'Health',
+    'Fitness',
+    'Nutrition',
+    'Mental Health',
+    'Data Science',
+    'Immunology',
+    'Molecular biology',
+    'Pharmacology',
+    'Epidemiology',
+    'Neuroscience',
+    'Endocrinology',
+    'Oncology'
 );
 
 
@@ -132,6 +170,17 @@ CREATE TYPE "public"."member_type" AS ENUM (
 
 
 ALTER TYPE "public"."member_type" OWNER TO "postgres";
+
+
+CREATE TYPE "public"."publication_stance" AS ENUM (
+    'supporting',
+    'contradicting',
+    'neutral',
+    'mixed'
+);
+
+
+ALTER TYPE "public"."publication_stance" OWNER TO "postgres";
 
 
 CREATE TYPE "public"."source_type" AS ENUM (
@@ -150,6 +199,41 @@ CREATE TYPE "public"."source_type" AS ENUM (
 
 
 ALTER TYPE "public"."source_type" OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_expert_status_change"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  -- Only proceed if status changed to 'accepted'
+  IF NEW.status = 'accepted' AND (OLD.status IS NULL OR OLD.status != 'accepted') THEN
+    
+    -- Determine the role based on member_type
+    -- expert member_type -> expert role
+    -- researcher member_type -> researcher role
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (
+      NEW.user_id, 
+      CASE 
+        WHEN NEW.member_type = 'expert' THEN 'expert'::public.app_role
+        WHEN NEW.member_type = 'researcher' THEN 'researcher'::public.app_role
+        ELSE 'user'::public.app_role
+      END
+    )
+    ON CONFLICT (user_id, role) DO NOTHING; -- Don't insert if role already exists
+    
+  END IF;
+  
+  -- If status changed from 'accepted' to something else, we could remove the role
+  -- But for now, we'll keep roles even if status changes (safer approach)
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_expert_status_change"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
@@ -193,6 +277,27 @@ $$;
 ALTER FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."record_claim_submission_contribution"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    -- Record the contribution for any user who submits claims
+    INSERT INTO public.user_contributions (user_id, contribution_type)
+    VALUES (NEW.user_id, 'new_claim')
+    ON CONFLICT DO NOTHING;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."record_claim_submission_contribution"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."record_claim_submission_contribution"() IS 'Records user contributions when new claims are created';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."record_expert_contribution_after_score"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -208,6 +313,76 @@ $$;
 
 
 ALTER FUNCTION "public"."record_expert_contribution_after_score"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."record_paper_submission_contribution"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    -- Record the contribution for any user who submits papers
+    INSERT INTO public.user_contributions (user_id, contribution_type)
+    VALUES (NEW.submitted_by, 'paper_added')
+    ON CONFLICT DO NOTHING;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."record_paper_submission_contribution"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."record_paper_submission_contribution"() IS 'Records user contributions when new papers/publications are submitted';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."record_publication_review_contribution"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    -- Record the contribution for any user who reviews publications
+    INSERT INTO public.user_contributions (user_id, contribution_type)
+    VALUES (NEW.expert_user_id, 'publication_review')
+    ON CONFLICT DO NOTHING;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."record_publication_review_contribution"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."record_publication_review_contribution"() IS 'Records user contributions when publication reviews are created or updated';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."restrict_signup_by_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    is_whitelisted BOOLEAN;
+BEGIN
+    -- Check if the new user's email exists in the whitelist table
+    SELECT EXISTS (
+        SELECT 1 
+        FROM public.whitelist 
+        WHERE email = NEW.email
+    ) INTO is_whitelisted;
+
+    -- If the email is NOT whitelisted, raise an exception
+    IF NOT is_whitelisted THEN
+        -- IMPORTANT: The message in RAISE EXCEPTION is what the Supabase client returns as the error message.
+        RAISE EXCEPTION 'Signup not allowed. Your email is not on the access list.';
+    END IF;
+
+    -- If the email is whitelisted, allow the insertion to proceed
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."restrict_signup_by_email"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
@@ -281,10 +456,10 @@ CREATE TABLE IF NOT EXISTS "public"."claim_links" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "claim_id" "uuid" NOT NULL,
     "expert_user_id" "uuid" NOT NULL,
-    "title" "text" NOT NULL,
+    "title" "text",
     "url" "text" NOT NULL,
     "description" "text",
-    "link_type" "text" DEFAULT 'webpage'::"text" NOT NULL,
+    "link_type" "text" DEFAULT 'webpage'::"text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
@@ -323,33 +498,36 @@ CREATE TABLE IF NOT EXISTS "public"."claims" (
     "title" "text" NOT NULL,
     "description" "text" NOT NULL,
     "category" "public"."claim_category" NOT NULL,
-    "status" "public"."claim_status" DEFAULT 'pending'::"public"."claim_status" NOT NULL,
+    "status" "public"."claim_status" DEFAULT 'proposed'::"public"."claim_status" NOT NULL,
     "vote_count" integer DEFAULT 0 NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "evidence_status" "public"."evidence_status_type",
+    "broad_category" "public"."broad_category_type" DEFAULT 'Health'::"public"."broad_category_type",
+    "labels" "text"[] DEFAULT '{}'::"text"[] NOT NULL
 );
 
 
 ALTER TABLE "public"."claims" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."expert_contributions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "expert_id" "uuid" NOT NULL,
-    "contribution_type" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "expert_contributions_contribution_type_check" CHECK (("contribution_type" = ANY (ARRAY['publication_review'::"text", 'new_claim'::"text", 'link_added'::"text"])))
-);
+COMMENT ON COLUMN "public"."claims"."evidence_status" IS 'Calculated label based on publication evidence and expert reviews';
 
 
-ALTER TABLE "public"."expert_contributions" OWNER TO "postgres";
+
+COMMENT ON COLUMN "public"."claims"."broad_category" IS 'Broader category classification: Health (pregnancy, menopause, perimenopause, general_health), Wellness (fitness, nutrition), Mind (mental_health)';
+
+
+
+COMMENT ON COLUMN "public"."claims"."labels" IS 'Topic labels describing what the claim discusses. Multiple labels can apply to one claim. Labels are predefined in the frontend.';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."experts" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "status" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "expertise_area" "public"."claim_category" NOT NULL,
+    "expertise_area" "public"."claim_category" DEFAULT 'general_health'::"public"."claim_category" NOT NULL,
     "education" "text" NOT NULL,
     "motivation" "text" NOT NULL,
     "website" "text",
@@ -358,6 +536,8 @@ CREATE TABLE IF NOT EXISTS "public"."experts" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "member_type" "public"."member_type" DEFAULT 'expert'::"public"."member_type" NOT NULL,
+    "expertise_text" "text" NOT NULL,
+    CONSTRAINT "expertise_text_length_check" CHECK ((("length"("expertise_text") >= 10) AND ("length"("expertise_text") <= 200))),
     CONSTRAINT "experts_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'more_information'::"text"])))
 );
 
@@ -376,7 +556,9 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "avatar_url" "text",
     "bio" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "cached_avatar_url" "text",
+    "cached_avatar_updated_at" timestamp with time zone
 );
 
 
@@ -395,6 +577,18 @@ CREATE TABLE IF NOT EXISTS "public"."social_media_links" (
 ALTER TABLE "public"."social_media_links" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_contributions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "contribution_type" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "user_contributions_contribution_type_check" CHECK (("contribution_type" = ANY (ARRAY['publication_review'::"text", 'new_claim'::"text", 'paper_added'::"text"])))
+);
+
+
+ALTER TABLE "public"."user_contributions" OWNER TO "postgres";
+
+
 CREATE OR REPLACE VIEW "public"."expert_stats" AS
  SELECT "e"."id",
     "e"."user_id",
@@ -411,32 +605,32 @@ CREATE OR REPLACE VIEW "public"."expert_stats" AS
     "p"."avatar_url",
     "p"."bio",
     COALESCE("json_agg"("json_build_object"('platform', "sml"."platform", 'url', "sml"."url")) FILTER (WHERE ("sml"."id" IS NOT NULL)), '[]'::json) AS "social_media_links",
-    "count"("ec"."id") AS "total_contributions",
+    "count"("uc"."id") AS "total_contributions",
     "count"(
         CASE
-            WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+            WHEN ("uc"."contribution_type" = 'publication_review'::"text") THEN 1
             ELSE NULL::integer
         END) AS "publication_reviews",
     "count"(
         CASE
-            WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+            WHEN ("uc"."contribution_type" = 'new_claim'::"text") THEN 1
             ELSE NULL::integer
         END) AS "new_claims",
     "count"(
         CASE
-            WHEN ("ec"."contribution_type" = 'link_added'::"text") THEN 1
+            WHEN ("uc"."contribution_type" = 'paper_added'::"text") THEN 1
             ELSE NULL::integer
-        END) AS "links_added",
+        END) AS "papers_added",
         CASE
-            WHEN ("count"("ec"."id") > 500) THEN 'Luminary'::"text"
-            WHEN ("count"("ec"."id") > 300) THEN 'Architect'::"text"
-            WHEN ("count"("ec"."id") > 150) THEN 'Navigator'::"text"
-            WHEN ("count"("ec"."id") > 50) THEN 'Explorer'::"text"
+            WHEN ("count"("uc"."id") > 500) THEN 'Luminary'::"text"
+            WHEN ("count"("uc"."id") > 300) THEN 'Architect'::"text"
+            WHEN ("count"("uc"."id") > 150) THEN 'Navigator'::"text"
+            WHEN ("count"("uc"."id") > 50) THEN 'Explorer'::"text"
             ELSE 'Seedling'::"text"
         END AS "contributor_level"
    FROM ((("public"."experts" "e"
      LEFT JOIN "public"."profiles" "p" ON (("e"."user_id" = "p"."user_id")))
-     LEFT JOIN "public"."expert_contributions" "ec" ON (("e"."id" = "ec"."expert_id")))
+     LEFT JOIN "public"."user_contributions" "uc" ON (("e"."user_id" = "uc"."user_id")))
      LEFT JOIN "public"."social_media_links" "sml" ON (("e"."user_id" = "sml"."expert_id")))
   WHERE ("e"."status" = 'accepted'::"text")
   GROUP BY "e"."id", "e"."user_id", "e"."expertise_area", "e"."years_of_experience", "e"."created_at", "e"."status", "e"."website", "e"."location", "e"."education", "e"."motivation", "e"."member_type", "p"."display_name", "p"."avatar_url", "p"."bio";
@@ -445,8 +639,197 @@ CREATE OR REPLACE VIEW "public"."expert_stats" AS
 ALTER VIEW "public"."expert_stats" OWNER TO "postgres";
 
 
-COMMENT ON VIEW "public"."expert_stats" IS 'Comprehensive view of expert statistics including member type (expert/researcher), contributions, and profile information';
+CREATE TABLE IF NOT EXISTS "public"."publication_scores" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "publication_id" "uuid" NOT NULL,
+    "expert_user_id" "uuid" NOT NULL,
+    "comments" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "review_data" "jsonb" DEFAULT '{}'::"jsonb"
+);
 
+
+ALTER TABLE "public"."publication_scores" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."publication_scores"."review_data" IS 'Review data including category (updated: Unreliable->Inconclusive, Fallacy->Misinformation), quality checks, and tags';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."publications" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "claim_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "journal" "text" NOT NULL,
+    "publication_year" integer NOT NULL,
+    "doi" "text",
+    "url" "text",
+    "abstract" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "submitted_by" "uuid",
+    "stance" "public"."publication_stance" DEFAULT 'supporting'::"public"."publication_stance",
+    "source" "text"
+);
+
+
+ALTER TABLE "public"."publications" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."publications"."stance" IS 'Indicates whether the publication supports, contradicts, is neutral toward, or has mixed evidence regarding the associated claim';
+
+
+
+COMMENT ON COLUMN "public"."publications"."source" IS 'URL or reference to the source where the paper was found';
+
+
+
+CREATE OR REPLACE VIEW "public"."expert_profiles_public" AS
+ SELECT "user_id",
+    "display_name",
+    "avatar_url",
+    "bio"
+   FROM "public"."expert_stats" "es"
+  WHERE ("user_id" IN ( SELECT DISTINCT "ps"."expert_user_id"
+           FROM "public"."publication_scores" "ps"
+          WHERE ("ps"."publication_id" IN ( SELECT "p"."id"
+                   FROM "public"."publications" "p"
+                  WHERE ("p"."claim_id" IN ( SELECT "claims"."id"
+                           FROM "public"."claims"
+                          ORDER BY "claims"."created_at" DESC
+                         LIMIT 5))))
+        UNION
+         SELECT DISTINCT "cc"."expert_user_id"
+           FROM "public"."claim_comments" "cc"
+          WHERE ("cc"."claim_id" IN ( SELECT "claims"."id"
+                   FROM "public"."claims"
+                  ORDER BY "claims"."created_at" DESC
+                 LIMIT 5))
+        UNION
+         SELECT DISTINCT "cl"."expert_user_id"
+           FROM "public"."claim_links" "cl"
+          WHERE ("cl"."claim_id" IN ( SELECT "claims"."id"
+                   FROM "public"."claims"
+                  ORDER BY "claims"."created_at" DESC
+                 LIMIT 5))));
+
+
+ALTER VIEW "public"."expert_profiles_public" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."expert_profiles_public" IS 'Public read-only view of expert profiles for experts who contributed to the 5 most recent claims. Allows anonymous users to see expert credentials.';
+
+
+
+CREATE OR REPLACE VIEW "public"."expert_stats_dev" AS
+ SELECT "e"."id",
+    "e"."user_id",
+    "e"."expertise_text",
+    "e"."years_of_experience",
+    "e"."created_at",
+    "e"."status",
+    "e"."website",
+    "e"."location",
+    "e"."education",
+    "e"."motivation",
+    "e"."member_type",
+    "p"."display_name",
+    "p"."avatar_url",
+    "p"."bio",
+    COALESCE("jsonb_agg"("jsonb_build_object"('platform', "sml"."platform", 'url', "sml"."url")) FILTER (WHERE ("sml"."id" IS NOT NULL)), '[]'::"jsonb") AS "social_media_links",
+    (COALESCE("sum"(
+        CASE
+            WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+            ELSE 0
+        END), (0)::bigint))::integer AS "publication_reviews",
+    (COALESCE("sum"(
+        CASE
+            WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+            ELSE 0
+        END), (0)::bigint))::integer AS "new_claims",
+    (COALESCE("sum"(
+        CASE
+            WHEN ("ec"."contribution_type" = 'links_added'::"text") THEN 1
+            ELSE 0
+        END), (0)::bigint))::integer AS "links_added",
+    (((COALESCE("sum"(
+        CASE
+            WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+            ELSE 0
+        END), (0)::bigint) + COALESCE("sum"(
+        CASE
+            WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+            ELSE 0
+        END), (0)::bigint)) + COALESCE("sum"(
+        CASE
+            WHEN ("ec"."contribution_type" = 'links_added'::"text") THEN 1
+            ELSE 0
+        END), (0)::bigint)))::integer AS "total_contributions",
+        CASE
+            WHEN (((COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'links_added'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) >= 50) THEN 'Luminary'::"text"
+            WHEN (((COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'links_added'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) >= 25) THEN 'Architect'::"text"
+            WHEN (((COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'links_added'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) >= 10) THEN 'Navigator'::"text"
+            WHEN (((COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'publication_review'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'new_claim'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) + COALESCE("sum"(
+            CASE
+                WHEN ("ec"."contribution_type" = 'links_added'::"text") THEN 1
+                ELSE 0
+            END), (0)::bigint)) >= 1) THEN 'Explorer'::"text"
+            ELSE 'Seedling'::"text"
+        END AS "contributor_level"
+   FROM ((("public"."experts" "e"
+     LEFT JOIN "public"."profiles" "p" ON (("e"."user_id" = "p"."user_id")))
+     LEFT JOIN "public"."social_media_links" "sml" ON (("sml"."expert_id" = "e"."user_id")))
+     LEFT JOIN "public"."user_contributions" "ec" ON (("ec"."user_id" = "e"."user_id")))
+  WHERE ("e"."status" = 'accepted'::"text")
+  GROUP BY "e"."id", "e"."user_id", "e"."expertise_text", "e"."years_of_experience", "e"."created_at", "e"."status", "e"."website", "e"."location", "e"."education", "e"."motivation", "e"."member_type", "p"."display_name", "p"."avatar_url", "p"."bio";
+
+
+ALTER VIEW "public"."expert_stats_dev" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."feature_requests" (
@@ -508,40 +891,77 @@ CREATE OR REPLACE VIEW "public"."feature_requests_full" AS
 ALTER VIEW "public"."feature_requests_full" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."publication_scores" (
+CREATE TABLE IF NOT EXISTS "public"."mailing_list_signups" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "publication_id" "uuid" NOT NULL,
-    "expert_user_id" "uuid" NOT NULL,
-    "comments" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "review_data" "jsonb" DEFAULT '{}'::"jsonb"
+    "email" character varying(254) NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 
-ALTER TABLE "public"."publication_scores" OWNER TO "postgres";
+ALTER TABLE "public"."mailing_list_signups" OWNER TO "postgres";
 
 
-COMMENT ON COLUMN "public"."publication_scores"."review_data" IS 'Flexible JSON storage for review data. Can contain any review-specific fields as needed.';
+CREATE OR REPLACE VIEW "public"."publication_scores_public" AS
+ SELECT "id",
+    "publication_id",
+    "expert_user_id",
+    "review_data",
+    "comments",
+    "created_at",
+    "updated_at"
+   FROM "public"."publication_scores" "ps"
+  WHERE ("publication_id" IN ( SELECT "p"."id"
+           FROM "public"."publications" "p"
+          WHERE ("p"."claim_id" IN ( SELECT "claims"."id"
+                   FROM "public"."claims"
+                  ORDER BY "claims"."created_at" DESC
+                 LIMIT 5))));
+
+
+ALTER VIEW "public"."publication_scores_public" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."publication_scores_public" IS 'Public read-only view of publication scores for publications in the 5 most recent claims. Allows anonymous users to see expert reviews.';
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."publications" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "claim_id" "uuid" NOT NULL,
-    "title" "text" NOT NULL,
-    "journal" "text" NOT NULL,
-    "publication_year" integer NOT NULL,
-    "doi" "text",
-    "url" "text",
-    "abstract" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
-    "submitted_by" "uuid"
-);
+CREATE OR REPLACE VIEW "public"."recent_claims_public" AS
+ SELECT "id",
+    "title",
+    "description",
+    "category",
+    "broad_category",
+    "labels",
+    "status",
+    "evidence_status",
+    "vote_count",
+    "created_at",
+    "user_id",
+    COALESCE(( SELECT "jsonb_agg"("jsonb_build_object"('id', "p"."id", 'title', "p"."title", 'journal', "p"."journal", 'publication_year', "p"."publication_year", 'year', "p"."publication_year", 'url', COALESCE("p"."url", "p"."doi"), 'doi', "p"."doi", 'source', "p"."source", 'stance', "p"."stance", 'created_at', "p"."created_at")) AS "jsonb_agg"
+           FROM "public"."publications" "p"
+          WHERE ("p"."claim_id" = "c"."id")), '[]'::"jsonb") AS "publications",
+    COALESCE(( SELECT "jsonb_agg"("jsonb_build_object"('id', "cl"."id", 'title', "cl"."title", 'url', "cl"."url", 'description', "cl"."description", 'link_type', "cl"."link_type", 'expert_user_id', "cl"."expert_user_id")) AS "jsonb_agg"
+           FROM "public"."claim_links" "cl"
+          WHERE ("cl"."claim_id" = "c"."id")), '[]'::"jsonb") AS "links",
+    COALESCE(( SELECT "jsonb_agg"("jsonb_build_object"('id', "cc"."id", 'expert_user_id', "cc"."expert_user_id", 'content', "cc"."content", 'created_at', "cc"."created_at", 'updated_at', "cc"."updated_at") ORDER BY "cc"."created_at") AS "jsonb_agg"
+           FROM "public"."claim_comments" "cc"
+          WHERE ("cc"."claim_id" = "c"."id")), '[]'::"jsonb") AS "comments",
+    ( SELECT "count"(*) AS "count"
+           FROM "public"."publications" "p"
+          WHERE ("p"."claim_id" = "c"."id")) AS "publication_count",
+    ( SELECT "count"(*) AS "count"
+           FROM "public"."claim_comments" "cc"
+          WHERE ("cc"."claim_id" = "c"."id")) AS "comment_count"
+   FROM "public"."claims" "c"
+  ORDER BY "created_at" DESC
+ LIMIT 3;
 
 
-ALTER TABLE "public"."publications" OWNER TO "postgres";
+ALTER VIEW "public"."recent_claims_public" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."recent_claims_public" IS 'Public read-only view showing the 5 most recent claims with aggregated publications, links, and comments data. Accessible to anonymous users for homepage preview.';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."resource_reviews" (
@@ -604,6 +1024,14 @@ CREATE TABLE IF NOT EXISTS "public"."user_roles" (
 ALTER TABLE "public"."user_roles" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."whitelist" (
+    "email" "text" NOT NULL
+);
+
+
+ALTER TABLE "public"."whitelist" OWNER TO "postgres";
+
+
 ALTER TABLE ONLY "public"."claim_comments"
     ADD CONSTRAINT "claim_comments_pkey" PRIMARY KEY ("id");
 
@@ -639,11 +1067,6 @@ ALTER TABLE ONLY "public"."claims"
 
 
 
-ALTER TABLE ONLY "public"."expert_contributions"
-    ADD CONSTRAINT "expert_contributions_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."experts"
     ADD CONSTRAINT "experts_pkey" PRIMARY KEY ("id");
 
@@ -666,6 +1089,11 @@ ALTER TABLE ONLY "public"."feature_votes"
 
 ALTER TABLE ONLY "public"."feature_votes"
     ADD CONSTRAINT "feature_votes_user_id_feature_request_id_key" UNIQUE ("user_id", "feature_request_id");
+
+
+
+ALTER TABLE ONLY "public"."mailing_list_signups"
+    ADD CONSTRAINT "mailing_list_signups_pkey" PRIMARY KEY ("id");
 
 
 
@@ -719,6 +1147,11 @@ ALTER TABLE ONLY "public"."sources"
 
 
 
+ALTER TABLE ONLY "public"."user_contributions"
+    ADD CONSTRAINT "user_contributions_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."user_roles"
     ADD CONSTRAINT "user_roles_pkey" PRIMARY KEY ("id");
 
@@ -726,6 +1159,11 @@ ALTER TABLE ONLY "public"."user_roles"
 
 ALTER TABLE ONLY "public"."user_roles"
     ADD CONSTRAINT "user_roles_user_id_role_key" UNIQUE ("user_id", "role");
+
+
+
+ALTER TABLE ONLY "public"."whitelist"
+    ADD CONSTRAINT "whitelist_pkey" PRIMARY KEY ("email");
 
 
 
@@ -737,7 +1175,19 @@ CREATE INDEX "idx_claim_votes_claim_id" ON "public"."claim_votes" USING "btree" 
 
 
 
+CREATE INDEX "idx_claims_broad_category" ON "public"."claims" USING "btree" ("broad_category");
+
+
+
 CREATE INDEX "idx_claims_category" ON "public"."claims" USING "btree" ("category");
+
+
+
+CREATE INDEX "idx_claims_evidence_status" ON "public"."claims" USING "btree" ("evidence_status");
+
+
+
+CREATE INDEX "idx_claims_labels" ON "public"."claims" USING "gin" ("labels");
 
 
 
@@ -749,7 +1199,19 @@ CREATE INDEX "idx_claims_user_id" ON "public"."claims" USING "btree" ("user_id")
 
 
 
+CREATE INDEX "idx_profiles_cached_avatar_updated_at" ON "public"."profiles" USING "btree" ("cached_avatar_updated_at") WHERE ("cached_avatar_url" IS NOT NULL);
+
+
+
 CREATE INDEX "idx_publications_claim_id" ON "public"."publications" USING "btree" ("claim_id");
+
+
+
+CREATE INDEX "idx_publications_claim_stance" ON "public"."publications" USING "btree" ("claim_id", "stance");
+
+
+
+CREATE INDEX "idx_publications_stance" ON "public"."publications" USING "btree" ("stance");
 
 
 
@@ -761,11 +1223,39 @@ CREATE INDEX "idx_sources_type" ON "public"."sources" USING "btree" ("source_typ
 
 
 
+CREATE OR REPLACE TRIGGER "claim_submission_contribution_trigger" AFTER INSERT ON "public"."claims" FOR EACH ROW EXECUTE FUNCTION "public"."record_claim_submission_contribution"();
+
+
+
+COMMENT ON TRIGGER "claim_submission_contribution_trigger" ON "public"."claims" IS 'Automatically tracks user contributions for claim submissions';
+
+
+
 CREATE OR REPLACE TRIGGER "claim_vote_count_trigger_delete" AFTER DELETE ON "public"."claim_votes" FOR EACH ROW EXECUTE FUNCTION "public"."update_claim_vote_count"();
 
 
 
 CREATE OR REPLACE TRIGGER "claim_vote_count_trigger_insert" AFTER INSERT ON "public"."claim_votes" FOR EACH ROW EXECUTE FUNCTION "public"."update_claim_vote_count"();
+
+
+
+CREATE OR REPLACE TRIGGER "expert_status_change_trigger" AFTER UPDATE OF "status" ON "public"."experts" FOR EACH ROW EXECUTE FUNCTION "public"."handle_expert_status_change"();
+
+
+
+CREATE OR REPLACE TRIGGER "paper_submission_contribution_trigger" AFTER INSERT ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."record_paper_submission_contribution"();
+
+
+
+COMMENT ON TRIGGER "paper_submission_contribution_trigger" ON "public"."publications" IS 'Automatically tracks user contributions for paper submissions';
+
+
+
+CREATE OR REPLACE TRIGGER "publication_review_contribution_trigger" AFTER INSERT OR UPDATE ON "public"."publication_scores" FOR EACH ROW EXECUTE FUNCTION "public"."record_publication_review_contribution"();
+
+
+
+COMMENT ON TRIGGER "publication_review_contribution_trigger" ON "public"."publication_scores" IS 'Automatically tracks user contributions for publication reviews';
 
 
 
@@ -819,11 +1309,6 @@ ALTER TABLE ONLY "public"."claim_votes"
 
 
 
-ALTER TABLE ONLY "public"."expert_contributions"
-    ADD CONSTRAINT "expert_contributions_expert_id_fkey" FOREIGN KEY ("expert_id") REFERENCES "public"."experts"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."experts"
     ADD CONSTRAINT "experts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
@@ -869,6 +1354,11 @@ ALTER TABLE ONLY "public"."sources"
 
 
 
+ALTER TABLE ONLY "public"."user_contributions"
+    ADD CONSTRAINT "user_contributions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+
+
 ALTER TABLE ONLY "public"."user_roles"
     ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
@@ -894,7 +1384,7 @@ CREATE POLICY "Admins can update all feature requests" ON "public"."feature_requ
 
 
 
-CREATE POLICY "Admins can update all resources" ON "public"."resources" FOR UPDATE USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+CREATE POLICY "Admins can update all resources" ON "public"."resources" FOR UPDATE USING (("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role")));
 
 
 
@@ -910,11 +1400,19 @@ CREATE POLICY "All authenticated users can view resources" ON "public"."resource
 
 
 
+CREATE POLICY "Allow public insert for mailing list signup" ON "public"."mailing_list_signups" FOR INSERT WITH CHECK (true);
+
+
+
 CREATE POLICY "Authenticated users can create feature requests" ON "public"."feature_requests" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Authenticated users can insert sources" ON "public"."sources" FOR INSERT TO "authenticated" WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Authenticated users can insert their own contributions" ON "public"."user_contributions" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -954,10 +1452,6 @@ CREATE POLICY "Enable users to view their own data only" ON "public"."profiles" 
 
 
 
-CREATE POLICY "Expert contributions are viewable by authenticated users" ON "public"."expert_contributions" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "Experts and researchers can create reviews" ON "public"."resource_reviews" FOR INSERT WITH CHECK ((("auth"."uid"() = "reviewer_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
 
 
@@ -982,7 +1476,7 @@ CREATE POLICY "Experts can delete their own comments" ON "public"."claim_comment
 
 
 
-CREATE POLICY "Experts can delete their own links" ON "public"."claim_links" FOR DELETE USING ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
+CREATE POLICY "Experts can delete their own links" ON "public"."claim_links" FOR DELETE USING ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role"))));
 
 
 
@@ -990,7 +1484,7 @@ CREATE POLICY "Experts can update their own comments" ON "public"."claim_comment
 
 
 
-CREATE POLICY "Experts can update their own links" ON "public"."claim_links" FOR UPDATE USING ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role")))) WITH CHECK ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
+CREATE POLICY "Experts can update their own links" ON "public"."claim_links" FOR UPDATE USING ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role")))) WITH CHECK ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role"))));
 
 
 
@@ -1042,13 +1536,7 @@ CREATE POLICY "Only experts can create comments" ON "public"."claim_comments" FO
 
 
 
-CREATE POLICY "Only experts can create contributions" ON "public"."expert_contributions" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM "public"."experts"
-  WHERE (("experts"."id" = "expert_contributions"."expert_id") AND ("experts"."user_id" = "auth"."uid"())))));
-
-
-
-CREATE POLICY "Only experts can create links" ON "public"."claim_links" FOR INSERT WITH CHECK ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))));
+CREATE POLICY "Only experts can create links" ON "public"."claim_links" FOR INSERT WITH CHECK ((("auth"."uid"() = "expert_user_id") AND ("public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role"))));
 
 
 
@@ -1104,7 +1592,7 @@ CREATE POLICY "Users can react to claims" ON "public"."claim_reactions" FOR INSE
 
 
 
-CREATE POLICY "Users can update their own claims" ON "public"."claims" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own contributions" ON "public"."user_contributions" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -1136,6 +1624,10 @@ CREATE POLICY "Users can view accepted publications" ON "public"."publications" 
 
 
 
+CREATE POLICY "Users can view all contributions" ON "public"."user_contributions" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Users can view their own expert application" ON "public"."experts" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
@@ -1145,6 +1637,10 @@ CREATE POLICY "Users can view their own roles" ON "public"."user_roles" FOR SELE
 
 
 CREATE POLICY "Users can vote on claims" ON "public"."claim_votes" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users, experts, and researchers can update claims" ON "public"."claims" FOR UPDATE USING ((("auth"."uid"() = "user_id") OR "public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"))) WITH CHECK ((("auth"."uid"() = "user_id") OR "public"."has_role"("auth"."uid"(), 'expert'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'researcher'::"public"."app_role") OR "public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role")));
 
 
 
@@ -1167,9 +1663,6 @@ ALTER TABLE "public"."claim_votes" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."claims" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."expert_contributions" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."experts" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1179,7 +1672,13 @@ ALTER TABLE "public"."feature_requests" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."feature_votes" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."mailing_list_signups" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."publication_scores" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."publications" ENABLE ROW LEVEL SECURITY;
@@ -1197,12 +1696,21 @@ ALTER TABLE "public"."social_media_links" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."sources" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."user_contributions" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."whitelist" ENABLE ROW LEVEL SECURITY;
 
 
 
 
 ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
+
+
+
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -1362,6 +1870,12 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."handle_expert_status_change"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_expert_status_change"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_expert_status_change"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
@@ -1374,9 +1888,33 @@ GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."a
 
 
 
+GRANT ALL ON FUNCTION "public"."record_claim_submission_contribution"() TO "anon";
+GRANT ALL ON FUNCTION "public"."record_claim_submission_contribution"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."record_claim_submission_contribution"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."record_expert_contribution_after_score"() TO "anon";
 GRANT ALL ON FUNCTION "public"."record_expert_contribution_after_score"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."record_expert_contribution_after_score"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."record_paper_submission_contribution"() TO "anon";
+GRANT ALL ON FUNCTION "public"."record_paper_submission_contribution"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."record_paper_submission_contribution"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."record_publication_review_contribution"() TO "anon";
+GRANT ALL ON FUNCTION "public"."record_publication_review_contribution"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."record_publication_review_contribution"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."restrict_signup_by_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."restrict_signup_by_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."restrict_signup_by_email"() TO "service_role";
 
 
 
@@ -1443,12 +1981,6 @@ GRANT ALL ON TABLE "public"."claims" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."expert_contributions" TO "anon";
-GRANT ALL ON TABLE "public"."expert_contributions" TO "authenticated";
-GRANT ALL ON TABLE "public"."expert_contributions" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."experts" TO "anon";
 GRANT ALL ON TABLE "public"."experts" TO "authenticated";
 GRANT ALL ON TABLE "public"."experts" TO "service_role";
@@ -1467,9 +1999,39 @@ GRANT ALL ON TABLE "public"."social_media_links" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."user_contributions" TO "anon";
+GRANT ALL ON TABLE "public"."user_contributions" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_contributions" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."expert_stats" TO "anon";
 GRANT ALL ON TABLE "public"."expert_stats" TO "authenticated";
 GRANT ALL ON TABLE "public"."expert_stats" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."publication_scores" TO "anon";
+GRANT ALL ON TABLE "public"."publication_scores" TO "authenticated";
+GRANT ALL ON TABLE "public"."publication_scores" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."publications" TO "anon";
+GRANT ALL ON TABLE "public"."publications" TO "authenticated";
+GRANT ALL ON TABLE "public"."publications" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."expert_profiles_public" TO "anon";
+GRANT ALL ON TABLE "public"."expert_profiles_public" TO "authenticated";
+GRANT ALL ON TABLE "public"."expert_profiles_public" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."expert_stats_dev" TO "anon";
+GRANT ALL ON TABLE "public"."expert_stats_dev" TO "authenticated";
+GRANT ALL ON TABLE "public"."expert_stats_dev" TO "service_role";
 
 
 
@@ -1491,15 +2053,21 @@ GRANT ALL ON TABLE "public"."feature_requests_full" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."publication_scores" TO "anon";
-GRANT ALL ON TABLE "public"."publication_scores" TO "authenticated";
-GRANT ALL ON TABLE "public"."publication_scores" TO "service_role";
+GRANT ALL ON TABLE "public"."mailing_list_signups" TO "anon";
+GRANT ALL ON TABLE "public"."mailing_list_signups" TO "authenticated";
+GRANT ALL ON TABLE "public"."mailing_list_signups" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."publications" TO "anon";
-GRANT ALL ON TABLE "public"."publications" TO "authenticated";
-GRANT ALL ON TABLE "public"."publications" TO "service_role";
+GRANT ALL ON TABLE "public"."publication_scores_public" TO "anon";
+GRANT ALL ON TABLE "public"."publication_scores_public" TO "authenticated";
+GRANT ALL ON TABLE "public"."publication_scores_public" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."recent_claims_public" TO "anon";
+GRANT ALL ON TABLE "public"."recent_claims_public" TO "authenticated";
+GRANT ALL ON TABLE "public"."recent_claims_public" TO "service_role";
 
 
 
@@ -1524,6 +2092,12 @@ GRANT ALL ON TABLE "public"."sources" TO "service_role";
 GRANT ALL ON TABLE "public"."user_roles" TO "anon";
 GRANT ALL ON TABLE "public"."user_roles" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_roles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."whitelist" TO "anon";
+GRANT ALL ON TABLE "public"."whitelist" TO "authenticated";
+GRANT ALL ON TABLE "public"."whitelist" TO "service_role";
 
 
 
@@ -1584,46 +2158,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-
-
-
-RESET ALL;
-CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
-
-
-  create policy "Avatar images are publicly accessible"
-  on "storage"."objects"
-  as permissive
-  for select
-  to public
-using ((bucket_id = 'avatars'::text));
-
-
-
-  create policy "Users can delete their own avatar"
-  on "storage"."objects"
-  as permissive
-  for delete
-  to public
-using (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
-
-
-
-  create policy "Users can update their own avatar"
-  on "storage"."objects"
-  as permissive
-  for update
-  to public
-using (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
-
-
-
-  create policy "Users can upload their own avatar"
-  on "storage"."objects"
-  as permissive
-  for insert
-  to public
-with check (((bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
 
 
 

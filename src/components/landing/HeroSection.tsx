@@ -1,7 +1,10 @@
-import MailingListSignup from "./MailingListSignup";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const HeroSection = () => {
+  const { user, loading } = useAuth();
   return (
     <section className="relative pt-12 pb-10 md:pt-32 md:pb-8 flex items-center justify-center bg-hero-gradient">
       <div className="absolute inset-0 bg-black/5"></div>
@@ -28,26 +31,19 @@ const HeroSection = () => {
           Building trust through transparency. Learn how to evaluate and trust health information
             with confidence through expert-backed scientific insights and community wisdom.
           </p>
-
-
-        </div>
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-5 mt-8">
-          <div className="flex-shrink-0 order-2 lg:order-1 relative">
-            {/* <img
-              src="/example_claim.png"
-              alt="Example of a health claim review"
-              className="max-w-sm lg:max-w-md xl:max-w-lg rounded-lg shadow-lg"
-            /> */}
-            {/* <Link to="/claims">
-              <Button className="absolute bottom-4 right-4 bg-primary hover:bg-primary/90 text-white shadow-lg">
-                Browse All
+          {!loading && !user && (
+            <div className="flex flex-col items-center gap-4 mt-2">
+              <p className="text-accent-secondary text-sm sm:text-base">
+                Join our community to access expert reviews
+              </p>
+              <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <Link to="/auth">
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
-            </Link> */}
-          </div>
-          <div className="order-1 lg:order-2">
-            <MailingListSignup />
-
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

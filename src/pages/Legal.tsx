@@ -26,13 +26,15 @@ const Legal = () => {
 
             <TabsContent value="privacy" className="mt-6">
               <div className="bg-card border border-border rounded-lg p-8 space-y-6 text-foreground">
+                {/* TL;DR */}
                 <section className="border-b border-border pb-6">
                   <h2 className="text-2xl font-semibold text-foreground mb-4">TL;DR</h2>
-                  <div className="space-y-3 text-sm">
+                  <div className="space-y-3">
                     <p>
-                      We started this project because we care about data and science integrity, transparency
-                      and making that information available for people. We value data privacy as much as
-                      this project and consider protecting your data an absolute must.
+                      You may know us as "The Health Integrity Project". In this policy, we may be referred to as "we", "our", or "us".
+                    </p>
+                    <p>
+                      We started this project because we care about data and science integrity, transparency, and making that information available for people. We value data privacy as much as this project and consider protecting your data an absolute must.
                     </p>
                     <p>
                       <strong>You do not have to provide personal information like your real name, address, or date of birth</strong> to sign up for a regular user account. For experts and researchers who create content, we require personal information to validate credentials—this is fundamental to keeping this project integral.
@@ -43,73 +45,138 @@ const Legal = () => {
                   </div>
                 </section>
 
+                {/* 1. About this Privacy Notice */}
                 <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">About this Privacy Notice</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">1. About this Privacy Notice</h2>
                   <p className="mb-4">
-                    This Privacy Policy applies to the personal information we collect about you through
-                    our website or when you communicate with us.
+                    This Privacy Policy applies to the personal information we collect about you through our website or when you communicate with us. You have rights in relation to how we use your personal information.
                   </p>
-                  <p className="mb-4">
-                    You have rights in relation to how we use your personal information.
-                  </p>
-                  <p className="mb-4">
-                    By using our website, <strong>you represent that you are at least 16 years of age.</strong> We do not
-                    knowingly advertise to, or collect personal information from, any individual under the
-                    age of 16. If we become aware that we have collected personal information from you
-                    and you are under the age of 16, we will suspend any services and delete your personal information immediately.
+                  <p>
+                    By using our website, <strong>you represent that you are at least 16 years of age.</strong> We do not knowingly advertise to, or collect personal information from, any individual under the age of 16. If we become aware that we have collected personal information from someone under 16, we will suspend any services and delete that personal information immediately.
                   </p>
                 </section>
 
+                {/* 2. Definitions */}
                 <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Personal Information We Collect</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">2. Definitions, Data & Metadata</h2>
+                  <div className="overflow-x-auto mb-6">
+                    <table className="w-full text-sm border border-border rounded-lg">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-semibold">Term</th>
+                          <th className="px-4 py-3 text-left font-semibold">Meaning</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        <tr>
+                          <td className="px-4 py-3 align-top">The Health Integrity Project, us, we, our, the project, HIP</td>
+                          <td className="px-4 py-3">The Health Integrity Project team that operates the site</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 align-top">Our services, the website</td>
+                          <td className="px-4 py-3">The Health Integrity Project websites, emails, and notifications; excluding third-party sites and services that have their own privacy policies</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 align-top">Personal Information</td>
+                          <td className="px-4 py-3">Information you provide or we collect that relates to you or could identify you: real name, email address, password, IP address, user-agent information, picture, location, website, social media identifiers, education and professional information</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 align-top">Contributions</td>
+                          <td className="px-4 py-3">Content you add or changes you make to any HIP Sites</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 align-top">User account</td>
+                          <td className="px-4 py-3">An account you can sign up for and use to browse the HIP Sites</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 align-top">Expert or Researcher account</td>
+                          <td className="px-4 py-3">An account you are invited to by the HIP team, requiring a vetting process</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 align-top">Third parties</td>
+                          <td className="px-4 py-3">Individuals, entities, websites, services, products, and applications not controlled by HIP, including other users and independent organizations</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">About Metadata</h3>
                   <p className="mb-4">
-                    We collect the following kinds of personal information from you:
+                    Metadata collection helps improve your user experience, but you may remove or disable some or all locally stored data through your browser settings.
                   </p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Cookies:</strong> We use cookies to understand how you use the HIP Sites, make our services safer and easier to use, and create a better experience. See our Cookie Policy for more information.</li>
+                    <li><strong>IP Addresses:</strong> When you visit our website, we automatically receive your device's IP address, which could determine your geographical location.</li>
+                    <li><strong>Browser Data:</strong> We receive information including device type, unique device IDs, browser type and version, language preference, operating system, internet service provider, referring website, pages visited, and timestamps.</li>
+                    <li><strong>Local Storage:</strong> We use technologies like local storage and session storage to deliver our services. This may include text, Personal Information (like your IP address), and usage information (like your username or visit time).</li>
+                  </ul>
+                </section>
+
+                {/* 3. Personal Information We Collect */}
+                <section>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">3. Personal Information We Collect, How & Why</h2>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Data Controller</h3>
+                  <p className="mb-4">
+                    For the purposes of the General Data Protection Regulation (GDPR), "The Health Integrity Project" is a "Data Controller".
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Information We Collect</h3>
+                  <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
                     <li>Account login and contact details such as your name and email address</li>
                     <li>For experts: picture, expertise area, years of experience, location, personal website/company name, education credentials</li>
-                    <li>Website and social media details such as Instagram handles, profile names you choose to give us</li>
-                    <li>Images, photos, user generated content</li>
-                    <li>Device information such as IP address, device ID and type, device location, website activity logs, network access, referrer, domain, browser type, language, previously visited pages, interaction through click behavior, country, time zone</li>
+                    <li>Website and social media details such as profile names you choose to share</li>
+                    <li>Images, photos, and user-generated content</li>
+                    <li>Device information such as IP address, device ID and type, location, activity logs, browser type, language, time zone</li>
                   </ul>
-                </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">How We Use Your Data</h2>
-                  <p className="mb-4">We collect personal information to:</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">How We Collect It</h3>
+                  <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
+                    <li>When you access and use our website via technologies described in the Metadata section</li>
+                    <li>When you create an account</li>
+                    <li>When you contact us with an inquiry or complaint</li>
+                    <li>When you engage with us on social media</li>
+                    <li>When you apply for membership as an expert/researcher</li>
+                    <li>When you respond to a survey</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Why We Collect It</h3>
                   <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Provide you with our services and personalized content</li>
-                    <li>Update you with new content on our website and via email (with your consent)</li>
-                    <li>Engage with you on social media</li>
-                    <li>Review applications for expert/researcher recruitment</li>
-                    <li>Improve and optimize our website</li>
-                    <li>Collect survey feedback to improve content</li>
-                    <li>Respond to your inquiries and provide customer support</li>
-                    <li>Conduct research and diagnostics to enhance user experience</li>
+                    <li>To provide you with our services</li>
+                    <li>To update you with new content on our website and via email (with your consent)</li>
+                    <li>To engage with you on social media</li>
+                    <li>To review applications for expert/researcher recruitment</li>
+                    <li>To improve and optimize our website</li>
+                    <li>To collect survey feedback to improve content</li>
+                    <li>For accounting, audit, legal, and internal purposes</li>
                   </ul>
                 </section>
 
+                {/* 4. Marketing */}
                 <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Cookies & Metadata</h2>
-                  <p className="mb-4">
-                    We use cookies and similar technologies to understand how you use our site and to provide
-                    essential features. Metadata collection helps improve your user experience. For more details,
-                    see our Cookie Policy.
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">4. Marketing</h2>
+                  <p>
+                    <strong>We do not broker, rent, or sell your personal information to third parties.</strong>
                   </p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Cookies:</strong> We use essential cookies for authentication and site functionality</li>
-                    <li><strong>IP Addresses:</strong> Automatically received to determine geographical location</li>
-                    <li><strong>Browser Data:</strong> Device type, browser version, language preference, operating system</li>
-                    <li><strong>Local Storage:</strong> Session storage for delivering services as requested</li>
-                  </ul>
                 </section>
 
+                {/* 5. Disclosure To Third Parties */}
                 <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Third-Party Services</h2>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">5. Disclosure To Third Parties & Cross-Borders</h2>
                   <p className="mb-4">
-                    We share the minimum amount of your personal information with third-party service providers
-                    necessary to operate our site. These providers have their own privacy policies.
+                    We share the minimum amount of your personal information to pursue our legitimate interests in a way that does not materially impact your rights, freedom, or interests.
                   </p>
+                  <p className="mb-4">These third parties include:</p>
+                  <ul className="list-disc list-inside space-y-2 ml-4 mb-4">
+                    <li>Service providers who perform functions on our behalf (e.g., cloud storage providers)</li>
+                    <li>Government regulatory bodies and law enforcement agencies as required by law</li>
+                    <li>Anyone else to whom you authorize us to disclose it</li>
+                  </ul>
+                  <p className="mb-4">
+                    Should we transfer your personal data outside of the United States, we will ensure that a similar degree of protection is afforded by ensuring those countries provide an adequate level of protection for personal information.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Our Third-Party Providers</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border border-border rounded-lg">
                       <thead className="bg-muted/50">
@@ -156,83 +223,129 @@ const Legal = () => {
                             </a>
                           </td>
                         </tr>
+                        <tr>
+                          <td className="px-4 py-3">Buttondown</td>
+                          <td className="px-4 py-3">Newsletter services</td>
+                          <td className="px-4 py-3">
+                            <a href="https://buttondown.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              View Policy
+                            </a>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
-                </section>
-
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Your Rights</h2>
-                  <p className="mb-4">You have the right to:</p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Access your personal data</strong> - Request a copy of the information we hold about you</li>
-                    <li><strong>Request data correction or deletion</strong> - Update inaccurate information or ask us to delete your data</li>
-                    <li><strong>Data portability</strong> - Request your personal information in a portable, machine-readable format</li>
-                    <li><strong>Opt out of communications</strong> - Unsubscribe from non-essential emails and notifications</li>
-                    <li><strong>Object or restrict processing</strong> - Challenge how we process your data in certain circumstances</li>
-                    <li><strong>Withdraw consent</strong> - Remove your consent for data processing at any time</li>
-                  </ul>
-                  <p className="mt-4">
-                    To exercise any of these rights, contact us via the link in our website footer or email us directly.
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Once you leave our website or are redirected to a third-party website or application, you are no longer governed by this Privacy Policy or our Terms of Service.
                   </p>
                 </section>
 
+                {/* 6. Your Rights */}
                 <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Security & Data Protection</h2>
-                  <p className="mb-4">
-                    We take all reasonable security measures to protect your personal information from
-                    inappropriate loss, misuse, access, disclosure, alteration or destruction.
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>We use Secure Sockets Layer (SSL) technology to encrypt all data transmissions</li>
-                    <li>Industry-standard security measures and regular security audits</li>
-                    <li>Compliance with GDPR, CCPA, PIPEDA, and other data protection regulations</li>
-                    <li>Limited access to personal data on a need-to-know basis</li>
-                  </ul>
-                  <p className="mt-4">
-                    No method of transmission over the internet is 100% secure. We cannot guarantee absolute
-                    security but we will always do our best. If we experience unauthorized access, we will
-                    notify you and relevant authorities in accordance with applicable laws.
-                  </p>
-                </section>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">6. Your Rights</h2>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Data Retention</h2>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Disclosure of Your Personal Information</h3>
                   <p className="mb-4">
-                    We will only keep your data for as long as necessary for the purpose for which it was collected,
-                    subject to satisfying any legal, accounting or reporting requirements.
+                    You may request that we disclose the personal information we hold about you, including a copy and details of our processing activities (what we collect, how we use it, and any third parties with whom we share it). You may also request your information in a portable format (structured, commonly used, machine-readable) to transmit to another entity.
                   </p>
                   <p className="mb-4">
-                    At the end of any retention period, your data will either be deleted completely or anonymized
-                    for statistical analysis and business planning.
+                    We may limit or reject requests where the burden would be disproportionate, where other persons' rights would be violated, or as required by law.
                   </p>
-                </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Marketing</h2>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Modification of Personal Information</h3>
                   <p className="mb-4">
-                    <strong>We do not broker, rent or sell your personal information to third parties.</strong>
+                    Please notify us if your personal information is inaccurate or incomplete. You may request to update or correct your information via the link on our website footer.
                   </p>
-                </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Updates to This Policy</h2>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Objection & Restriction</h3>
                   <p className="mb-4">
-                    Privacy laws and our practices change over time and may result in changes to our Privacy Policy.
-                    We reserve the right to modify this policy at any time.
+                    You may object to your personal information being processed in certain circumstances, or where we do not have a lawful basis. You may restrict processing where you are contesting accuracy, where we lack lawful basis, to oppose erasure, or if you are exploring your right to object.
                   </p>
-                  <p className="mb-4">
-                    Any material changes will be notified to you via email (if we have your contact information)
-                    or a popup when you access our website. Continued use of our services after changes indicates
-                    acceptance of the updated policy.
-                  </p>
-                </section>
 
-                <section>
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">Contact Us</h2>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Right to Deletion ("Forget Me")</h3>
+                  <p className="mb-4">
+                    You may request that we delete your personal information. If you make a request, we will delete your personal information.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Withdrawing Consent & Opting Out</h3>
+                  <p className="mb-4">
+                    You may withdraw your consent at any time. If you do, we will only communicate with you where necessary to complete our obligations.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">When You Exercise Your Rights</h3>
+                  <p className="mb-4">
+                    We will continue to provide you with the same service as all our users. However, where you do not supply certain information or request its deletion, we may be delayed or prevented from satisfying your request.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Complaints</h3>
+                  <p className="mb-4">
+                    If you have a complaint about how we handle your personal information, please contact us via the link on our website footer.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Verifying Your Identity</h3>
                   <p>
-                    If you have questions about this Privacy Policy, want to request a copy of your data,
-                    request deletion, or have any complaints about how we handle your personal information, contact us at{" "}
+                    We take privacy seriously. If you contact us to make an enquiry or exercise your rights, we may ask additional questions to verify your identity.
+                  </p>
+                </section>
+
+                {/* 7. Security */}
+                <section>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">7. Security</h2>
+                  <p className="mb-4">
+                    We take all reasonable security measures to ensure your personal information is not inappropriately lost, misused, accessed, disclosed, altered, or destroyed.
+                  </p>
+                  <p className="mb-4">
+                    We use Secure Sockets Layer (SSL) technology to protect your online information. SSL encrypts all information including personal data, providing security by encrypting all data transmissions.
+                  </p>
+                  <p className="mb-4">
+                    No method of transmission over the internet using industry standard technology is 100% secure. Therefore, we cannot guarantee the absolute security of your personal information, but we will always try our best.
+                  </p>
+                  <p className="mb-4">
+                    If we ever experience unauthorized access, disclosure, or use of your personal information, we will follow our processes to notify you and the relevant government body in accordance with relevant laws.
+                  </p>
+
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Retention</h3>
+                  <p className="mb-4">
+                    We will only keep your data for as long as necessary for the purpose for which it was collected, subject to legal, accounting, or reporting requirements.
+                  </p>
+                  <p className="mb-4">
+                    At the end of any retention period, your data will either be deleted completely or anonymized (for example, by aggregation with other data so it can be used for statistical analysis and business planning in a non-identifiable way).
+                  </p>
+                  <p>
+                    Non-Personal Information may be retained indefinitely as appropriate.
+                  </p>
+                </section>
+
+                {/* 8. Sharing Information Online */}
+                <section>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">8. Sharing Information Online & Links To Other Websites</h2>
+                  <p className="mb-4">
+                    We may make available opportunities for you to share information online like social media or blogs. Please be aware that whenever you voluntarily disclose personal information online, that information becomes public and can be collected and used by others. We have no control over, and take no responsibility for, the use, storage, or dissemination of publicly disclosed personal information.
+                  </p>
+                  <p>
+                    Sometimes our website may contain links to third-party websites. We are not responsible for the content or privacy practices of third-party websites. We suggest you review the privacy policy of each website you visit.
+                  </p>
+                </section>
+
+                {/* 9. Updating Our Privacy Policy */}
+                <section>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">9. Updating Our Privacy Policy</h2>
+                  <p className="mb-4">
+                    Privacy laws and our practices change over time and may result in changes to our Privacy Policy. We reserve the right to modify this Privacy Policy at any time.
+                  </p>
+                  <p className="mb-4">
+                    Any changes will be effective upon publication on our website and will replace any other privacy policy published by us to date. Your continued use of our services after publication of any modified privacy policy indicates your acceptance of the updated Privacy Policy.
+                  </p>
+                  <p>
+                    Any material changes will be notified to you in a manner we consider appropriate, such as via email (if we have your contact information) or a popup when you access our website.
+                  </p>
+                </section>
+
+                {/* 10. Contact Us */}
+                <section>
+                  <h2 className="text-2xl font-semibold text-foreground mb-4">10. How To Contact Us</h2>
+                  <p>
+                    If you have any enquiries about your account, questions or complaints about how we handle your personal information, or you want to request a copy or deletion of your data, you can contact our Privacy Officer via email at{" "}
                     <a href="mailto:legal@healthintegrityproject.org" className="text-accent hover:underline">
                       legal@healthintegrityproject.org
                     </a>
@@ -240,7 +353,7 @@ const Legal = () => {
                 </section>
 
                 <div className="border-t border-border pt-6 mt-8">
-                  <p className="text-sm text-foreground/70">
+                  <p className="text-sm text-muted-foreground">
                     Last updated: January 2026
                   </p>
                 </div>
