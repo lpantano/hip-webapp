@@ -1,6 +1,10 @@
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const HeroSection = () => {
+  const { user, loading } = useAuth();
   return (
     <section className="relative pt-12 pb-10 md:pt-32 md:pb-8 flex items-center justify-center bg-hero-gradient">
       <div className="absolute inset-0 bg-black/5"></div>
@@ -27,6 +31,19 @@ const HeroSection = () => {
           Building trust through transparency. Learn how to evaluate and trust health information
             with confidence through expert-backed scientific insights and community wisdom.
           </p>
+          {!loading && !user && (
+            <div className="flex flex-col items-center gap-4 mt-2">
+              <p className="text-accent-secondary text-sm sm:text-base">
+                Join our community to access expert reviews
+              </p>
+              <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                <Link to="/auth">
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </section>
