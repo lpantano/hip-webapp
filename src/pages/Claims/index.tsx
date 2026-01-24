@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
 
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Filter, X, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Folder, Tag, X, Search } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import PublicClaimsPreview from '@/components/landing/PublicClaimsPreview';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,7 @@ import CategoriesLegend from './components/Legend';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
+import { SortSegmentedControl } from './components/SortSegmentedControl';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
 import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
@@ -93,7 +94,6 @@ const Claims = () => {
 
   // Check if user is expert or researcher
   const [isExpert, setIsExpert] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(false);
   useEffect(() => {
     const checkExpertStatus = async () => {
       if (!user) {
@@ -514,30 +514,9 @@ const Claims = () => {
               </a>
             </p>
 
-            {/*Legend (collapsible) */}
-            <div className="mb-4 flex flex-col items-center gap-4">
-
-
-              <div className="w-full max-w-3xl text-center">
-                <button
-                  type="button"
-                  onClick={() => setLegendOpen(!legendOpen)}
-                  aria-expanded={legendOpen}
-                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary focus:outline-none"
-                >
-                  <span className="font-medium">{legendOpen ? 'Hide legend' : 'Show legend'}</span>
-                  {legendOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                </button>
-
-                {legendOpen && (
-                  <div className="mt-3">
-                    {/* Categories Legend (moved to component) */}
-                    <div className="mb-3">
-                      <CategoriesLegend />
-                    </div>
-                  </div>
-                )}
-              </div>
+            {/* Study Quality Legend - compact horizontal with tooltips */}
+            <div className="w-full max-w-3xl mx-auto">
+              <CategoriesLegend />
             </div>
           </div>
 
@@ -556,18 +535,14 @@ const Claims = () => {
               ) : (
                 <>
               {/* Claims Controls */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>All Claims must be linked to scientific publications</span>
-                </div> */}
-                <div className="flex flex-wrap gap-2 justify-center">
+              <div className="flex flex-col gap-4 mb-8 w-full max-w-3xl mx-auto px-4">
+                {/* Top row: New Claim button and Search */}
+                <div className="flex flex-row gap-2 sm:gap-4 items-center justify-center">
                   <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
                     <DialogTrigger asChild>
-                      <Button size="sm" className="gap-2 whitespace-nowrap" disabled={!user}>
+                      <Button size="sm" className="gap-2 whitespace-nowrap h-9 px-2 sm:px-4" disabled={!user}>
                         <Plus className="w-4 h-4" />
                         <span className="hidden sm:inline">{user ? 'New Claim' : 'Sign in to Submit Claim'}</span>
-                        <span className="sm:hidden">{user ? 'New' : 'Sign In'}</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
@@ -575,7 +550,6 @@ const Claims = () => {
                       <ClaimSubmissionForm
                         onSuccess={() => {
                           setShowSubmissionForm(false);
-                          // Refresh the claims data by re-running the fetch
                           fetchData(currentPage);
                         }}
                         onCancel={() => setShowSubmissionForm(false)}
@@ -584,7 +558,7 @@ const Claims = () => {
                   </Dialog>
 
                   {/* Search Input */}
-                  <div className="relative w-full sm:w-[240px]">
+                  <div className="relative flex-1 max-w-[280px]">
                     <Search
                       className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
                       aria-hidden="true"
@@ -609,12 +583,15 @@ const Claims = () => {
                       </button>
                     )}
                   </div>
+                </div>
 
+                {/* Filter dropdowns: 2-column grid on mobile, flex row on desktop */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 justify-center">
                   <Select value={filterByBroadCategory} onValueChange={(value) => setFilterByBroadCategory(value as typeof filterByBroadCategory)}>
-                    <SelectTrigger className="w-full sm:w-[180px] h-9">
+                    <SelectTrigger className="w-full sm:w-[160px] h-9">
                       <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4" />
-                        <SelectValue placeholder="Broad Category" />
+                        <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <SelectValue placeholder="Category" />
                       </div>
                     </SelectTrigger>
                     <SelectContent>
@@ -627,14 +604,14 @@ const Claims = () => {
                   </Select>
 
                   <Select value={filterByLabel} onValueChange={setFilterByLabel}>
-                    <SelectTrigger className="w-full sm:w-[180px] h-9">
+                    <SelectTrigger className="w-full sm:w-[160px] h-9">
                       <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4" />
-                        <SelectValue placeholder="Topic Label" />
+                        <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <SelectValue placeholder="Topic" />
                       </div>
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">All Labels</SelectItem>
+                      <SelectItem value="all">All Topics</SelectItem>
                       {CLAIM_LABELS.map((label) => (
                         <SelectItem key={label.value} value={label.value}>
                           {label.label}
@@ -643,28 +620,11 @@ const Claims = () => {
                     </SelectContent>
                   </Select>
 
-                  <Button
-                    variant={sortBy === 'votes' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSortBy('votes')}
-                    className="whitespace-nowrap"
-                  >
-                    <span className="hidden sm:inline">Sort by Votes</span>
-                    <span className="sm:hidden">Votes</span>
-                  </Button>
-                  <Button
-                    variant={sortBy === 'recent' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSortBy('recent')}
-                    className="whitespace-nowrap"
-                  >
-                    <span className="hidden sm:inline">Most Recent</span>
-                    <span className="sm:hidden">Recent</span>
-                  </Button>
+                  <SortSegmentedControl value={sortBy} onChange={setSortBy} />
                 </div>
               </div>
 
-              {/* Evidence Status Filter - New horizontal row */}
+              {/* Evidence Status Filter */}
               <div className="flex justify-center mb-6">
                 <div className="w-full max-w-3xl px-4">
                   <EvidenceStatusFilter

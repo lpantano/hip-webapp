@@ -25,7 +25,7 @@ export const EvidenceStatusFilter = ({
 
   return (
     <div className="w-full">
-      <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
+      <div className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 text-center">
         Filter by Evidence Status
       </div>
       <ToggleGroup
