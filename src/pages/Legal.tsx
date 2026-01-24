@@ -156,6 +156,15 @@ const Legal = () => {
                             </a>
                           </td>
                         </tr>
+                        <tr>
+                          <td className="px-4 py-3">Buttondown</td>
+                          <td className="px-4 py-3">Newsletter and communication emails</td>
+                          <td className="px-4 py-3">
+                            <a href="https://buttondown.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              View Policy
+                            </a>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
