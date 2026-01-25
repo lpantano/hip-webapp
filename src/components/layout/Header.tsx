@@ -49,7 +49,7 @@ const Header = () => {
               Home
             </Link>
             <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
-              Browse Health Claims
+              Health Claims
             </Link>
             <Link to="/about" className="text-white/80 hover:text-white transition-colors">
               About
