@@ -32,7 +32,7 @@ const Header = () => {
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Health"
             >
-              Health
+              Health Claims
             </Link>
             <Link
               to="/community"
@@ -48,15 +48,16 @@ const Header = () => {
             <Link to="/" className="text-white/80 hover:text-white transition-colors">
               Home
             </Link>
+            <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
+              Browse Health Claims
+            </Link>
             <Link to="/about" className="text-white/80 hover:text-white transition-colors">
               About
             </Link>
             <Link to="/community" className="text-white/80 hover:text-white transition-colors">
               Community
             </Link>
-            <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
-              Health
-            </Link>
+
             {/* <Link to="/games" className="text-white/80 hover:text-white transition-colors">
               Games
             </Link> */}
