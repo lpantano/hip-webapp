@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "generate:sitemap": "tsx scripts/generate-sitemap.ts",
     "stats": "tsx scripts/claims-stats.ts",
+    "fetch-papers": "tsx scripts/fetch-papers.ts",
+    "find-papers": "tsx scripts/find-papers-agent.ts",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version"

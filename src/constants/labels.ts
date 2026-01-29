@@ -49,6 +49,7 @@ export const CLAIM_LABEL_GROUPS = [
     },
     labels: [
       { value: 'fitness', label: 'Fitness' },
+      { value: 'body-composition', label: 'Body Composition' },
       { value: 'exercise', label: 'Exercise' },
       { value: 'weight-management', label: 'Weight Management' },
       { value: 'sleep', label: 'Sleep' },
