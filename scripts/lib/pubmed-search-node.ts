@@ -92,11 +92,13 @@ export async function searchPubMed(
 }
 
 function extractTextContent(xml: string, tagName: string, startIndex: number = 0): string {
-  const openTag = `<${tagName}>`;
+  const openTagStart = `<${tagName}`;
   const closeTag = `</${tagName}>`;
-  const openIndex = xml.indexOf(openTag, startIndex);
+  const openIndex = xml.indexOf(openTagStart, startIndex);
   if (openIndex === -1) return '';
-  const contentStart = openIndex + openTag.length;
+  const tagEndIndex = xml.indexOf('>', openIndex);
+  if (tagEndIndex === -1) return '';
+  const contentStart = tagEndIndex + 1;
   const closeIndex = xml.indexOf(closeTag, contentStart);
   if (closeIndex === -1) return '';
   return xml.substring(contentStart, closeIndex).trim();

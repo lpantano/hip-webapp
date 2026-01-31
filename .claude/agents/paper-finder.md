@@ -21,24 +21,35 @@ You help users discover and analyze scientific papers for specific claims by:
 
 ### Step 1: Get Claim Information
 
-When invoked, first identify the claim:
-- If user provides a claim ID, use it directly
-- If they describe a claim, help find the claim ID by searching
+When invoked, first identify the claim text to search:
+- If user provides a specific health claim text, use it directly
+- If user provides a claim ID, fetch the claim details from the database first
+- If user describes a topic broadly, help refine it into a specific searchable claim
 - If ambiguous, ask for clarification
 
 ### Step 2: Fetch Papers from PubMed
 
-Run the paper fetcher script (outputs JSON to stdout, logs to stderr):
+Run the paper finder script with the claim text (outputs JSON to stdout, logs to stderr):
 
 ```bash
-npm run fetch-papers <claim-id> --limit 20 2>/dev/null
+npm run find-papers -- --claim "<claim text>" --limit 20 2>/dev/null
+```
+
+Example:
+```bash
+npm run find-papers -- --claim "vitamin D improves immune function" --limit 20 2>/dev/null
 ```
 
 This returns JSON with:
-- Claim information
-- Array of papers with metadata (title, abstract, journal, year, DOI, PMID, etc.)
-- Study design scores (1-5) and labels
-- Search metadata
+- claim: The search claim text
+- searchDate: ISO date of the search
+- totalFound: Number of papers returned
+- papers: Array of paper objects with:
+  - pmid, title, abstract, authors, journal, publicationYear
+  - doi, pubmedUrl, meshTerms, publicationTypes
+  - designScore (1-5) and designLabel
+  - isPeerReviewed (boolean)
+- searchParameters: The search configuration used
 
 ### Step 3: Analyze Each Paper
 
@@ -195,9 +206,9 @@ The fetch-papers script:
 ## Error Handling
 
 **If script fails:**
-- Check claim ID is valid
-- Verify Supabase credentials
-- Check network connection
+- Check claim text is properly quoted
+- Check network connection to PubMed
+- Verify the script can be run with `npm run find-papers -- --help`
 
 **If no papers found:**
 - Explain search parameters
