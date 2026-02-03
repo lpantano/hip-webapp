@@ -6,6 +6,8 @@ This document describes the automated upstream synchronization workflow for keep
 
 The sync workflow automatically synchronizes the `main` and `devel` branches with the upstream repository at [Health-Integrity-Project/webapp](https://github.com/Health-Integrity-Project/webapp).
 
+> **⚠️ Important**: The upstream repository is private. You must configure a Personal Access Token before the workflow will work. See [UPSTREAM_SYNC_SETUP.md](UPSTREAM_SYNC_SETUP.md) for detailed setup instructions.
+
 ## Workflow File
 
 - **Location**: `.github/workflows/sync-upstream.yml`
@@ -161,10 +163,17 @@ The workflow needs these permissions:
 - `contents: write` - To push merged changes
 - `pull-requests: write` - To create PRs for conflicts
 
+### Required Secrets
+
+The workflow requires:
+- `UPSTREAM_SYNC_TOKEN` - Personal Access Token with read access to the private upstream repository
+  - **Setup required**: See [UPSTREAM_SYNC_SETUP.md](UPSTREAM_SYNC_SETUP.md) for step-by-step instructions
+
 ### Environment
 
 The workflow uses:
 - `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+- `UPSTREAM_SYNC_TOKEN` - User-configured PAT for private upstream access
 - GitHub CLI (`gh`) - For creating pull requests
 
 ## Troubleshooting

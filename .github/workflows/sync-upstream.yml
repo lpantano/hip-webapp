@@ -36,8 +36,11 @@ jobs:
 
       - name: Add upstream remote
         run: |
-          git remote add upstream https://github.com/Health-Integrity-Project/webapp.git || true
+          # Use PAT for private upstream repository
+          git remote add upstream https://x-access-token:${{ secrets.UPSTREAM_SYNC_TOKEN }}@github.com/Health-Integrity-Project/webapp.git || true
           git fetch upstream
+        env:
+          UPSTREAM_SYNC_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
 
       - name: Check current branch
         id: current_branch
