@@ -1,0 +1,168 @@
+name: Sync with Upstream
+
+on:
+  # Trigger on push to main or devel
+  push:
+    branches:
+      - main
+      - devel
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Run daily to catch upstream changes
+  schedule:
+    - cron: '0 0 * * *'  # Run at midnight UTC daily
+
+jobs:
+  sync-upstream:
+    name: Sync Fork with Upstream
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper merging
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/Health-Integrity-Project/webapp.git || true
+          git fetch upstream
+
+      - name: Check current branch
+        id: current_branch
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Current branch: $BRANCH"
+
+      - name: Sync branch with upstream
+        id: sync
+        run: |
+          BRANCH=${{ steps.current_branch.outputs.branch }}
+          echo "Syncing $BRANCH with upstream/$BRANCH"
+
+          # Check if upstream branch exists
+          if ! git ls-remote --heads upstream $BRANCH | grep -q $BRANCH; then
+            echo "⚠️  Upstream branch $BRANCH does not exist, skipping sync"
+            echo "skipped=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Fetch latest changes from upstream
+          git fetch upstream $BRANCH
+
+          # Check if there are any differences
+          if git diff --quiet HEAD upstream/$BRANCH; then
+            echo "✅ Already up to date with upstream/$BRANCH"
+            echo "uptodate=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Try to merge upstream changes
+          if git merge upstream/$BRANCH --no-edit; then
+            echo "✅ Successfully merged upstream/$BRANCH"
+            echo "merged=true" >> $GITHUB_OUTPUT
+            echo "conflicts=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Merge conflicts detected"
+            git merge --abort
+            echo "merged=false" >> $GITHUB_OUTPUT
+            echo "conflicts=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push merged changes
+        if: steps.sync.outputs.merged == 'true'
+        run: |
+          BRANCH=${{ steps.current_branch.outputs.branch }}
+          git push origin $BRANCH
+          echo "✅ Successfully pushed merged changes to $BRANCH"
+
+      - name: Create PR for conflicts
+        if: steps.sync.outputs.conflicts == 'true'
+        run: |
+          BRANCH=${{ steps.current_branch.outputs.branch }}
+          SYNC_BRANCH="sync-upstream-$BRANCH-$(date +%s)"
+
+          # Create a new branch for the sync
+          git checkout -b $SYNC_BRANCH
+
+          # Merge with conflicts allowed
+          git merge upstream/$BRANCH --no-commit --no-ff || true
+
+          # Stage all changes (including conflicts)
+          git add -A
+
+          # Commit the merge attempt
+          git commit -m "chore: sync with upstream/$BRANCH" \
+                     -m "Automated sync from upstream repository" \
+                     -m "Branch: $BRANCH" \
+                     -m "⚠️ This PR contains merge conflicts that need manual resolution" \
+                     -m "" \
+                     -m "🤖 Generated with [Claude Code](https://claude.com/claude-code)" \
+                     -m "" \
+                     -m "Co-Authored-By: Claude <noreply@anthropic.com>" || true
+
+          # Push the sync branch
+          git push origin $SYNC_BRANCH
+
+          # Create PR using GitHub CLI
+          gh pr create \
+            --base $BRANCH \
+            --head $SYNC_BRANCH \
+            --title "🔄 Sync $BRANCH with upstream" \
+            --body "## Upstream Sync
+
+          This PR syncs the \`$BRANCH\` branch with \`upstream/$BRANCH\`.
+
+          ⚠️ **This PR contains merge conflicts that require manual resolution.**
+
+          ### Steps to resolve:
+          1. Check out this branch locally:
+             \`\`\`bash
+             git fetch origin $SYNC_BRANCH
+             git checkout $SYNC_BRANCH
+             \`\`\`
+          2. Resolve the merge conflicts
+          3. Commit the resolved changes
+          4. Push to this branch
+          5. Merge this PR
+
+          ### Upstream Repository
+          - Repository: [Health-Integrity-Project/webapp](https://github.com/Health-Integrity-Project/webapp)
+          - Branch: \`$BRANCH\`
+
+          🤖 Automated sync created by GitHub Actions" \
+            --label "sync,upstream"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        if: always()
+        run: |
+          BRANCH=${{ steps.current_branch.outputs.branch }}
+          echo "## Upstream Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** $BRANCH" >> $GITHUB_STEP_SUMMARY
+          echo "- **Upstream:** Health-Integrity-Project/webapp" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.sync.outputs.skipped }}" = "true" ]; then
+            echo "⚠️ Upstream branch does not exist, sync skipped" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.sync.outputs.uptodate }}" = "true" ]; then
+            echo "✅ Already up to date with upstream" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.sync.outputs.merged }}" = "true" ]; then
+            echo "✅ Successfully merged and pushed upstream changes" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.sync.outputs.conflicts }}" = "true" ]; then
+            echo "⚠️ Merge conflicts detected - PR created for manual resolution" >> $GITHUB_STEP_SUMMARY
+          fi
