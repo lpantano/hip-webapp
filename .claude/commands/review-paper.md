@@ -135,7 +135,7 @@ Generate a structured review in the following format:
 ### Evidence Analysis
 
 #### Study Design Summary
-[Describe the study design in 2-3 sentences: What did researchers do? How was it structured? What were they measuring?]
+[Describe the study design in 2-3 sentences ONLY: What did researchers do? How was it structured? What were they measuring?]
 
 #### Research Question
 [What question was this study trying to answer? Be specific.]
@@ -155,6 +155,9 @@ you SHOULD stop after each finding and quotes that support the finding to ask fo
 [Enumerate the limitations of the study to make it clear to the expert. Type of population, metric measured, cofounding factors, no blinded study.]
 
 #### Relationship to Claim
+
+Ask the user what is the final category after all the information before making this statement.
+
 **Claim**: [Restate the claim being evaluated]
 
 **Paper's Stance**: [Supporting / Contradicting / Neutral / Mixed]
@@ -170,23 +173,16 @@ you SHOULD stop after each finding and quotes that support the finding to ask fo
 
 ### Expert Comment (For Layperson Audience)
 
-[Write a 3-5 paragraph explanation for a general audience that includes:]
+[Write an explanation for a general audience that includes:]
+
+The text should be under 500 characters.
 
 **Study Design**: [What type of study was this? Who participated? What intervention or observation was done?]
 
 **Main Findings**: [What did the study show? Include key numbers and results in plain language.]
 
 **Classification Rationale**: [Why does this study have the classification it received? What are its strengths and limitations?]
-
-**Alignment with Claim**: [How well does this study support or contradict the claim? What are the caveats?]
-
-**Recommendations**: [What additional research would be needed to strengthen the evidence? What populations, designs, or controls would improve this study's alignment with the claim?]
-
-### Expert Comment (For Layperson Audience) - Shorter
-
-- Make the expert comment less than 500 characters. Stick with the most important for each section.
-- Add a final sentence summarizing the Recommendations. this is outside the 500 character limit.
-
+```
 ---
 
 ## Instructions
@@ -214,6 +210,9 @@ If they give you feedback, take their feedback as a core rule.
 7. **the Claim Context**: papers are classified as to support OR to disproof a claim, consider this relationship  to this paper. User should give you this information.
 
 8. **Identify Improvement Opportunities**: Be constructive - what would make this study stronger evidence for the claim?
+
+9. **Archive** Ask for confirmation to do the following as last step:
+ - Rename PDF and save it under company/science folder, save the chat as-is in a markdown in the same folder with the same name than the paper.
 
 ## Examples of Good Reviews
 

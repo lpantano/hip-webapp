@@ -1,0 +1,163 @@
+[
+  {
+    "filename": "2001_Timing_Amino_Acid_Carbohydrate_Muscle_Anabolic_Response_Tipton.pdf",
+    "filename_year": 2001,
+    "pdf_year": 2001,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2011_Raspberry_Leaf_Pregnancy_Simpson.pdf",
+    "filename_year": 2011,
+    "pdf_year": 2001,
+    "source": "metadata_creation_date",
+    "status": "MISMATCH"
+  },
+  {
+    "filename": "2012_Nutrition_Physiology_Study.pdf",
+    "filename_year": 2012,
+    "pdf_year": 2012,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2012_Sex_Based_Myofibrillar_Protein_Synthesis_West.pdf",
+    "filename_year": 2012,
+    "pdf_year": 2012,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2013_Schoenfeld_Protein_Timing_Meta_Analysis.pdf",
+    "filename_year": 2013,
+    "pdf_year": 2013,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2015_Creatine_Hypoxia_Cognitive_Performance_Turner.pdf",
+    "filename_year": 2015,
+    "pdf_year": 2015,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2018_Pineapple_Anti_Obesity_Effects_El_Shazly.pdf",
+    "filename_year": 2018,
+    "pdf_year": 2018,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2019_Hormone_Therapy_Muscle_Mass_Javed.pdf",
+    "filename_year": 2019,
+    "pdf_year": 2019,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2019_Low_Carb_Training_Protein_Requirements_Gillen.pdf",
+    "filename_year": 2019,
+    "pdf_year": 2019,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2020_Protein_Timing_Postmenopausal_Women_De_Branco.pdf",
+    "filename_year": 2020,
+    "pdf_year": 2019,
+    "source": "metadata_creation_date",
+    "status": "MISMATCH"
+  },
+  {
+    "filename": "2021_BCAA_Metabolites_Low_Glycogen_Margolis.pdf",
+    "filename_year": 2021,
+    "pdf_year": 2021,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2021_Complementary_Alternative_Medicine_Study.pdf",
+    "filename_year": 2021,
+    "pdf_year": 2021,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2021_Futsal_Menstrual_Cycle_Injuries_Lago_Fuentes.pdf",
+    "filename_year": 2021,
+    "pdf_year": 2021,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2021_Menstrual_Cycle_Football_Injuries_Martin.pdf",
+    "filename_year": 2021,
+    "pdf_year": 2021,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2022_Creatine_Memory_Meta_Analysis_Prokopidis.pdf",
+    "filename_year": 2022,
+    "pdf_year": 2023,
+    "source": "metadata_creation_date",
+    "status": "MISMATCH"
+  },
+  {
+    "filename": "2023_Creatine_Cognitive_RCT_Moriarty.pdf",
+    "filename_year": 2023,
+    "pdf_year": 2023,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2023_Exercise_Sports_Performance_Study.pdf",
+    "filename_year": 2023,
+    "pdf_year": 2014,
+    "source": "pypdf_creation_date",
+    "status": "MISMATCH"
+  },
+  {
+    "filename": "2024_Creatine_Sleep_Deprivation_Cognitive_Gordji-Nejad.pdf",
+    "filename_year": 2024,
+    "pdf_year": 2024,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2024_International_Journal_Environmental_Public_Health.pdf",
+    "filename_year": 2024,
+    "pdf_year": 2024,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2024_Multivitamin_Cognitive_Function_COSMOS.pdf",
+    "filename_year": 2024,
+    "pdf_year": 2024,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2025_Creatine_Cognition_Clinical_Outcomes.pdf",
+    "filename_year": 2025,
+    "pdf_year": 2025,
+    "source": "content_pattern",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2025_Creatine_GAA_Cognitive_Function_Chun.pdf",
+    "filename_year": 2025,
+    "pdf_year": 2025,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  },
+  {
+    "filename": "2025_Female_Athlete_Study.pdf",
+    "filename_year": 2025,
+    "pdf_year": 2025,
+    "source": "metadata_creation_date",
+    "status": "MATCH"
+  }
+]

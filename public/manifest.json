@@ -9,25 +9,25 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/logo-hi2-tr.png",
+      "src": "/logo-sm.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-hi2-tr.png",
+      "src": "/logo-sm.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/logo-hi2-tr.png",
+      "src": "/logo-sm.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-hi2-tr.png",
+      "src": "/logo-sm.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -42,7 +42,7 @@
       "url": "/claims",
       "icons": [
         {
-          "src": "/logo-hi2-tr.png",
+          "src": "/logo-sm.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -55,7 +55,7 @@
       "url": "/community",
       "icons": [
         {
-          "src": "/logo-hi2-tr.png",
+          "src": "/logo-sm.png",
           "sizes": "96x96",
           "type": "image/png"
         }

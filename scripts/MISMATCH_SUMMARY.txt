@@ -1,0 +1,131 @@
+================================================================================
+PDF PUBLICATION YEAR MISMATCH SUMMARY
+================================================================================
+Analysis Date: 2026-01-31
+Directory: /Users/lpantano/Code/Apps/evidence-decoded/company/science/papers/
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+Total PDFs Analyzed: 23
+Matches: 19 (82.6%)
+Mismatches: 4 (17.4%)
+
+================================================================================
+DETAILED MISMATCH INFORMATION
+================================================================================
+
+[1] 2011_Raspberry_Leaf_Pregnancy_Simpson.pdf
+    Filename Year:      2011
+    Actual Year:        2001
+    Discrepancy:        10 years older
+    Confidence:         VERY HIGH
+    Evidence:
+    - PDF metadata CreationDate: April 12, 2001
+    - Journal: J Midwife Womens Health
+    - Journal Issue: 2001.46:51-59
+    ACTION: Rename to "2001_Raspberry_Leaf_Pregnancy_Simpson.pdf"
+
+[2] 2020_Protein_Timing_Postmenopausal_Women_De_Branco.pdf
+    Filename Year:      2020
+    Actual Year:        2019 (acceptance) / 2020 (publication)
+    Discrepancy:        1 year - COMPLEX CASE
+    Confidence:         HIGH
+    Evidence:
+    - PDF metadata CreationDate: December 26, 2019
+    - Journal: Clinical Nutrition 39(2020)
+    - DOI: 10.1016/j.clnu.2019.01.008
+    - Article accepted: January 9, 2019
+    ACTION: KEEP AS-IS
+    RATIONALE: The filename correctly reflects journal publication year (2020).
+              The metadata shows pre-publication PDF date (2019).
+              This is normal for early online/advance PDF publication.
+
+[3] 2022_Creatine_Memory_Meta_Analysis_Prokopidis.pdf
+    Filename Year:      2022
+    Actual Year:        2023
+    Discrepancy:        1 year newer
+    Confidence:         VERY HIGH
+    Evidence:
+    - PDF metadata CreationDate: March 3, 2023
+    - Literature search period: up to September 2021
+    - PDF creation date confirms 2023 publication
+    ACTION: Rename to "2023_Creatine_Memory_Meta_Analysis_Prokopidis.pdf"
+
+[4] 2023_Exercise_Sports_Performance_Study.pdf
+    Filename Year:      2023
+    Actual Year:        2014
+    Discrepancy:        9 years OLDER
+    Confidence:         VERY HIGH
+    Evidence:
+    - PDF metadata CreationDate: May 16, 2014
+    - Journal: Journal of Nutrition, Health & Aging (JNHA)
+    - Journal Issue: 18(2014):540-546
+    - DOI: 10.1007/s12603-014-0464-x
+    - Title: "Influence of age and gender on fat mass, fat-free mass and 
+             skeletal muscle mass among Australian adults"
+    ACTION: Rename to "2014_Age_Gender_Fat_Mass_AusDiab.pdf"
+    CRITICAL: This paper is 9 years older than filename indicates!
+
+================================================================================
+METADATA EXTRACTION METHODOLOGY
+================================================================================
+
+Tools Used: pdfplumber, pypdf Python libraries
+Metadata Fields Analyzed:
+  - CreationDate (primary indicator)
+  - ModDate (secondary check)
+  - Subject field (journal/publication info)
+  - Title (content verification)
+  - DOI (publication verification)
+
+Text Analysis:
+  - First 3-5 pages scanned for publication year mentions
+  - Regex patterns: publication dates, copyright years, issue information
+  - Journal metadata in headers/footers
+
+Validation Method: Cross-referenced with PDF metadata, journal metadata, and DOI
+
+================================================================================
+SUMMARY STATISTICS
+================================================================================
+
+Extraction Success Rate: 100% (23/23 PDFs)
+Files with readable metadata: 23
+Files with text extraction issues: 1 (but metadata was readable)
+
+Source of Year Information:
+  - PDF metadata (CreationDate): 22 files
+  - Content pattern analysis: 1 file
+  - No fallback methods needed
+
+================================================================================
+RECOMMENDATIONS FOR FUTURE MAINTENANCE
+================================================================================
+
+1. Establish consistent naming convention:
+   - Use publication year from journal/official source, not PDF metadata
+   - Include author surname for disambiguation
+   - Format: YYYY_Topic_Description_Author.pdf
+
+2. Before adding new PDFs:
+   - Extract actual publication year from journal
+   - Verify against PDF metadata
+   - Flag any discrepancies during upload
+
+3. Metadata verification checklist:
+   - Check PDF Subject field for journal info
+   - Verify DOI matches the study
+   - Cross-check with original publication date
+   - Document any discrepancies
+
+4. Consider maintaining a CSV index with:
+   - Filename
+   - Filename Year
+   - Actual Publication Year
+   - Journal
+   - DOI
+   - Notes
+
+================================================================================
