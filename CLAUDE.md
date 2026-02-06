@@ -259,3 +259,10 @@ toast.error("Error message")
 - Check the README.md for detailed setup and deployment instructions
 - Review existing code patterns before implementing new features
 - When in doubt, ask the user for clarification rather than making assumptions
+
+## Active Technologies
+- TypeScript 5.8 (React 18.3, Vite 7.2) + React Router v6.30, Supabase 2.55, TanStack Query 5.83, shadcn/ui (Radix UI), Tailwind CSS (001-simplify-claim-card)
+- Supabase (PostgreSQL database), existing tables: claims, publications, publication_scores, claim_votes (001-simplify-claim-card)
+
+## Recent Changes
+- 001-simplify-claim-card: Added TypeScript 5.8 (React 18.3, Vite 7.2) + React Router v6.30, Supabase 2.55, TanStack Query 5.83, shadcn/ui (Radix UI), Tailwind CSS

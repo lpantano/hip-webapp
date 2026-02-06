@@ -1,12 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ChevronUp,
-  ChevronDown,
-  Eye,
   Plus,
   FileText,
   Link as LinkIcon,
@@ -15,14 +13,12 @@ import {
   X,
   Info,
   ThumbsUp,
-  Share2
+  Share2,
+  BookOpen
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
-import ClaimLabelsStack from './ClaimLabelsStack';
-import ClaimPublicationsExpanded from './ClaimPublicationsExpanded';
 import { getCategoryColor } from '@/lib/getCategoryColor';
-import { getEvidenceStatusColor, getStanceIcon } from '../utils/helpers';
+import { getEvidenceStatusColor } from '../utils/helpers';
 import { getLabelDisplay, getLabelColor } from '@/constants/labels';
 import { cn } from '@/lib/utils';
 import type { ClaimUI, PublicationScoreRow } from '../types';
@@ -43,13 +39,13 @@ interface ClaimCardProps {
   isExpert: boolean;
   user: User | null;
   onVote: (id: string) => void;
-  onStanceClick: (claimId: string, stance: 'supporting' | 'contradicting') => void;
+  onStanceClick?: (claimId: string, stance: 'supporting' | 'contradicting') => void;
   onTitleUpdate: (claimId: string, newTitle: string) => Promise<void>;
   onShowReel: (claimId: string) => void;
   onShowPaperForm: (claimId: string) => void;
   onShowSourceForm: (claimId: string) => void;
   onShowEvidenceInfo: (claimId: string) => void;
-  expandedStance: { claimId: string; stance: 'supporting' | 'contradicting' } | null;
+  expandedStance?: { claimId: string; stance: 'supporting' | 'contradicting' } | null;
   editingClaimId: string | null;
   setEditingClaimId: (id: string | null) => void;
   updatingTitle: string | null;
@@ -61,25 +57,22 @@ interface ClaimCardProps {
 export const ClaimCard = ({
   claim,
   userVotes,
-  expertProfiles,
   isExpert,
   user,
   onVote,
-  onStanceClick,
   onTitleUpdate,
   onShowReel,
   onShowPaperForm,
   onShowSourceForm,
   onShowEvidenceInfo,
-  expandedStance,
   editingClaimId,
   setEditingClaimId,
   updatingTitle,
-  setReviewPublication,
   showShareButton,
   onShare
 }: ClaimCardProps) => {
   const [editedTitle, setEditedTitle] = useState('');
+  const navigate = useNavigate();
 
   // Permission check for editing claim titles
   const canEditClaim = () => {
@@ -277,96 +270,7 @@ export const ClaimCard = ({
             </>
           )}
         </div>
-
-        {/* Aggregated Category Labels from all expert reviews, separated by stance */}
-        <div className="flex-col mt-2">
-          {(() => {
-            const agg = aggregateLabelsForClaim(claim);
-            const {
-              classificationOrder,
-              supportingLabelCounts,
-              contradictingLabelCounts,
-              supportingWomenNotIncluded,
-              contradictingWomenNotIncluded,
-              supportingObservationalCount,
-              contradictingObservationalCount,
-              supportingClinicalTrialCount,
-              contradictingClinicalTrialCount,
-              aggregatedReasons
-            } = agg;
-
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                <div className="space-y-1">
-                  <div
-                    className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
-                    onClick={() => onStanceClick(claim.id, 'supporting')}
-                  >
-                    <span className="font-semibold text-xs">
-                      Reported to Support ({claim.publications.filter(p => p.stance === 'supporting').length})
-                    </span>
-                    {expandedStance?.claimId === claim.id && expandedStance?.stance === 'supporting' ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <ClaimLabelsStack
-                      classificationOrder={classificationOrder}
-                      labelCounts={supportingLabelCounts}
-                      womenNotIncludedCount={supportingWomenNotIncluded}
-                      observationalCount={supportingObservationalCount}
-                      clinicalTrialCount={supportingClinicalTrialCount}
-                      stance="supporting"
-                      aggregatedReasonsForStance={aggregatedReasons.supporting}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div
-                    className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
-                    onClick={() => onStanceClick(claim.id, 'contradicting')}
-                  >
-                    <span className="font-semibold text-xs">
-                      Reported to Disprove ({claim.publications.filter(p => p.stance === 'contradicting').length})
-                    </span>
-                    {expandedStance?.claimId === claim.id && expandedStance?.stance === 'contradicting' ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <ClaimLabelsStack
-                      classificationOrder={classificationOrder}
-                      labelCounts={contradictingLabelCounts}
-                      womenNotIncludedCount={contradictingWomenNotIncluded}
-                      observationalCount={contradictingObservationalCount}
-                      clinicalTrialCount={contradictingClinicalTrialCount}
-                      stance="contradicting"
-                      aggregatedReasonsForStance={aggregatedReasons.contradicting}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
       </CardHeader>
-
-      {/* Expanded view with individual reviews */}
-      {expandedStance?.claimId === claim.id && setReviewPublication && (
-        <ClaimPublicationsExpanded
-          publications={claim.publications.filter(p => p.stance === expandedStance.stance)}
-          links={claim.links}
-          isExpert={isExpert}
-          user={user}
-          setReviewPublication={setReviewPublication}
-          getStanceIcon={getStanceIcon}
-          expertProfiles={expertProfiles}
-        />
-      )}
 
       {/* Bottom section with action buttons */}
       <CardContent className="pt-2">
@@ -374,16 +278,18 @@ export const ClaimCard = ({
           <div className="border-t border-border pt-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onShowReel(claim.id)}
-                  className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline">See Comments</span>
-                  <span className="sm:hidden">Comments</span>
-                </Button>
+                {claim.publications.length > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => navigate(`/claims/${claim.id}/evidence`)}
+                    className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span className="hidden sm:inline">See Reviews</span>
+                    <span className="sm:hidden">Evidence</span>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"

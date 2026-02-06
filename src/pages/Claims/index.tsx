@@ -19,7 +19,6 @@ import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ClaimCard } from './components/ClaimCard';
-import CategoriesLegend from './components/Legend';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
@@ -57,7 +56,6 @@ const Claims = () => {
   const [showSourceForm, setShowSourceForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
-  const [expandedStance, setExpandedStance] = useState<{ claimId: string; stance: 'supporting' | 'contradicting' } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
@@ -427,16 +425,6 @@ const Claims = () => {
     }
   };
 
-  const handleStanceClick = (claimId: string, stance: 'supporting' | 'contradicting') => {
-    // Toggle: if clicking same stance on same claim, collapse it
-    if (expandedStance?.claimId === claimId && expandedStance?.stance === stance) {
-      setExpandedStance(null);
-    } else {
-      // Otherwise expand the clicked stance
-      setExpandedStance({ claimId, stance });
-    }
-  };
-
   // Update claim title with validation
   const updateClaimTitle = async (claimId: string, newTitle: string) => {
     if (!user) return;
@@ -513,11 +501,6 @@ const Claims = () => {
                 <ExternalLink className="w-4 h-4" />
               </a>
             </p>
-
-            {/* Study Quality Legend - compact horizontal with tooltips */}
-            <div className="w-full max-w-3xl mx-auto">
-              <CategoriesLegend />
-            </div>
           </div>
 
           {/* Tabs Navigation */}
@@ -661,17 +644,14 @@ const Claims = () => {
                 isExpert={isExpert}
                 user={user}
                 onVote={handleVote}
-                onStanceClick={handleStanceClick}
                 onTitleUpdate={updateClaimTitle}
                 onShowReel={setShowReelClaim}
                 onShowPaperForm={setShowPaperForm}
                 onShowSourceForm={setShowSourceForm}
                 onShowEvidenceInfo={setShowEvidenceInfo}
-                expandedStance={expandedStance}
                 editingClaimId={editingClaimId}
                 setEditingClaimId={setEditingClaimId}
                 updatingTitle={updatingTitle}
-                setReviewPublication={setReviewPublication}
                 showShareButton={false}
               />
             ))}
