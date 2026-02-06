@@ -242,6 +242,17 @@ const ClaimPublicationsExpanded: React.FC<{
                   </div>
 
                   <div className="flex items-center gap-2 mt-3">
+                    {pub.rawScores && pub.rawScores.length > 0 && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setSelectedPublication(pub)}
+                        className="flex items-center gap-2 shadow-md"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Reviews
+                      </Button>
+                    )}
                     {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (() => {
                       const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
                       const reviewButtonText = existingReview ? 'Update' : 'Review';
