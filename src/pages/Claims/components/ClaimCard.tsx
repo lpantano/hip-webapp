@@ -116,7 +116,7 @@ export const ClaimCard = ({
   return (
     <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
       <CardHeader className="pb-2">
-        {/* First row: Category/Status badges and vote button */}
+        {/* First row: Category/Status badges */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap gap-2">
             <button
@@ -152,44 +152,6 @@ export const ClaimCard = ({
                 {getLabelDisplay(label)}
               </Badge>
             ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (showShareButton && onShare) {
-                  onShare();
-                } else {
-                  handleShareClick();
-                }
-              }}
-              className="h-8 px-2"
-              title="Copy link to this claim"
-            >
-              <Share2 className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
-            </Button>
-            <button
-              onClick={() => onVote(claim.id)}
-              disabled={!user}
-              title={!user ? "Sign in to vote" : undefined}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation ${
-                userVotes.has(claim.id)
-                  ? 'text-blue-500 scale-105'
-                  : 'text-muted-foreground hover:text-primary'
-              } ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
-            >
-              <ThumbsUp className={`w-4 h-4 transition-all ${
-                userVotes.has(claim.id) ? 'fill-current' : ''
-              }`} />
-              <span className={`font-bold text-sm min-w-[20px] text-center transition-colors ${
-                userVotes.has(claim.id) ? 'text-blue-500' : ''
-              }`}>
-                {claim.votes}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -277,7 +239,7 @@ export const ClaimCard = ({
       {/* Bottom section with action buttons */}
       <CardContent className="pt-2">
         {user ? (
-          <div className="border-t border-border pt-3">
+          <div className="border-t border-border pt-3 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 {claim.publications.length > 0 && (
@@ -321,17 +283,60 @@ export const ClaimCard = ({
                   </Button>
                 ) : null}
               </div>
-              <div className="text-xs text-muted-foreground ml-auto">
+            </div>
+            {/* New row: Vote/Share buttons on left, Date on right */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onVote(claim.id)}
+                  disabled={!user}
+                  title={!user ? "Sign in to vote" : undefined}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation ${
+                    userVotes.has(claim.id)
+                      ? 'text-blue-500 scale-105'
+                      : 'text-muted-foreground hover:text-primary'
+                  } ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  <ThumbsUp className={`w-4 h-4 transition-all ${
+                    userVotes.has(claim.id) ? 'fill-current' : ''
+                  }`} />
+                  <span className={`font-bold text-sm min-w-[20px] text-center transition-colors ${
+                    userVotes.has(claim.id) ? 'text-blue-500' : ''
+                  }`}>
+                    {claim.votes}
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showShareButton && onShare) {
+                      onShare();
+                    } else {
+                      handleShareClick();
+                    }
+                  }}
+                  className="h-8 px-2"
+                  title="Copy link to this claim"
+                >
+                  <Share2 className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
               </div>
             </div>
           </div>
         ) : (
-          <div className="border-t border-border pt-3">
+          <div className="border-t border-border pt-3 space-y-3">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground text-center sm:text-left">
                 Sign in to interact with this claim
               </p>
+            </div>
+            {/* New row: Date only for non-authenticated users */}
+            <div className="flex items-center justify-end gap-2">
               <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
               </div>
