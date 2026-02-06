@@ -50,7 +50,7 @@ export const EvidenceStatusFilter = ({
     if (selectedStatuses.length === 1) {
       return selectedStatuses[0];
     }
-    return `${selectedStatuses.length} Selected`;
+    return `(${selectedStatuses.length}) Evidence Status`;
   };
 
   return (
