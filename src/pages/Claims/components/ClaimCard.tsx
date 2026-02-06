@@ -144,13 +144,12 @@ export const ClaimCard = ({
               {claim.broad_category}
             </Badge>
             {claim.labels && claim.labels.length > 0 && claim.labels.map((label) => (
-              <Badge
+              <span
                 key={label}
-                variant="outline"
-                className={cn("text-xs", getLabelColor(label).unselected)}
+                className={cn("text-xs font-medium pointer-events-none", getLabelColor(label).unselected)}
               >
                 {getLabelDisplay(label)}
-              </Badge>
+              </span>
             ))}
           </div>
         </div>
