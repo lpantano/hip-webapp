@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
 
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ExternalLink, Plus, Folder, Tag, X, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Tag, X, Search } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import PublicClaimsPreview from '@/components/landing/PublicClaimsPreview';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,8 +25,6 @@ import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
 import { SortSegmentedControl } from './components/SortSegmentedControl';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
-import { CLAIM_CATEGORIES_WITH_ALL } from '@/constants/categories';
-import { BROAD_CATEGORIES_WITH_ALL } from '@/constants/broadCategories';
 import { CLAIM_LABELS } from '@/constants/labels';
 import { getEvidenceStatusColor, groupBy } from './utils/helpers';
 import { useOptimisticVote } from './hooks/useOptimisticVote';
@@ -40,8 +38,6 @@ const Claims = () => {
   const [totalClaims, setTotalClaims] = useState(0);
   const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
-  const [filterByCategory, setFilterByCategory] = useState<Database['public']['Enums']['claim_category'] | 'all'>('all');
-  const [filterByBroadCategory, setFilterByBroadCategory] = useState<Database['public']['Enums']['broad_category_type'] | 'all'>('all');
   const [filterByLabel, setFilterByLabel] = useState<string>('all');
   const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>([
     'Evidence Supports',
@@ -140,16 +136,6 @@ const Claims = () => {
         .from('claims')
         .select('*', { count: 'exact' })
         .range(page * CLAIMS_PER_PAGE, (page + 1) * CLAIMS_PER_PAGE - 1);
-
-      // Apply category filter
-      if (filterByCategory !== 'all') {
-        claimsQuery = claimsQuery.eq('category', filterByCategory);
-      }
-
-      // Apply broad category filter
-      if (filterByBroadCategory !== 'all') {
-        claimsQuery = claimsQuery.eq('broad_category', filterByBroadCategory);
-      }
 
       // Apply label filter
       if (filterByLabel !== 'all') {
@@ -352,7 +338,7 @@ const Claims = () => {
     } catch (err) {
       console.error('Error loading claims:', err);
     }
-  }, [sb, user, filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses, setUserVotes]);
+  }, [sb, user, filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses, setUserVotes]);
 
   // Move fetchData outside useEffect so it can be called from form submission
   const fetchData = useCallback(async (page: number = 0) => {
@@ -393,7 +379,7 @@ const Claims = () => {
   // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterByCategory, filterByBroadCategory, filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses]);
+  }, [filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -462,9 +448,6 @@ const Claims = () => {
     }
   };
 
-  const categoryOptions = CLAIM_CATEGORIES_WITH_ALL;
-
-
   // Claims are now filtered and sorted by the database query
   // Only show special claim if running on localhost
   let filteredAndSortedClaims = claims;
@@ -496,10 +479,7 @@ const Claims = () => {
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
-              Upvote Claims to prioritize them for expert review. <a href="/workflow" className="inline-flex items-center gap-2 text-md sm:text-lg text-primary hover:underline">
-                Learn how we review information and science
-                <ExternalLink className="w-4 h-4" />
-              </a>
+              Upvote Claims to prioritize them for expert review.
             </p>
           </div>
 
@@ -570,21 +550,10 @@ const Claims = () => {
 
                 {/* Filter dropdowns: 2-column grid on mobile, flex row on desktop */}
                 <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 justify-center">
-                  <Select value={filterByBroadCategory} onValueChange={(value) => setFilterByBroadCategory(value as typeof filterByBroadCategory)}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9">
-                      <div className="flex items-center gap-2">
-                        <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <SelectValue placeholder="Category" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BROAD_CATEGORIES_WITH_ALL.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <EvidenceStatusFilter
+                    selectedStatuses={selectedEvidenceStatuses}
+                    onStatusChange={setSelectedEvidenceStatuses}
+                  />
 
                   <Select value={filterByLabel} onValueChange={setFilterByLabel}>
                     <SelectTrigger className="w-full sm:w-[160px] h-9">
@@ -604,16 +573,6 @@ const Claims = () => {
                   </Select>
 
                   <SortSegmentedControl value={sortBy} onChange={setSortBy} />
-                </div>
-              </div>
-
-              {/* Evidence Status Filter */}
-              <div className="flex justify-center mb-6">
-                <div className="w-full max-w-3xl px-4">
-                  <EvidenceStatusFilter
-                    selectedStatuses={selectedEvidenceStatuses}
-                    onStatusChange={setSelectedEvidenceStatuses}
-                  />
                 </div>
               </div>
 

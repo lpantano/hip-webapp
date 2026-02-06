@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -287,9 +287,19 @@ const ClaimEvidencePage = () => {
         </nav>
 
         <article aria-labelledby="claim-title">
-          <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-6">
+          <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-4">
             {claim.title}
           </h1>
+
+          {/* Info Section */}
+          <div className="mb-6 text-center">
+            <p className="text-sm sm:text-base text-muted-foreground">
+              <a href="/workflow" className="inline-flex items-center gap-2 text-primary hover:underline">
+                Learn how we review information and science
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </p>
+          </div>
 
           {/* Study Quality Legend */}
           <div className="w-full max-w-3xl mx-auto mb-8">
