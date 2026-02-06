@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from '../types';
@@ -6,7 +6,6 @@ import { groupBy } from '../utils/helpers';
 import { CLAIMS_PER_PAGE } from '../constants';
 
 interface UseClaimsQueryParams {
-  page: number;
   sortBy: 'votes' | 'recent';
   filterByLabel: string;
   selectedEvidenceStatuses: string[];
@@ -28,29 +27,28 @@ interface ClaimsQueryResult {
 }
 
 export const useClaimsQuery = ({
-  page,
   sortBy,
   filterByLabel,
   selectedEvidenceStatuses,
   debouncedSearchQuery,
   userId
 }: UseClaimsQueryParams) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [
       'claims',
-      page,
       sortBy,
       filterByLabel,
       selectedEvidenceStatuses,
       debouncedSearchQuery,
       userId
     ],
-    queryFn: async (): Promise<ClaimsQueryResult> => {
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }): Promise<ClaimsQueryResult> => {
       // Build the claims query with pagination, filtering, and sorting
       let claimsQuery = supabase
         .from('claims')
         .select('*', { count: 'exact' })
-        .range(page * CLAIMS_PER_PAGE, (page + 1) * CLAIMS_PER_PAGE - 1);
+        .range(pageParam * CLAIMS_PER_PAGE, (pageParam + 1) * CLAIMS_PER_PAGE - 1);
 
       // Apply label filter
       if (filterByLabel !== 'all') {
@@ -114,7 +112,7 @@ export const useClaimsQuery = ({
       // Calculate pagination info
       const totalClaims = count || 0;
       const totalPages = Math.ceil(totalClaims / CLAIMS_PER_PAGE);
-      const hasMoreClaims = page < totalPages - 1;
+      const hasMoreClaims = pageParam < totalPages - 1;
 
       // Batch the claim-dependent queries in parallel
       const claimIds = claimsData?.map(c => c.id) || [];
@@ -243,6 +241,9 @@ export const useClaimsQuery = ({
         userVotes,
         expertProfiles
       };
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.hasMoreClaims ? allPages.length : undefined;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
 
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Tag, X, Search } from 'lucide-react';
+import { Plus, Tag, X, Search, Loader2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import PublicClaimsPreview from '@/components/landing/PublicClaimsPreview';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,11 +28,10 @@ import { CLAIM_LABELS } from '@/constants/labels';
 import { getEvidenceStatusColor } from './utils/helpers';
 import { useReviewCards } from './hooks/useReviewCards';
 import { useClaimsQuery } from './hooks/useClaimsQuery';
-import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
+import { SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [searchParams] = useSearchParams();
-  const [currentPage, setCurrentPage] = useState(0);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByLabel, setFilterByLabel] = useState<string>('all');
   const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>([
@@ -48,17 +47,19 @@ const Claims = () => {
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
-  const prevPageRef = useRef<number>(-1);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  // Fetch claims using TanStack Query
+  // Fetch claims using TanStack Query with infinite scroll
   const {
     data: queryData,
     isLoading: loading,
     error,
-    refetch
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
   } = useClaimsQuery({
-    page: currentPage,
     sortBy,
     filterByLabel,
     selectedEvidenceStatuses,
@@ -66,12 +67,36 @@ const Claims = () => {
     userId: user?.id || null
   });
 
-  // Extract data from query result with defaults
-  const claims = queryData?.claims || [];
-  const totalClaims = queryData?.totalClaims || 0;
-  const hasMoreClaims = queryData?.hasMoreClaims || false;
-  const expertProfiles = queryData?.expertProfiles || {};
-  const queryUserVotes = queryData?.userVotes || new Set<string>();
+  // Flatten pages data for rendering
+  const claims = queryData?.pages.flatMap(page => page.claims) || [];
+  const totalClaims = queryData?.pages[0]?.totalClaims || 0;
+  const expertProfiles = queryData?.pages.reduce((acc, page) => ({ ...acc, ...page.expertProfiles }), {} as Record<string, { display_name?: string | null; avatar_url?: string | null }>) || {};
+  const queryUserVotes = queryData?.pages.reduce((acc, page) => {
+    page.userVotes.forEach(v => acc.add(v));
+    return acc;
+  }, new Set<string>()) || new Set<string>();
+
+  // Intersection Observer for infinite scroll
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [target] = entries;
+    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  useEffect(() => {
+    const element = loadMoreRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   // Read search and label parameters from URL on mount
   useEffect(() => {
@@ -163,27 +188,6 @@ const Claims = () => {
       }, 100);
     }
   }, [loading]);
-
-  // Scroll to top when page changes and data has finished loading
-  useEffect(() => {
-    // Only scroll if page changed (skip initial load when prevPageRef is 0 and currentPage is 0)
-    const pageChanged = prevPageRef.current !== currentPage;
-    if (pageChanged && !loading && prevPageRef.current !== -1) {
-      // Use setTimeout to ensure DOM has updated
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-    }
-    // Update ref after checking
-    if (pageChanged) {
-      prevPageRef.current = currentPage;
-    }
-  }, [currentPage, loading]);
-
-  // Reset to first page when filters or sorting change
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses]);
 
   const handleVote = async (id: string) => {
     if (!user) {
@@ -413,73 +417,17 @@ const Claims = () => {
               />
             ))}
 
-            {/* Pagination Controls */}
-            {totalClaims > 0 && (
-              <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 p-4 bg-card/30 rounded-lg border">
-                <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
-                  Showing {currentPage * CLAIMS_PER_PAGE + 1} - {Math.min((currentPage + 1) * CLAIMS_PER_PAGE, totalClaims)} of {totalClaims} claims
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(0)}
-                    disabled={currentPage === 0 || loading}
-                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
-                    aria-label="First page"
-                  >
-                    {loading && currentPage === 0 ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                    ) : (
-                      <ChevronsLeft className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                    disabled={currentPage === 0 || loading}
-                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
-                    aria-label="Previous page"
-                  >
-                    {loading ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                    ) : (
-                      <ChevronLeft className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <div className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-background rounded border min-w-[80px] sm:min-w-[100px] text-center">
-                    Page {currentPage + 1} of {Math.ceil(totalClaims / CLAIMS_PER_PAGE)}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={!hasMoreClaims || loading}
-                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
-                    aria-label="Next page"
-                  >
-                    {loading ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1)}
-                    disabled={!hasMoreClaims || loading || currentPage === Math.ceil(totalClaims / CLAIMS_PER_PAGE) - 1}
-                    className="min-w-[40px] sm:min-w-[44px] touch-manipulation"
-                    aria-label="Last page"
-                  >
-                    {loading && !hasMoreClaims ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                    ) : (
-                      <ChevronsRight className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
+            {/* Infinite scroll sentinel and loading indicator */}
+            <div ref={loadMoreRef} className="h-10" />
+            {isFetchingNextPage && (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading more claims...</span>
+              </div>
+            )}
+            {!hasNextPage && claims.length > 0 && (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                Showing all {totalClaims} claims
               </div>
             )}
 
@@ -525,7 +473,7 @@ const Claims = () => {
               onClose={() => setShowSourceForm(null)}
               claimId={showSourceForm}
               userId={user.id}
-              onSuccess={() => fetchData(currentPage)}
+              onSuccess={() => refetch()}
             />
           )}
 
