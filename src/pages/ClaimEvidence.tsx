@@ -108,7 +108,7 @@ const useClaimEvidence = (claimId: string | undefined) => {
       const publications: Publication[] = (publicationsData || []).map(pub => ({
         id: pub.id,
         title: pub.title,
-        authors: pub.authors || '',
+        authors: '',
         journal: pub.journal,
         year: pub.publication_year,
         url: pub.url || pub.doi || '',

@@ -175,16 +175,18 @@ export const ClaimCard = ({
               onClick={() => onVote(claim.id)}
               disabled={!user}
               title={!user ? "Sign in to vote" : undefined}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all touch-manipulation ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation ${
                 userVotes.has(claim.id)
-                  ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105'
-                  : 'border-border hover:border-primary hover:bg-primary/5'
+                  ? 'text-blue-500 scale-105'
+                  : 'text-muted-foreground hover:text-primary'
               } ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <ThumbsUp className={`w-4 h-4 transition-all ${
                 userVotes.has(claim.id) ? 'fill-current' : ''
               }`} />
-              <span className="font-bold text-sm min-w-[20px] text-center">
+              <span className={`font-bold text-sm min-w-[20px] text-center transition-colors ${
+                userVotes.has(claim.id) ? 'text-blue-500' : ''
+              }`}>
                 {claim.votes}
               </span>
             </button>
