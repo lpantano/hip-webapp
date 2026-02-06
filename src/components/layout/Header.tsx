@@ -15,7 +15,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-1 md:px-6 md:py-1">
         <div className="flex items-center justify-between">
           <Link
-            to="/"
+            to="/project"
             className="flex items-center gap-3 hover:text-accent transition-colors"
             aria-label="The Health Integrity Project home"
           >
@@ -30,7 +30,7 @@ const Header = () => {
           {/* Mobile Navigation - Show only Claims and Community with icons */}
           <nav className="flex md:hidden items-center gap-2">
             <Link
-              to="/claims"
+              to="/"
               className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
               title="Health"
             >
@@ -48,10 +48,10 @@ const Header = () => {
           {/* Desktop Navigation - Show all items */}
           <nav className="hidden text-lg md:flex items-center gap-6">
             <Link to="/" className="text-white/80 hover:text-white transition-colors">
-              Home
-            </Link>
-            <Link to="/claims" className="text-white/80 hover:text-white transition-colors">
               Health Claims
+            </Link>
+            <Link to="/project" className="text-white/80 hover:text-white transition-colors">
+              The Project
             </Link>
             <Link to="/about" className="text-white/80 hover:text-white transition-colors">
               About

@@ -267,7 +267,7 @@ const Claims = () => {
       <SEO
         title="Health Claims"
         description="Community-driven claims about products and services for women's health conditions. Expert-reviewed scientific evidence and research."
-        url="/claims"
+        url="/"
         keywords="health claims, women's health, scientific evidence, expert reviews, health research, medical claims"
       />
       <Header />
@@ -277,12 +277,13 @@ const Claims = () => {
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-8 sm:mb-12 text-center px-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
-              Health Claims
+              The Health Integrity Project
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
+            <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto mb-8"></div>
+            {/* <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
               Upvote Claims to prioritize them for expert review.
-            </p>
+            </p> */}
           </div>
 
           {/* Tabs Navigation */}
@@ -307,7 +308,7 @@ const Claims = () => {
                     <DialogTrigger asChild>
                       <Button size="sm" className="gap-2 whitespace-nowrap h-9 px-2 sm:px-4" disabled={!user}>
                         <Plus className="w-4 h-4" />
-                        <span className="hidden sm:inline">{user ? 'New Claim' : 'Sign in to Submit Claim'}</span>
+                        <span className="hidden sm:inline">{user ? 'Add Claim' : 'Sign in to Submit Claim'}</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">

@@ -249,7 +249,7 @@ const ClaimEvidencePage = () => {
           <p className="text-muted-foreground mb-6">
             The claim you're looking for doesn't exist or has been removed.
           </p>
-          <Button onClick={() => navigate('/claims')}>
+          <Button onClick={() => navigate('/')}>
             Browse All Claims
           </Button>
         </main>
