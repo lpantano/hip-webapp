@@ -27,7 +27,16 @@ import Footer from "./components/layout/Footer";
 // Lazy load evidence page for code splitting
 const ClaimEvidence = lazy(() => import('./pages/ClaimEvidence'));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+      gcTime: 10 * 60 * 1000, // 10 minutes - cache retention (previously cacheTime)
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      retry: 1, // Retry failed requests once
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>

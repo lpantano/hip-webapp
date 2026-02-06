@@ -183,6 +183,11 @@ const ClaimEvidencePage = () => {
   const { user } = useAuth();
   const { data: claim, isLoading, error, expertProfiles, refetch } = useClaimEvidence(id);
 
+  // Scroll to top when page mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // State for publication review dialog
   const [reviewPublication, setReviewPublication] = useState<{
     id: string;
@@ -301,10 +306,7 @@ const ClaimEvidencePage = () => {
             </p>
           </div>
 
-          {/* Study Quality Legend */}
-          <div className="w-full max-w-3xl mx-auto mb-8">
-            <CategoriesLegend />
-          </div>
+          
 
           {hasNoPapers ? (
             <div className="text-center py-12 bg-card/50 rounded-lg border">
@@ -365,6 +367,10 @@ const ClaimEvidencePage = () => {
                   </Card>
                 )}
               </section>
+              {/* Study Quality Legend */}
+              <div className="w-full max-w-3xl mx-auto mb-8">
+                <CategoriesLegend />
+              </div>
             </div>
           )}
         </article>

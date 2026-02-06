@@ -284,7 +284,11 @@ export const ClaimCard = ({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => navigate(`/claims/${claim.id}/evidence`)}
+                    onClick={() => {
+                      // Save scroll position before navigating
+                      sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
+                      navigate(`/claims/${claim.id}/evidence`);
+                    }}
                     className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
                   >
                     <BookOpen className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,20 +23,16 @@ import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
 import { SortSegmentedControl } from './components/SortSegmentedControl';
-import type { Database } from '@/integrations/supabase/types';
-import type { ClaimUI, ClaimRow, ClaimCommentRow, PublicationRow, ClaimLinkRow, PublicationScoreRow } from './types';
+import type { PublicationScoreRow } from './types';
 import { CLAIM_LABELS } from '@/constants/labels';
-import { getEvidenceStatusColor, groupBy } from './utils/helpers';
-import { useOptimisticVote } from './hooks/useOptimisticVote';
+import { getEvidenceStatusColor } from './utils/helpers';
 import { useReviewCards } from './hooks/useReviewCards';
+import { useClaimsQuery } from './hooks/useClaimsQuery';
 import { CLAIMS_PER_PAGE, SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [searchParams] = useSearchParams();
-  const [claims, setClaims] = useState<ClaimUI[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalClaims, setTotalClaims] = useState(0);
-  const [hasMoreClaims, setHasMoreClaims] = useState(true);
   const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
   const [filterByLabel, setFilterByLabel] = useState<string>('all');
   const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>([
@@ -46,16 +42,36 @@ const Claims = () => {
   ]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
-  const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [showSourceForm, setShowSourceForm] = useState<string | null>(null);
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
-  const [expertProfiles, setExpertProfiles] = useState<Record<string, { display_name?: string | null; avatar_url?: string | null }>>({});
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
   const prevPageRef = useRef<number>(-1);
   const { user } = useAuth();
+
+  // Fetch claims using TanStack Query
+  const {
+    data: queryData,
+    isLoading: loading,
+    error,
+    refetch
+  } = useClaimsQuery({
+    page: currentPage,
+    sortBy,
+    filterByLabel,
+    selectedEvidenceStatuses,
+    debouncedSearchQuery,
+    userId: user?.id || null
+  });
+
+  // Extract data from query result with defaults
+  const claims = queryData?.claims || [];
+  const totalClaims = queryData?.totalClaims || 0;
+  const hasMoreClaims = queryData?.hasMoreClaims || false;
+  const expertProfiles = queryData?.expertProfiles || {};
+  const queryUserVotes = queryData?.userVotes || new Set<string>();
 
   // Read search and label parameters from URL on mount
   useEffect(() => {
@@ -70,14 +86,8 @@ const Claims = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
-  // Use custom hook for optimistic vote updates
-  const {
-    userVotes,
-    optimisticallyAddVote,
-    optimisticallyRemoveVote,
-    revertVote,
-    setUserVotes
-  } = useOptimisticVote(setClaims);
+  // Track user votes from query
+  const userVotes = queryUserVotes;
 
   // State for inline title editing
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
@@ -128,237 +138,31 @@ const Claims = () => {
     };
   }, [searchQuery]);
 
-  // Use the groupBy helper for cleaner data grouping
-  const fetchClaimsData = useCallback(async (page: number = 0) => {
-    try {
-      // Build the claims query with pagination, filtering, and sorting
-      let claimsQuery = sb
-        .from('claims')
-        .select('*', { count: 'exact' })
-        .range(page * CLAIMS_PER_PAGE, (page + 1) * CLAIMS_PER_PAGE - 1);
-
-      // Apply label filter
-      if (filterByLabel !== 'all') {
-        claimsQuery = claimsQuery.contains('labels', [filterByLabel]);
-      }
-
-      // Apply search filter
-      if (debouncedSearchQuery.trim()) {
-        claimsQuery = claimsQuery.ilike('title', `%${debouncedSearchQuery.trim()}%`);
-      }
-
-      // Apply evidence status filter
-      if (selectedEvidenceStatuses.length > 0 && selectedEvidenceStatuses.length < 4) {
-        const hasAwaitingEvidence = selectedEvidenceStatuses.includes('Awaiting Evidence');
-        const otherStatuses = selectedEvidenceStatuses.filter(s => s !== 'Awaiting Evidence');
-
-        if (hasAwaitingEvidence && otherStatuses.length > 0) {
-          // Combine NULL check + enum values with OR
-          const statusList = otherStatuses.map(s => `"${s}"`).join(',');
-          claimsQuery = claimsQuery.or(
-            `evidence_status.is.null,evidence_status.eq.Awaiting Evidence,evidence_status.in.(${statusList})`
-          );
-        } else if (hasAwaitingEvidence) {
-          // Only awaiting evidence (includes NULL)
-          claimsQuery = claimsQuery.or('evidence_status.is.null,evidence_status.eq.Awaiting Evidence');
-        } else if (otherStatuses.length === 1) {
-          // Single specific status - use equality for efficiency
-          claimsQuery = claimsQuery.eq('evidence_status', otherStatuses[0] as Database['public']['Enums']['evidence_status_type']);
-        } else {
-          // Multiple specific statuses (not awaiting evidence)
-          claimsQuery = claimsQuery.in('evidence_status', otherStatuses as Database['public']['Enums']['evidence_status_type'][]);
-        }
-      }
-      // If all 4 selected or empty, no filter applied (shows all claims)
-
-      // Apply sorting with secondary keys for stable pagination
-      // Secondary sort keys ensure consistent ordering even when primary values change
-      if (sortBy === 'votes') {
-        // Sort by vote_count, then by created_at (desc), then by id for complete stability
-        claimsQuery = claimsQuery
-          .order('vote_count', { ascending: false })
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: true });
-      } else {
-        // Sort by created_at, then by id for stability
-        claimsQuery = claimsQuery
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: true });
-      }
-
-      // Batch the first set of queries in parallel for better performance
-      const [
-        { data: claimsData, error: claimsError, count },
-        { data: userVotesData, error: votesError }
-      ] = await Promise.all([
-        claimsQuery,
-        user ? sb.from('claim_votes').select('claim_id').eq('user_id', user.id) : Promise.resolve({ data: null, error: null })
-      ]);
-
-      if (claimsError) throw claimsError;
-
-      // Update pagination state
-      setTotalClaims(count || 0);
-      const totalPages = Math.ceil((count || 0) / CLAIMS_PER_PAGE);
-      setHasMoreClaims(page < totalPages - 1);
-
-      // Batch the claim-dependent queries in parallel
-      const claimIds = claimsData?.map(c => c.id) || [];
-      const [
-        { data: publicationsData, error: publicationsError },
-        { data: commentsData, error: commentsError },
-        { data: linksData, error: linksError }
-      ] = await Promise.all([
-        sb.from('publications').select('*').in('claim_id', claimIds),
-        sb.from('claim_comments').select('*').in('claim_id', claimIds).order('created_at', { ascending: true }),
-        sb.from('claim_links').select('*').in('claim_id', claimIds)
-      ]);
-
-      if (publicationsError) throw publicationsError;
-      if (commentsError) throw commentsError;
-
-      // Use groupBy helper for cleaner data organization
-      const publicationsByClaim = groupBy(publicationsData || [], (pub: PublicationRow) => pub.claim_id);
-      const commentsByClaim = groupBy(commentsData || [], (comment: ClaimCommentRow) => comment.claim_id);
-      const linksByClaim = groupBy((linksData || []) as ClaimLinkRow[], (link) => link.claim_id);
-
-
-
-      const mappedClaims: ClaimUI[] = (claimsData || []).map((c: ClaimRow) => {
-        // map publications for this claim
-        const claimPublications = publicationsByClaim[c.id] || [];
-        const pubs = claimPublications.map((p: PublicationRow) => {
-          return {
-            id: p.id, // Add publication ID
-            title: p.title,
-            authors: p.authors || '',
-            journal: p.journal || '',
-            year: p.publication_year || (p.created_at ? new Date(p.created_at).getFullYear() : new Date().getFullYear()),
-            url: p.url || p.doi || '',
-            source: p.source || null,
-            stance: p.stance,
-            rawScores: []
-          };
-        });
-
-
-        return {
-          id: c.id,
-          claim: c.title || c.description || '',
-          user_id: c.user_id,
-          category: c.category,
-          broad_category: c.broad_category,
-          labels: c.labels || [],
-          votes: c.vote_count || 0,
-          created_at: c.created_at,
-          publications: pubs,
-          links: (linksByClaim[c.id] || []).map(l => ({ id: l.id, title: l.title, url: l.url, description: l.description, link_type: l.link_type, expert_user_id: l.expert_user_id })),
-          comments: commentsByClaim[c.id] || [],
-          // preserve DB enum/status values directly as requested
-          rawStatus: c.status,
-          status: c.status as ClaimUI['status'],
-          evidence_status: 'evidence_status' in c ? (c.evidence_status as ClaimUI['evidence_status']) : null
-        };
-      });
-
-      setClaims(mappedClaims);
-
-      // Set user votes from the batched query above
-      if (!votesError && userVotesData) {
-        setUserVotes(new Set(userVotesData.map(v => v.claim_id)));
-      } else {
-        setUserVotes(new Set());
-      }
-
-      // Batch the final queries for publication scores and expert profiles
-      try {
-        const pubIds = mappedClaims.flatMap(c => c.publications.map(p => p.id));
-        if (pubIds.length > 0) {
-          // Fetch scores first to determine which experts we need
-          const { data: scoreRows, error: scoreErr } = await sb
-            .from('publication_scores')
-            .select('*')
-            .in('publication_id', pubIds as string[]);
-
-          if (!scoreErr && scoreRows) {
-            const scoreRowsTyped = scoreRows as PublicationScoreRow[];
-            const scoreMap: Record<string, PublicationScoreRow[]> = {};
-            const expertIdsSet = new Set<string>();
-
-            // Build score map and collect expert IDs in one pass
-            scoreRowsTyped.forEach((r) => {
-              if (!scoreMap[r.publication_id]) scoreMap[r.publication_id] = [];
-              scoreMap[r.publication_id].push(r);
-              if (r.expert_user_id) expertIdsSet.add(r.expert_user_id);
-            });
-
-            // Fetch expert profiles in parallel with updating claims
-            const expertIds = Array.from(expertIdsSet);
-            const expertProfilesPromise = expertIds.length > 0
-              ? sb.from('expert_stats').select('user_id, display_name, avatar_url').in('user_id', expertIds as string[])
-              : Promise.resolve({ data: null, error: null });
-
-            const [{ data: statsRows, error: statsErr }] = await Promise.all([
-              expertProfilesPromise
-            ]);
-
-            // Update claims with scores
-            const updatedClaims = mappedClaims.map((cl) => ({
-              ...cl,
-              publications: cl.publications.map((pub) => {
-                const rows = scoreMap[pub.id] || pub.rawScores || [];
-                return {
-                  ...pub,
-                  rawScores: rows
-                };
-              })
-            }));
-
-            setClaims(updatedClaims);
-
-            // Set expert profiles
-            if (!statsErr && statsRows) {
-              const statsMap: Record<string, { display_name?: string | null; avatar_url?: string | null }> = {};
-              (statsRows as unknown[]).forEach((r) => {
-                if (!r || typeof r !== 'object') return;
-                const rec = r as Record<string, unknown>;
-                const key = typeof rec.user_id === 'string' ? rec.user_id : null;
-                if (!key) return;
-                const display = typeof rec.display_name === 'string' ? rec.display_name : null;
-                const avatar = typeof rec.avatar_url === 'string' ? rec.avatar_url : null;
-                statsMap[key] = { display_name: display, avatar_url: avatar };
-              });
-              setExpertProfiles(prev => ({ ...prev, ...statsMap }));
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load publication_scores', e);
-      }
-    } catch (err) {
-      console.error('Error loading claims:', err);
-    }
-  }, [sb, user, filterByLabel, sortBy, debouncedSearchQuery, selectedEvidenceStatuses, setUserVotes]);
-
-  // Move fetchData outside useEffect so it can be called from form submission
-  const fetchData = useCallback(async (page: number = 0) => {
-    setLoading(true);
-    try {
-      // Fetch claims data for the specified page
-      await fetchClaimsData(page);
-      // Don't set currentPage here - it's already set by the caller or useEffect
-      // Setting it here causes infinite loops when fetchData is in useEffect dependencies
-    } catch (err) {
-      console.error('Error loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchClaimsData]);
-
-  // Load data when filters, sorting, or page changes
+  // Scroll restoration: save scroll position when navigating away
   useEffect(() => {
-    fetchData(currentPage);
-  }, [currentPage, fetchData]);
+    const saveScrollPosition = () => {
+      sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
+    };
+
+    // Save scroll position before navigating away
+    window.addEventListener('beforeunload', saveScrollPosition);
+
+    return () => {
+      window.removeEventListener('beforeunload', saveScrollPosition);
+    };
+  }, []);
+
+  // Restore scroll position on mount (when returning from evidence page)
+  useEffect(() => {
+    const savedPosition = sessionStorage.getItem('claimsScrollPosition');
+    if (savedPosition && !loading) {
+      const position = parseInt(savedPosition, 10);
+      setTimeout(() => {
+        window.scrollTo({ top: position, behavior: 'instant' });
+        sessionStorage.removeItem('claimsScrollPosition');
+      }, 100);
+    }
+  }, [loading]);
 
   // Scroll to top when page changes and data has finished loading
   useEffect(() => {
@@ -389,13 +193,6 @@ const Claims = () => {
 
     const hasVoted = userVotes.has(id);
 
-    // Optimistic UI update using custom hook
-    if (hasVoted) {
-      optimisticallyRemoveVote(id);
-    } else {
-      optimisticallyAddVote(id);
-    }
-
     try {
       if (hasVoted) {
         const { error: delError } = await sb.from('claim_votes').delete().eq('claim_id', id).eq('user_id', user.id);
@@ -404,10 +201,11 @@ const Claims = () => {
         const { error: insertError } = await sb.from('claim_votes').insert({ claim_id: id, user_id: user.id });
         if (insertError) throw insertError;
       }
+      // Refetch claims data to update vote counts and user votes
+      refetch();
     } catch (err) {
       console.error('Vote failed:', err);
-      // Revert optimistic update on error
-      revertVote(id, !hasVoted);
+      toast.error('Failed to update vote');
     }
   };
 
@@ -434,7 +232,7 @@ const Claims = () => {
       if (error) throw error;
 
       // Refresh data
-      await fetchData(currentPage);
+      await refetch();
       toast.success('Title updated', {
         description: 'Claim title has been updated successfully.'
       });
@@ -513,7 +311,7 @@ const Claims = () => {
                       <ClaimSubmissionForm
                         onSuccess={() => {
                           setShowSubmissionForm(false);
-                          fetchData(currentPage);
+                          refetch();
                         }}
                         onCancel={() => setShowSubmissionForm(false)}
                       />
@@ -709,7 +507,7 @@ const Claims = () => {
                         claimTitle={claim.claim}
                         onSuccess={() => {
                           setShowPaperForm(null);
-                          fetchData(currentPage);
+                          refetch();
                         }}
                         onCancel={() => setShowPaperForm(null)}
                       />
@@ -769,7 +567,7 @@ const Claims = () => {
               onClose={() => setReviewPublication(null)}
               onReviewSubmitted={() => {
                 // refresh claims and expert distributions after an expert submits/updates a review
-                fetchData(currentPage);
+                refetch();
               }}
             />
           )}
