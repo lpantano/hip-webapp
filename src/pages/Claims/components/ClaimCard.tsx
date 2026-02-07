@@ -253,7 +253,7 @@ export const ClaimCard = ({
                     className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
                   >
                     <BookOpen className="w-4 h-4" />
-                    <span className="hidden sm:inline">See Reviews</span>
+                    <span className="hidden sm:inline">View Evidence</span>
                     <span className="sm:hidden">Evidence</span>
                   </Button>
                 )}
