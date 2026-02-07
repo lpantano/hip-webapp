@@ -351,31 +351,37 @@ const Claims = () => {
                   </div>
                 </div>
 
-                {/* Filter dropdowns: 2-column grid on mobile, flex row on desktop */}
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 justify-center">
-                  <EvidenceStatusFilter
-                    selectedStatuses={selectedEvidenceStatuses}
-                    onStatusChange={setSelectedEvidenceStatuses}
-                  />
+                {/* Filter dropdowns: Evidence Status on first row (mobile), Topics and Sort on second row (mobile), flex row on desktop */}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 justify-center">
+                  {/* First row on mobile: Evidence Status (full width) */}
+                  <div className="w-full sm:w-auto">
+                    <EvidenceStatusFilter
+                      selectedStatuses={selectedEvidenceStatuses}
+                      onStatusChange={setSelectedEvidenceStatuses}
+                    />
+                  </div>
 
-                  <Select value={filterByLabel} onValueChange={setFilterByLabel}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9">
-                      <div className="flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <SelectValue placeholder="Topic" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">All Topics</SelectItem>
-                      {CLAIM_LABELS.map((label) => (
-                        <SelectItem key={label.value} value={label.value}>
-                          {label.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Second row on mobile: Topics and Sort side by side */}
+                  <div className="grid grid-cols-2 sm:contents gap-2 sm:gap-3">
+                    <Select value={filterByLabel} onValueChange={setFilterByLabel}>
+                      <SelectTrigger className="w-full sm:w-[160px] h-9">
+                        <div className="flex items-center gap-2">
+                          <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <SelectValue placeholder="Topic" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        <SelectItem value="all">All Topics</SelectItem>
+                        {CLAIM_LABELS.map((label) => (
+                          <SelectItem key={label.value} value={label.value}>
+                            {label.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                  <SortSegmentedControl value={sortBy} onChange={setSortBy} />
+                    <SortSegmentedControl value={sortBy} onChange={setSortBy} />
+                  </div>
                 </div>
               </div>
 
