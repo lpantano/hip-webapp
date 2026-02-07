@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ClaimPublicationsExpanded from './Claims/components/ClaimPublicationsExpanded';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import CategoriesLegend from './Claims/components/Legend';
-import { getStanceIcon } from './Claims/utils/helpers';
+import { getStanceIcon, getEvidenceStatusColor } from './Claims/utils/helpers';
 import type { PublicationScoreRow } from './Claims/types';
 
 interface ExpertProfile {
@@ -199,6 +201,9 @@ const ClaimEvidencePage = () => {
     existingReview?: PublicationScoreRow | null;
   } | null>(null);
 
+  // State for evidence info dialog
+  const [showEvidenceInfo, setShowEvidenceInfo] = useState(false);
+
   // Check if user is expert
   const [isExpert, setIsExpert] = useState(false);
   useEffect(() => {
@@ -292,12 +297,8 @@ const ClaimEvidencePage = () => {
         </nav>
 
         <article aria-labelledby="claim-title">
-          <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-4">
-            {claim.title}
-          </h1>
-
-          {/* Info Section */}
-          <div className="mb-6 text-center">
+        {/* Info Section */}
+          <div className="mb-3 text-center">
             <p className="text-sm sm:text-base text-muted-foreground">
               <a href="/workflow" className="inline-flex items-center gap-2 text-primary hover:underline">
                 Learn how we review information and science
@@ -305,6 +306,27 @@ const ClaimEvidencePage = () => {
               </a>
             </p>
           </div>
+          <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-4">
+            {claim.title}
+          </h1>
+
+          {/* Evidence Status Badge */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => setShowEvidenceInfo(true)}
+              className="text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Learn about evidence status"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+            {claim.evidence_status && (
+              <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
+                {claim.evidence_status}
+              </Badge>
+            )}
+          </div>
+
+          
 
           
 
@@ -386,6 +408,37 @@ const ClaimEvidencePage = () => {
             refetch();
           }}
         />
+      )}
+
+      {/* Evidence Info Dialog */}
+      {showEvidenceInfo && (
+        <Dialog open={showEvidenceInfo} onOpenChange={() => setShowEvidenceInfo(false)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogTitle>Understanding Evidence</DialogTitle>
+            <div className="space-y-4 text-sm">
+              <div>
+                <h3 className="font-semibold mb-2">Evidence Status</h3>
+                <p className="text-muted-foreground mb-3">
+                  The evidence status badge indicates the overall quality and reliability of evidence for
+                  this claim based on expert reviews.
+                </p>
+              </div>
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">Paper Stances</h3>
+                <div className="space-y-3 text-muted-foreground">
+                  <div>
+                    <strong>Reported to Support:</strong> Papers that have been reported by sources to
+                    support this claim.
+                  </div>
+                  <div>
+                    <strong>Reported to Disprove:</strong> Papers that have been reported by sources to
+                    disprove or contradict this claim.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
