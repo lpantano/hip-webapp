@@ -206,14 +206,16 @@ export const ClaimCard = ({
               <div className="flex-1">
                 <CardTitle className="text-lg mb-1">
                   {claim.claim}
-                  <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>
-                      {claim.publications.length === 0
-                        ? 'waiting for papers'
-                        : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
-                      }
+                  {user && (
+                    <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>
+                        {claim.publications.length === 0
+                          ? 'waiting for papers'
+                          : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
+                        }
+                      </span>
                     </span>
-                  </span>
+                  )}
                 </CardTitle>
               </div>
               {canEditClaim() && (
@@ -329,13 +331,19 @@ export const ClaimCard = ({
           </div>
         ) : (
           <div className="border-t border-border pt-3 space-y-3">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground text-center sm:text-left">
-                Sign in to interact with this claim
-              </p>
-            </div>
-            {/* New row: Date only for non-authenticated users */}
-            <div className="flex items-center justify-end gap-2">
+            {/* Show vote count and sign-in prompt for anonymous users */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-muted-foreground opacity-60">
+                  <ThumbsUp className="w-4 h-4" />
+                  <span className="font-bold text-sm min-w-[20px] text-center">
+                    {claim.votes}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Sign in to vote and view evidence
+                </p>
+              </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
               </div>

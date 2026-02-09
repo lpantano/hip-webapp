@@ -295,33 +295,30 @@ const Claims = () => {
 
             {/* Claims Tab */}
             <TabsContent value="claims" className="space-y-6">
-              {/* Show PublicClaimsPreview for anonymous users */}
-              {!user ? (
-                <PublicClaimsPreview />
-              ) : (
-                <>
               {/* Claims Controls */}
               <div className="flex flex-col gap-4 mb-8 w-full max-w-3xl mx-auto px-4">
                 {/* Top row: New Claim button and Search */}
                 <div className="flex flex-row gap-2 sm:gap-4 items-center justify-center">
-                  <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="gap-2 whitespace-nowrap h-9 px-2 sm:px-4" disabled={!user}>
-                        <Plus className="w-4 h-4" />
-                        <span className="hidden sm:inline">{user ? 'Add Claim' : 'Sign in to Submit Claim'}</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
-                      <DialogTitle>Submit a new claim</DialogTitle>
-                      <ClaimSubmissionForm
-                        onSuccess={() => {
-                          setShowSubmissionForm(false);
-                          refetch();
-                        }}
-                        onCancel={() => setShowSubmissionForm(false)}
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  {user && (
+                    <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="gap-2 whitespace-nowrap h-9 px-2 sm:px-4">
+                          <Plus className="w-4 h-4" />
+                          <span className="hidden sm:inline">Add Claim</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
+                        <DialogTitle>Submit a new claim</DialogTitle>
+                        <ClaimSubmissionForm
+                          onSuccess={() => {
+                            setShowSubmissionForm(false);
+                            refetch();
+                          }}
+                          onCancel={() => setShowSubmissionForm(false)}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  )}
 
                   {/* Search Input */}
                   <div className="relative flex-1 max-w-[280px]">
@@ -437,10 +434,6 @@ const Claims = () => {
                 Showing all {totalClaims} claims
               </div>
             )}
-
-            {/* Anonymous User CTA - Removed since anonymous users now see PublicClaimsPreview */}
-              </>
-              )}
             </TabsContent>
 
             {/* <TabsContent value="trusted-resources" className="space-y-6">
@@ -528,7 +521,7 @@ const Claims = () => {
           )}
 
           {/* Evidence Info Dialog */}
-          {user && showEvidenceInfo && (
+          {showEvidenceInfo && (
             <Dialog open={!!showEvidenceInfo} onOpenChange={() => setShowEvidenceInfo(null)}>
               <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[600px] sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
                 <DialogTitle>Understanding Evidence</DialogTitle>
