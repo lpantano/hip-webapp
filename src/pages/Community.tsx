@@ -259,7 +259,7 @@ const Community = () => {
               Our Community
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Meet the dedicated professionals - experts and researchers - who review, contribute, and guide our community with their expertise in women's health, wellness, and technology.
+              Meet the experts and researchers who review, contribute, and guide our community with their expertise in women's health, wellness, and technology.
             </p>
           </div>
 

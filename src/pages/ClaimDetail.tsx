@@ -245,7 +245,7 @@ const ClaimDetail = () => {
                     : 'An error occurred while loading this claim.'}
                 </p>
                 <Button asChild>
-                  <Link to="/claims" className="flex items-center gap-2">
+                  <Link to="/" className="flex items-center gap-2">
                     <ArrowLeft className="w-4 h-4" />
                     View All Claims
                   </Link>
@@ -275,7 +275,7 @@ const ClaimDetail = () => {
           {/* Navigation and Share Section */}
           <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between gap-4">
             <Button variant="outline" size="sm" asChild>
-              <Link to="/claims" className="flex items-center gap-2">
+              <Link to="/" className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 All Claims
               </Link>

@@ -11,7 +11,7 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <SEO
-        url="/"
+        url="/project"
         keywords="women's health, health evidence, scientific research, health claims, expert reviews"
       />
       <Header />

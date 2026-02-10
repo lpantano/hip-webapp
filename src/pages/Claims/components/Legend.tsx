@@ -90,8 +90,7 @@ export default function CategoriesLegend({ items, className }: Props) {
       <div className={cn("w-full", className)}>
         <div className="flex flex-wrap items-center gap-2 justify-center py-2 px-4 bg-muted/30 rounded-lg">
           <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
-            <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Study Quality:</span>
+            <span>Legend:</span>
           </div>
           {itemsToRender.map((item) => {
             if (!item) return null;

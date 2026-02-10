@@ -23,7 +23,7 @@ const HeroSection = () => {
 
           </div>
           <div className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 ">
-            Expert-Reviewed Evidence for <a href="/claims" className="inline-flex items-center mt-4 text-accent-secondary underline font-bold hover:text-primary transition-colors">
+            Expert-Reviewed Evidence for <a href="/" className="inline-flex items-center mt-4 text-accent-secondary underline font-bold hover:text-primary transition-colors">
               Health Claims <ArrowRight className="inline-block w-4 h-4 ml-1 mb-0.5" />
           </a>
           </div>

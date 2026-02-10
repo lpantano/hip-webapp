@@ -27,9 +27,9 @@ const PublicClaimsPreview = () => {
     return (
       <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          {/* <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Latest Health Claims
-          </h2>
+          </h2> */}
           <div className="text-center py-12">
             <div className="inline-flex items-center px-4 py-2 text-sm text-muted-foreground">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
@@ -45,9 +45,9 @@ const PublicClaimsPreview = () => {
     return (
       <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          {/* <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Latest Health Claims
-          </h2>
+          </h2> */}
           <div className="text-center text-muted-foreground">
             <p>Unable to load claims. Please try again later.</p>
           </div>
@@ -60,9 +60,9 @@ const PublicClaimsPreview = () => {
     return (
       <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          {/* <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Latest Health Claims
-          </h2>
+          </h2> */}
           <div className="text-center text-muted-foreground">
             <p>No claims available yet. Be the first to contribute!</p>
             {!user && (
@@ -82,13 +82,25 @@ const PublicClaimsPreview = () => {
   return (
     <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
       <div className="container mx-auto px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+        {/* <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
           Latest Health Claims
-        </h2>
-        <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+        </h2> */}
+        <p className="text-center text-muted-foreground mb-6 max-w-2xl mx-auto">
           Explore community-driven health claims backed by expert reviews and scientific evidence.
           {!user && ' Sign in to vote, comment, and contribute.'}
         </p>
+
+        {/* Sign In CTA - Top */}
+        {!user && (
+          <div className="flex justify-center mb-8">
+            <Button asChild size="lg" variant="default">
+              <Link to="/auth" className="flex items-center gap-2">
+                <LogIn className="w-4 h-4" />
+                Sign In to Browse All Health Claims
+              </Link>
+            </Button>
+          </div>
+        )}
 
         {/* Claims Grid */}
         <div className="max-w-4xl mx-auto space-y-6 mb-8">
@@ -117,18 +129,7 @@ const PublicClaimsPreview = () => {
           ))}
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          {!user && (
-            <Button asChild size="lg" variant="default">
-              <Link to="/auth" className="flex items-center gap-2">
-                <LogIn className="w-4 h-4" />
-                Sign In to Browse All Health Claims
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
+              </div>
     </section>
   );
 };

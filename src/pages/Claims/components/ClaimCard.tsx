@@ -1,12 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ChevronUp,
-  ChevronDown,
-  Eye,
   Plus,
   FileText,
   Link as LinkIcon,
@@ -15,14 +13,12 @@ import {
   X,
   Info,
   ThumbsUp,
-  Share2
+  Share2,
+  BookOpen
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { aggregateLabelsForClaim } from '@/lib/label-aggregation';
-import ClaimLabelsStack from './ClaimLabelsStack';
-import ClaimPublicationsExpanded from './ClaimPublicationsExpanded';
 import { getCategoryColor } from '@/lib/getCategoryColor';
-import { getEvidenceStatusColor, getStanceIcon } from '../utils/helpers';
+import { getEvidenceStatusColor } from '../utils/helpers';
 import { getLabelDisplay, getLabelColor } from '@/constants/labels';
 import { cn } from '@/lib/utils';
 import type { ClaimUI, PublicationScoreRow } from '../types';
@@ -43,13 +39,13 @@ interface ClaimCardProps {
   isExpert: boolean;
   user: User | null;
   onVote: (id: string) => void;
-  onStanceClick: (claimId: string, stance: 'supporting' | 'contradicting') => void;
+  onStanceClick?: (claimId: string, stance: 'supporting' | 'contradicting') => void;
   onTitleUpdate: (claimId: string, newTitle: string) => Promise<void>;
   onShowReel: (claimId: string) => void;
   onShowPaperForm: (claimId: string) => void;
   onShowSourceForm: (claimId: string) => void;
   onShowEvidenceInfo: (claimId: string) => void;
-  expandedStance: { claimId: string; stance: 'supporting' | 'contradicting' } | null;
+  expandedStance?: { claimId: string; stance: 'supporting' | 'contradicting' } | null;
   editingClaimId: string | null;
   setEditingClaimId: (id: string | null) => void;
   updatingTitle: string | null;
@@ -61,25 +57,22 @@ interface ClaimCardProps {
 export const ClaimCard = ({
   claim,
   userVotes,
-  expertProfiles,
   isExpert,
   user,
   onVote,
-  onStanceClick,
   onTitleUpdate,
   onShowReel,
   onShowPaperForm,
   onShowSourceForm,
   onShowEvidenceInfo,
-  expandedStance,
   editingClaimId,
   setEditingClaimId,
   updatingTitle,
-  setReviewPublication,
   showShareButton,
   onShare
 }: ClaimCardProps) => {
   const [editedTitle, setEditedTitle] = useState('');
+  const navigate = useNavigate();
 
   // Permission check for editing claim titles
   const canEditClaim = () => {
@@ -123,7 +116,7 @@ export const ClaimCard = ({
   return (
     <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
       <CardHeader className="pb-2">
-        {/* First row: Category/Status badges and vote button */}
+        {/* First row: Category/Status badges */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap gap-2">
             <button
@@ -151,50 +144,13 @@ export const ClaimCard = ({
               {claim.broad_category}
             </Badge>
             {claim.labels && claim.labels.length > 0 && claim.labels.map((label) => (
-              <Badge
+              <span
                 key={label}
-                variant="outline"
-                className={cn("text-xs", getLabelColor(label).unselected)}
+                className={cn("text-xs font-medium pointer-events-none", getLabelColor(label).unselected)}
               >
                 {getLabelDisplay(label)}
-              </Badge>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (showShareButton && onShare) {
-                  onShare();
-                } else {
-                  handleShareClick();
-                }
-              }}
-              className="h-8 px-2"
-              title="Copy link to this claim"
-            >
-              <Share2 className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
-            </Button>
-            <button
-              onClick={() => onVote(claim.id)}
-              disabled={!user}
-              title={!user ? "Sign in to vote" : undefined}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all touch-manipulation ${
-                userVotes.has(claim.id)
-                  ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105'
-                  : 'border-border hover:border-primary hover:bg-primary/5'
-              } ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
-            >
-              <ThumbsUp className={`w-4 h-4 transition-all ${
-                userVotes.has(claim.id) ? 'fill-current' : ''
-              }`} />
-              <span className="font-bold text-sm min-w-[20px] text-center">
-                {claim.votes}
               </span>
-            </button>
+            ))}
           </div>
         </div>
 
@@ -250,14 +206,16 @@ export const ClaimCard = ({
               <div className="flex-1">
                 <CardTitle className="text-lg mb-1">
                   {claim.claim}
-                  <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>
-                      {claim.publications.length === 0
-                        ? 'waiting for papers'
-                        : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
-                      }
+                  {user && (
+                    <span className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>
+                        {claim.publications.length === 0
+                          ? 'waiting for papers'
+                          : `${claim.publications.length} paper${claim.publications.length === 1 ? '' : 's'}`
+                        }
+                      </span>
                     </span>
-                  </span>
+                  )}
                 </CardTitle>
               </div>
               {canEditClaim() && (
@@ -277,113 +235,30 @@ export const ClaimCard = ({
             </>
           )}
         </div>
-
-        {/* Aggregated Category Labels from all expert reviews, separated by stance */}
-        <div className="flex-col mt-2">
-          {(() => {
-            const agg = aggregateLabelsForClaim(claim);
-            const {
-              classificationOrder,
-              supportingLabelCounts,
-              contradictingLabelCounts,
-              supportingWomenNotIncluded,
-              contradictingWomenNotIncluded,
-              supportingObservationalCount,
-              contradictingObservationalCount,
-              supportingClinicalTrialCount,
-              contradictingClinicalTrialCount,
-              aggregatedReasons
-            } = agg;
-
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                <div className="space-y-1">
-                  <div
-                    className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
-                    onClick={() => onStanceClick(claim.id, 'supporting')}
-                  >
-                    <span className="font-semibold text-xs">
-                      Reported to Support ({claim.publications.filter(p => p.stance === 'supporting').length})
-                    </span>
-                    {expandedStance?.claimId === claim.id && expandedStance?.stance === 'supporting' ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <ClaimLabelsStack
-                      classificationOrder={classificationOrder}
-                      labelCounts={supportingLabelCounts}
-                      womenNotIncludedCount={supportingWomenNotIncluded}
-                      observationalCount={supportingObservationalCount}
-                      clinicalTrialCount={supportingClinicalTrialCount}
-                      stance="supporting"
-                      aggregatedReasonsForStance={aggregatedReasons.supporting}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div
-                    className="flex items-center gap-2 mb-2 cursor-pointer [@media(hover:hover)]:hover:text-primary transition-colors touch-manipulation"
-                    onClick={() => onStanceClick(claim.id, 'contradicting')}
-                  >
-                    <span className="font-semibold text-xs">
-                      Reported to Disprove ({claim.publications.filter(p => p.stance === 'contradicting').length})
-                    </span>
-                    {expandedStance?.claimId === claim.id && expandedStance?.stance === 'contradicting' ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <ClaimLabelsStack
-                      classificationOrder={classificationOrder}
-                      labelCounts={contradictingLabelCounts}
-                      womenNotIncludedCount={contradictingWomenNotIncluded}
-                      observationalCount={contradictingObservationalCount}
-                      clinicalTrialCount={contradictingClinicalTrialCount}
-                      stance="contradicting"
-                      aggregatedReasonsForStance={aggregatedReasons.contradicting}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
       </CardHeader>
-
-      {/* Expanded view with individual reviews */}
-      {expandedStance?.claimId === claim.id && setReviewPublication && (
-        <ClaimPublicationsExpanded
-          publications={claim.publications.filter(p => p.stance === expandedStance.stance)}
-          links={claim.links}
-          isExpert={isExpert}
-          user={user}
-          setReviewPublication={setReviewPublication}
-          getStanceIcon={getStanceIcon}
-          expertProfiles={expertProfiles}
-        />
-      )}
 
       {/* Bottom section with action buttons */}
       <CardContent className="pt-2">
         {user ? (
-          <div className="border-t border-border pt-3">
+          <div className="border-t border-border pt-3 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onShowReel(claim.id)}
-                  className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline">See Comments</span>
-                  <span className="sm:hidden">Comments</span>
-                </Button>
+                {claim.publications.length > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      // Save scroll position before navigating
+                      sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
+                      navigate(`/claims/${claim.id}/evidence`);
+                    }}
+                    className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span className="hidden sm:inline">View Evidence</span>
+                    <span className="sm:hidden">Evidence</span>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -409,17 +284,66 @@ export const ClaimCard = ({
                   </Button>
                 ) : null}
               </div>
-              <div className="text-xs text-muted-foreground ml-auto">
+            </div>
+            {/* New row: Vote/Share buttons on left, Date on right */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onVote(claim.id)}
+                  disabled={!user}
+                  title={!user ? "Sign in to vote" : undefined}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation ${
+                    userVotes.has(claim.id)
+                      ? 'text-blue-500 scale-105'
+                      : 'text-muted-foreground hover:text-primary'
+                  } ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  <ThumbsUp className={`w-4 h-4 transition-all ${
+                    userVotes.has(claim.id) ? 'fill-current' : ''
+                  }`} />
+                  <span className={`font-bold text-sm min-w-[20px] text-center transition-colors ${
+                    userVotes.has(claim.id) ? 'text-blue-500' : ''
+                  }`}>
+                    {claim.votes}
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showShareButton && onShare) {
+                      onShare();
+                    } else {
+                      handleShareClick();
+                    }
+                  }}
+                  className="h-8 px-2"
+                  title="Copy link to this claim"
+                >
+                  <Share2 className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
               </div>
             </div>
           </div>
         ) : (
-          <div className="border-t border-border pt-3">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground text-center sm:text-left">
-                Sign in to interact with this claim
-              </p>
+          <div className="border-t border-border pt-3 space-y-3">
+            {/* Show vote count and sign-in prompt for anonymous users */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-muted-foreground opacity-60">
+                  <ThumbsUp className="w-4 h-4" />
+                  <span className="font-bold text-sm min-w-[20px] text-center">
+                    {claim.votes}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Sign in to vote and view evidence
+                </p>
+              </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
               </div>

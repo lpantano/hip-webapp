@@ -152,74 +152,59 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
         </div>
       </div>
 
-      {/* Middle Section: Comments (Scrollable) */}
-      <div className="flex-1 flex items-center px-4 sm:px-6 py-2 sm:py-4 overflow-y-auto">
-        {reviewCard.expert.comments.length > 0 ? (
-          <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-4 my-auto">
-            {reviewCard.expert.comments.map((comment, idx) => (
-              <div
-                key={idx}
-                className="bg-muted/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-border/50 shadow-sm"
-              >
-                <div className="text-xs text-muted-foreground mb-2 font-medium tracking-wide uppercase">
-                  {new Date(comment.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </div>
-                <MarkdownRenderer
-                  content={comment.content}
-                  className="text-base sm:text-base leading-relaxed"
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="w-full text-center text-muted-foreground/60 text-base font-medium">
-            No comments provided for this review.
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Section: Labels, Tags, and Avatar */}
-      <div className="flex-shrink-0 px-4 sm:px-6 py-5 sm:py-4 border-t border-border/50 bg-muted/20">
-        <div className="flex flex-col gap-2 sm:gap-3">
-          {/* Labels and Tags Row */}
+      {/* Middle Section: Labels, Tags, and Comments (Scrollable) */}
+      <div className="flex-1 flex flex-col px-4 sm:px-6 py-2 sm:py-4 overflow-y-auto">
+        {/* Labels and Tags Row - Moved from bottom */}
+        <div className="mb-4 pb-4 border-b border-border/50">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
             {/* Classification */}
             {reviewCard.expert.classification && (
-              <div className={`inline-flex items-center gap-1 sm:gap-2 rounded-lg ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold`}>
-                <span>{String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}</span>
-                {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center text-gray-500 hover:text-gray-650 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                        aria-label="Classification reasons"
-                      >
-                        <Info className="w-4 h-4" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent side="top" className="max-w-xs text-sm p-3">
-                      {(() => {
-                        const reasons = getClassificationReasons(reviewCard.expert.reviewData);
-                        if (reasons.length > 0) {
-                          return (
-                            <div className="text-sm text-muted-foreground space-y-2">
-                              {reasons.map((reason, i) => (
-                                <div key={i} className="leading-relaxed">{reason}</div>
-                              ))}
-                            </div>
-                          );
-                        }
-                        return <div className="text-sm text-muted-foreground">No reasons provided.</div>;
-                      })()}
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
+              <>
+                <div className={`inline-flex items-center gap-1 sm:gap-2 rounded-lg ${getCategoryBackgroundColor(String(reviewCard.expert.classification))} px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold`}>
+                  <span>{String(reviewCard.expert.classification).charAt(0).toUpperCase() + String(reviewCard.expert.classification).slice(1)}</span>
+                  {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center text-gray-500 hover:text-gray-650 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                          aria-label="Classification reasons"
+                        >
+                          <Info className="w-4 h-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-sm p-3">
+                        {(() => {
+                          const reasons = getClassificationReasons(reviewCard.expert.reviewData);
+                          if (reasons.length > 0) {
+                            return (
+                              <div className="text-sm text-muted-foreground space-y-2">
+                                {reasons.map((reason, i) => (
+                                  <div key={i} className="leading-relaxed">{reason}</div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return <div className="text-sm text-muted-foreground">No reasons provided.</div>;
+                        })()}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+
+                {/* Invalid/Inconclusive/Misinformation Reason Chips */}
+                {reviewCard.expert.reviewData && isProblematicCategory(String(reviewCard.expert.classification)) && (() => {
+                  const reasons = getClassificationReasons(reviewCard.expert.reviewData);
+                  return reasons.map((reason, i) => (
+                    <div
+                      key={i}
+                      className="inline-flex items-center rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {reason}
+                    </div>
+                  ));
+                })()}
+              </>
             )}
 
             {/* Study Tags */}
@@ -283,7 +268,40 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
               </div>
             ))}
           </div>
+        </div>
 
+        {/* Comments Section */}
+        {reviewCard.expert.comments.length > 0 ? (
+          <div className="w-full max-w-2xl mx-auto space-y-3 sm:space-y-4">
+            {reviewCard.expert.comments.map((comment, idx) => (
+              <div
+                key={idx}
+                className="bg-muted/30 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-border/50 shadow-sm"
+              >
+                <div className="text-xs text-muted-foreground mb-2 font-medium tracking-wide uppercase">
+                  {new Date(comment.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+                <MarkdownRenderer
+                  content={comment.content}
+                  className="text-base sm:text-base leading-relaxed"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full text-center text-muted-foreground/60 text-base font-medium">
+            No comments provided for this review.
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Section: Avatar Only */}
+      <div className="flex-shrink-0 px-4 sm:px-6 py-5 sm:py-4 border-t border-border/50 bg-muted/20">
+        <div className="flex flex-col gap-2 sm:gap-3">
           {/* Avatar and Expert Name Row */}
           <div className="flex items-center gap-3 pt-2">
             <Popover>
