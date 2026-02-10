@@ -230,9 +230,11 @@ export const useClaimsQuery = ({
       }
 
       // Set user votes
-      const userVotes = !votesError && userVotesData
-        ? new Set(userVotesData.map(v => v.claim_id))
-        : new Set<string>();
+      const userVotes: Set<string> = !votesError && userVotesData
+        ? new Set(userVotesData.map((v) => String(v.claim_id)))
+        : new Set();
+
+
 
       return {
         claims: mappedClaims,
