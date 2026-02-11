@@ -114,31 +114,30 @@ export const ClaimCard = ({
   };
 
   return (
-    <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
+    <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all overflow-hidden">
+      {/* Evidence Status Header */}
+      {claim.evidence_status && (
+        <div className={`${getEvidenceStatusColor(claim.evidence_status)} px-4 py-3 text-white flex items-center justify-between rounded-t-lg`}>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm uppercase tracking-wide">{claim.evidence_status}</h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowEvidenceInfo(claim.id);
+              }}
+              className="ml-1 hover:opacity-80 transition-opacity"
+              aria-label="Learn about evidence status"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <CardHeader className="pb-2">
-        {/* First row: Category/Status badges */}
+        {/* First row: Category/Labels */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap gap-2">
-            <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShowEvidenceInfo(claim.id);
-                  }}
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                  aria-label="Learn about evidence status"
-                >
-                  <Info className="w-4 h-4" />
-                </button>
-
-            {claim.evidence_status && (
-              <div className="flex items-center gap-1">
-
-                <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                  {claim.evidence_status}
-                </Badge>
-
-              </div>
-            )}
             {/* Topic Labels */}
             <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
               {claim.broad_category}
