@@ -328,29 +328,6 @@ const Claims = () => {
                   />
                 </div>
 
-                {/* Add Claim button */}
-                {user && (
-                  <div className="flex justify-center">
-                    <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="gap-2 whitespace-nowrap h-9 px-4">
-                          <Plus className="w-4 h-4" />
-                          <span>Add Claim</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
-                        <DialogTitle>Submit a new claim</DialogTitle>
-                        <ClaimSubmissionForm
-                          onSuccess={() => {
-                            setShowSubmissionForm(false);
-                            refetch();
-                          }}
-                          onCancel={() => setShowSubmissionForm(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
               </div>
 
               {loading && (
@@ -542,6 +519,30 @@ const Claims = () => {
                     </div>
                   </div>
                 </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Floating Action Button */}
+          {user && (
+            <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
+              <DialogTrigger asChild>
+                <button
+                  className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+                  aria-label="Add new claim"
+                >
+                  <Plus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
+                <DialogTitle>Submit a new claim</DialogTitle>
+                <ClaimSubmissionForm
+                  onSuccess={() => {
+                    setShowSubmissionForm(false);
+                    refetch();
+                  }}
+                  onCancel={() => setShowSubmissionForm(false)}
+                />
               </DialogContent>
             </Dialog>
           )}
