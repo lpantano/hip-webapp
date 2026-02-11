@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Plus,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   FileText,
   Link as LinkIcon,
   Pencil,
@@ -14,7 +19,8 @@ import {
   Info,
   ThumbsUp,
   Share2,
-  BookOpen
+  BookOpen,
+  MoreVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryColor } from '@/lib/getCategoryColor';
@@ -135,7 +141,7 @@ export const ClaimCard = ({
       )}
 
       <CardHeader className="pb-2">
-        {/* First row: Category/Labels */}
+        {/* First row: Category/Labels and Mobile Menu */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap gap-2">
             {/* Topic Labels */}
@@ -151,6 +157,33 @@ export const ClaimCard = ({
               </span>
             ))}
           </div>
+          {/* Three-dot menu for mobile - only show if user is logged in */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="sm:hidden h-8 w-8 p-0 touch-manipulation"
+                  aria-label="More options"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onShowPaperForm(claim.id)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Add Paper
+                </DropdownMenuItem>
+                {(isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
+                  <DropdownMenuItem onClick={() => onShowSourceForm(claim.id)}>
+                    <LinkIcon className="w-4 h-4 mr-2" />
+                    Add Source
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Second row: Claim title */}
@@ -258,30 +291,27 @@ export const ClaimCard = ({
                     <span className="sm:hidden">Evidence</span>
                   </Button>
                 )}
+                {/* Desktop: Show individual buttons */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onShowPaperForm(claim.id)}
-                  className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
+                  className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
                 >
-                  <FileText className="hidden sm:inline w-4 h-4" />
-                  <Plus className="sm:hidden w-4 h-4" />
-                  <span className="hidden sm:inline">Add Paper</span>
-                  <span className="sm:hidden">Paper</span>
+                  <FileText className="w-4 h-4" />
+                  <span>Add Paper</span>
                 </Button>
-                {isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed') ? (
+                {(isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onShowSourceForm(claim.id)}
-                    className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
+                    className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
                   >
-                    <LinkIcon className="hidden sm:inline w-4 h-4" />
-                    <Plus className="sm:hidden w-4 h-4" />
-                    <span className="hidden sm:inline">Add Source</span>
-                    <span className="sm:hidden">Source</span>
+                    <LinkIcon className="w-4 h-4" />
+                    <span>Add Source</span>
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
             {/* New row: Vote/Share buttons on left, Date on right */}
