@@ -25,16 +25,6 @@ const Header = () => {
             </div> */}
           </Link>
 
-          {/* Mobile Navigation - Show only Claims */}
-          <nav className="flex md:hidden items-center gap-2">
-            <Link
-              to="/"
-              className="text-white/80 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10"
-              title="Health"
-            >
-              Health Claims
-            </Link>
-          </nav>
 
           {/* Desktop Navigation - Show all items */}
           <nav className="hidden text-lg md:flex items-center gap-6">
@@ -97,6 +87,9 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/project" className="cursor-pointer">The Project</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/community" className="cursor-pointer">Community</Link>
                 </DropdownMenuItem>
