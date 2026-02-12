@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/auth/UserMenu';
-import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Menu } from 'lucide-react';
 
@@ -14,7 +13,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-1 md:px-6 md:py-1">
         <div className="flex items-center justify-between">
           <Link
-            to="/project"
+            to="/"
             className="flex items-center gap-3 hover:text-accent transition-colors"
             aria-label="The Health Integrity Project home"
           >
@@ -80,12 +79,7 @@ const Header = () => {
               </a>
             </div>
 
-            {/* PWA Install Button - Desktop only */}
-            <div className="hidden md:block">
-              <PWAInstallPrompt size="sm" variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20" />
-            </div>
-
-            {/* Mobile Hamburger Menu */}
+{/* Mobile Hamburger Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
@@ -93,6 +87,9 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="cursor-pointer">Health Claims</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/project" className="cursor-pointer">The Project</Link>
                 </DropdownMenuItem>

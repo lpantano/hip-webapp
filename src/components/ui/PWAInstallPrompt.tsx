@@ -8,9 +8,10 @@ interface PWAInstallPromptProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
+  floating?: boolean;
 }
 
-const PWAInstallPrompt = ({ variant = "default", size = "default", className = "" }: PWAInstallPromptProps) => {
+const PWAInstallPrompt = ({ variant = "default", size = "default", className = "", floating = false }: PWAInstallPromptProps) => {
   const { isInstalled, installApp, browserType, canAutoInstall } = usePWAInstall();
   const [showInstructions, setShowInstructions] = useState(false);
 
@@ -153,6 +154,47 @@ const PWAInstallPrompt = ({ variant = "default", size = "default", className = "
 
   if (!isSupportedMobile) {
     return null;
+  }
+
+  if (floating) {
+    return (
+      <>
+        <button
+          className="fixed bottom-6 left-6 z-40 md:hidden w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+          onClick={handleInstall}
+          aria-label="Install app"
+        >
+          <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
+        </button>
+
+        <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Install Health Integrity Project
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-muted-foreground">
+                Add our app to your device for quick access and a native app experience!
+              </p>
+
+              {getInstructionsByBrowser()}
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Once installed, the app will work offline and provide faster access to health information!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
   }
 
   return (
