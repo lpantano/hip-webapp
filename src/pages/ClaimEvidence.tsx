@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ExternalLink, Info } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Info, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
@@ -204,6 +203,10 @@ const ClaimEvidencePage = () => {
   // State for evidence info dialog
   const [showEvidenceInfo, setShowEvidenceInfo] = useState(false);
 
+  // State for collapsible sections
+  const [supportingOpen, setSupportingOpen] = useState(true);
+  const [contradictingOpen, setContradictingOpen] = useState(true);
+
   // Check if user is expert
   const [isExpert, setIsExpert] = useState(false);
   useEffect(() => {
@@ -340,53 +343,77 @@ const ClaimEvidencePage = () => {
             <div className="flex flex-col gap-8">
               {/* Supporting Evidence Section */}
               <section aria-labelledby="supporting-heading" className="space-y-4">
-                <h2 id="supporting-heading" className="text-xl sm:text-2xl font-bold text-teal-600 dark:text-teal-400">
-                  Supporting Evidence ({supportingPapers.length})
-                </h2>
-                {supportingPapers.length === 0 ? (
-                  <div className="bg-card/50 rounded-lg border p-6 text-center">
-                    <p className="text-muted-foreground">
-                      No evidence found that supports this claim.
-                    </p>
+                <button
+                  onClick={() => setSupportingOpen(prev => !prev)}
+                  className="flex items-center gap-3 text-xl sm:text-2xl font-bold w-full text-left cursor-pointer"
+                  aria-expanded={supportingOpen}
+                  aria-controls="supporting-content"
+                >
+                  <span className="w-1 self-stretch rounded-full bg-teal-500" aria-hidden="true" />
+                  <span id="supporting-heading">Supporting Evidence</span>
+                  <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 rounded-full bg-teal-500 text-white text-sm font-semibold px-2">
+                    {supportingPapers.length}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 ml-auto text-muted-foreground transition-transform duration-200 ${supportingOpen ? 'rotate-0' : '-rotate-90'}`} />
+                </button>
+                {supportingOpen && (
+                  <div id="supporting-content">
+                    {supportingPapers.length === 0 ? (
+                      <div className="bg-card/50 rounded-lg border p-6 text-center">
+                        <p className="text-muted-foreground">
+                          No evidence found that supports this claim.
+                        </p>
+                      </div>
+                    ) : (
+                      <ClaimPublicationsExpanded
+                        publications={supportingPapers}
+                        links={links}
+                        isExpert={isExpert}
+                        user={user}
+                        setReviewPublication={setReviewPublication}
+                        getStanceIcon={getStanceIcon}
+                        expertProfiles={expertProfiles}
+                      />
+                    )}
                   </div>
-                ) : (
-                  <Card className="bg-card/50">
-                    <ClaimPublicationsExpanded
-                      publications={supportingPapers}
-                      links={links}
-                      isExpert={isExpert}
-                      user={user}
-                      setReviewPublication={setReviewPublication}
-                      getStanceIcon={getStanceIcon}
-                      expertProfiles={expertProfiles}
-                    />
-                  </Card>
                 )}
               </section>
 
               {/* Contradicting Evidence Section */}
               <section aria-labelledby="contradicting-heading" className="space-y-4">
-                <h2 id="contradicting-heading" className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  Contradicting Evidence ({contradictingPapers.length})
-                </h2>
-                {contradictingPapers.length === 0 ? (
-                  <div className="bg-card/50 rounded-lg border p-6 text-center">
-                    <p className="text-muted-foreground">
-                      No evidence found that contradicts this claim.
-                    </p>
+                <button
+                  onClick={() => setContradictingOpen(prev => !prev)}
+                  className="flex items-center gap-3 text-xl sm:text-2xl font-bold w-full text-left cursor-pointer"
+                  aria-expanded={contradictingOpen}
+                  aria-controls="contradicting-content"
+                >
+                  <span className="w-1 self-stretch rounded-full bg-orange-500" aria-hidden="true" />
+                  <span id="contradicting-heading">Contradicting Evidence</span>
+                  <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 rounded-full bg-orange-500 text-white text-sm font-semibold px-2">
+                    {contradictingPapers.length}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 ml-auto text-muted-foreground transition-transform duration-200 ${contradictingOpen ? 'rotate-0' : '-rotate-90'}`} />
+                </button>
+                {contradictingOpen && (
+                  <div id="contradicting-content">
+                    {contradictingPapers.length === 0 ? (
+                      <div className="bg-card/50 rounded-lg border p-6 text-center">
+                        <p className="text-muted-foreground">
+                          No evidence found that contradicts this claim.
+                        </p>
+                      </div>
+                    ) : (
+                      <ClaimPublicationsExpanded
+                        publications={contradictingPapers}
+                        links={[]}
+                        isExpert={isExpert}
+                        user={user}
+                        setReviewPublication={setReviewPublication}
+                        getStanceIcon={getStanceIcon}
+                        expertProfiles={expertProfiles}
+                      />
+                    )}
                   </div>
-                ) : (
-                  <Card className="bg-card/50">
-                    <ClaimPublicationsExpanded
-                      publications={contradictingPapers}
-                      links={[]}
-                      isExpert={isExpert}
-                      user={user}
-                      setReviewPublication={setReviewPublication}
-                      getStanceIcon={getStanceIcon}
-                      expertProfiles={expertProfiles}
-                    />
-                  </Card>
                 )}
               </section>
               {/* Study Quality Legend */}
