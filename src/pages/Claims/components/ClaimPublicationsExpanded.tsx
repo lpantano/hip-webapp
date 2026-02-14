@@ -82,6 +82,45 @@ const ReviewerInsightCallout: React.FC<{ content: string }> = ({ content }) => {
   );
 };
 
+/* ── Truncated paper title (2-line clamp, tap to expand) ── */
+const TruncatedTitle: React.FC<{ title: string }> = ({ title }) => {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [isClamped, setIsClamped] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const checkClamp = useCallback(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    setIsClamped(el.scrollHeight > el.clientHeight + 1);
+  }, []);
+
+  useEffect(() => {
+    checkClamp();
+    window.addEventListener('resize', checkClamp);
+    return () => window.removeEventListener('resize', checkClamp);
+  }, [checkClamp, title]);
+
+  return (
+    <div className="mb-3">
+      <h5
+        ref={titleRef}
+        onClick={() => isClamped && setExpanded(true)}
+        className={`text-sm sm:text-base text-muted-foreground leading-snug ${!expanded ? 'line-clamp-2' : ''} ${isClamped && !expanded ? 'cursor-pointer' : ''}`}
+      >
+        {title}
+      </h5>
+      {expanded && (
+        <button
+          onClick={() => setExpanded(false)}
+          className="mt-1 text-xs font-medium text-primary hover:underline cursor-pointer"
+        >
+          Show less
+        </button>
+      )}
+    </div>
+  );
+};
+
 const ClaimPublicationsExpanded: React.FC<{
   publications: Publication[];
   links?: LinkRow[];
@@ -267,9 +306,7 @@ const ClaimPublicationsExpanded: React.FC<{
                 </div>
 
                 {/* Paper Title */}
-                <h5 className="text-base sm:text-lg font-semibold leading-snug mb-3">
-                  {pub.title}
-                </h5>
+                <TruncatedTitle title={pub.title} />
 
                 {/* Reviewer Insight Callout */}
                 {reviewerInsight && (

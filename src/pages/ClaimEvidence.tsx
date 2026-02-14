@@ -287,34 +287,24 @@ const ClaimEvidencePage = () => {
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8 pt-24 max-w-4xl" role="main" aria-labelledby="claim-title">
-        <nav aria-label="Breadcrumb">
+        <nav aria-label="Breadcrumb" className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
             aria-label="Return to claims list"
-            className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+          <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+            Learn how we review information and science
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </nav>
 
         <article aria-labelledby="claim-title">
-        {/* Info Section */}
-          <div className="mb-3 text-center">
-            <p className="text-sm sm:text-base text-muted-foreground">
-              <a href="/workflow" className="inline-flex items-center gap-2 text-primary hover:underline">
-                Learn how we review information and science
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </p>
-          </div>
-          <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-4">
-            {claim.title}
-          </h1>
-
           {/* Evidence Status Badge */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <button
               onClick={() => setShowEvidenceInfo(true)}
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -328,6 +318,10 @@ const ClaimEvidencePage = () => {
               </Badge>
             )}
           </div>
+
+          <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-4">
+            {claim.title}
+          </h1>
 
           
 

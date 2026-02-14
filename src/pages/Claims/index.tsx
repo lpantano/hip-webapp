@@ -30,13 +30,30 @@ import { SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 const Claims = () => {
   const [searchParams] = useSearchParams();
   const [sortBy] = useState<'votes' | 'recent'>('recent');
-  const [filterByLabel, setFilterByLabel] = useState<string>('all');
-  const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>([
-    'Evidence Supports',
-    'Evidence Disproves',
-    'Inconclusive'
-  ]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Initialize filters from sessionStorage if available
+  const [filterByLabel, setFilterByLabel] = useState<string>(() => {
+    const saved = sessionStorage.getItem('claimsFilterByLabel');
+    return saved || 'all';
+  });
+
+  const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('claimsSelectedEvidenceStatuses');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return ['Evidence Supports', 'Evidence Disproves', 'Inconclusive'];
+      }
+    }
+    return ['Evidence Supports', 'Evidence Disproves', 'Inconclusive'];
+  });
+
+  const [searchQuery, setSearchQuery] = useState<string>(() => {
+    const saved = sessionStorage.getItem('claimsSearchQuery');
+    return saved || '';
+  });
+
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
@@ -96,14 +113,17 @@ const Claims = () => {
   }, [handleObserver]);
 
   // Read search and label parameters from URL on mount
+  // URL params take precedence over sessionStorage
   useEffect(() => {
     const searchParam = searchParams.get('search');
     if (searchParam) {
       setSearchQuery(searchParam);
+      sessionStorage.setItem('claimsSearchQuery', searchParam);
     }
     const labelParam = searchParams.get('label');
     if (labelParam) {
       setFilterByLabel(labelParam);
+      sessionStorage.setItem('claimsFilterByLabel', labelParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
@@ -158,6 +178,19 @@ const Claims = () => {
     return () => {
       clearTimeout(handler);
     };
+  }, [searchQuery]);
+
+  // Persist filter state to sessionStorage whenever filters change
+  useEffect(() => {
+    sessionStorage.setItem('claimsFilterByLabel', filterByLabel);
+  }, [filterByLabel]);
+
+  useEffect(() => {
+    sessionStorage.setItem('claimsSelectedEvidenceStatuses', JSON.stringify(selectedEvidenceStatuses));
+  }, [selectedEvidenceStatuses]);
+
+  useEffect(() => {
+    sessionStorage.setItem('claimsSearchQuery', searchQuery);
   }, [searchQuery]);
 
   // Scroll restoration: save scroll position when navigating away
