@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { ArrowLeft, ExternalLink, X, Share2, LogIn } from 'lucide-react';
+import { ArrowLeft, ExternalLink, X, Share, LogIn } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
 import { ClaimCard } from '@/pages/Claims/components/ClaimCard';
@@ -281,7 +281,7 @@ const ClaimDetail = () => {
               </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={handleShare} className="flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
+              <Share className="w-4 h-4" />
               <span className="hidden sm:inline">Share</span>
             </Button>
           </div>

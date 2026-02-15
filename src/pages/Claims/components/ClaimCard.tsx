@@ -18,7 +18,7 @@ import {
   X,
   Info,
   ThumbsUp,
-  Share2,
+  Share,
   BookOpen,
   MoreVertical
 } from 'lucide-react';
@@ -350,7 +350,7 @@ export const ClaimCard = ({
                   className="h-8 px-2"
                   title="Copy link to this claim"
                 >
-                  <Share2 className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
+                  <Share className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">
@@ -369,6 +369,22 @@ export const ClaimCard = ({
                     {claim.votes}
                   </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showShareButton && onShare) {
+                      onShare();
+                    } else {
+                      handleShareClick();
+                    }
+                  }}
+                  className="h-8 px-2"
+                  title="Copy link to this claim"
+                >
+                  <Share className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
+                </Button>
                 <p className="text-sm text-muted-foreground">
                   Sign in to vote and view evidence
                 </p>
