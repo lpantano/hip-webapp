@@ -305,6 +305,11 @@ const ClaimEvidencePage = () => {
         <article aria-labelledby="claim-title">
           {/* Evidence Status Badge */}
           <div className="flex items-center gap-2 mb-2">
+            {claim.evidence_status && (
+              <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none px-4 py-1 text-sm`}>
+                {claim.evidence_status}
+              </Badge>
+            )}
             <button
               onClick={() => setShowEvidenceInfo(true)}
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -312,11 +317,6 @@ const ClaimEvidencePage = () => {
             >
               <Info className="w-4 h-4" />
             </button>
-            {claim.evidence_status && (
-              <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                {claim.evidence_status}
-              </Badge>
-            )}
           </div>
 
           <h1 id="claim-title" className="text-2xl sm:text-3xl font-bold mb-4">

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { FileText, ExternalLink, X, MapPin } from 'lucide-react';
+import { FileText, ExternalLink, X, MapPin, Clock } from 'lucide-react';
 import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
 import { getCategoryBackgroundColor, getStudyTagColor, getCategoryDescription, getStudyTagDescription } from '@/lib/classification-categories';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
@@ -302,6 +302,12 @@ const ClaimPublicationsExpanded: React.FC<{
                         {getStudyTagDescription('Women Not Included')}
                       </PopoverContent>
                     </Popover>
+                  )}
+                  {reviewerIds.length === 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                      <Clock className="w-3 h-3" />
+                      Awaiting Review
+                    </span>
                   )}
                 </div>
 
