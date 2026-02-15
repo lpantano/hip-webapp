@@ -2,10 +2,10 @@ name: Sync with Upstream
 
 on:
   # Trigger on push to main or devel
-  push:
-    branches:
-      - main
-      - devel
+  # push:
+  #   branches:
+  #     - main
+  #     - devel
 
   # Allow manual trigger
   workflow_dispatch:
