@@ -22,7 +22,7 @@ export const EvidenceStatusFilter = ({
   };
 
   const handleShowAll = () => {
-    onStatusChange(EVIDENCE_STATUS_OPTIONS);
+    onStatusChange([...EVIDENCE_STATUS_OPTIONS]);
   };
 
   const isAllSelected = selectedStatuses.length === 0 || selectedStatuses.length === EVIDENCE_STATUS_OPTIONS.length;
