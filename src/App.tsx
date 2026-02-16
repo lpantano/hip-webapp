@@ -23,6 +23,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ResearchWorkflow from "./pages/ResearchWorkflow";
 import Footer from "./components/layout/Footer";
+import PWAInstallPrompt from "./components/ui/PWAInstallPrompt";
 
 // Lazy load evidence page for code splitting
 const ClaimEvidence = lazy(() => import('./pages/ClaimEvidence'));
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <DevRoleSelector />
+            <PWAInstallPrompt floating />
             <Footer />
           </BrowserRouter>
         </TooltipProvider>

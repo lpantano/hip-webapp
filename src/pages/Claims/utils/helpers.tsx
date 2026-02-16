@@ -28,12 +28,12 @@ export const getStatusColor = (status: string): string => {
  */
 export const getEvidenceStatusColor = (evidenceStatus: string): string => {
   const colors: Record<string, string> = {
-    'Awaiting Evidence': 'bg-gray-100 text-gray-700 border border-gray-300',
-    'Evidence Supports': 'bg-green-100 text-green-800 border border-green-300',
-    'Evidence Disproves': 'bg-red-100 text-red-800 border border-red-300',
-    'Inconclusive': 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+    'Awaiting Evidence': 'bg-gray-600',
+    'Evidence Supports': 'bg-green-500',
+    'Evidence Disproves': 'bg-red-500',
+    'Inconclusive': 'bg-amber-400'
   };
-  return colors[evidenceStatus] || 'bg-gray-100 text-gray-700 border border-gray-300';
+  return colors[evidenceStatus] || 'bg-gray-600';
 };
 
 /**

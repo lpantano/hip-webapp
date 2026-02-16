@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Plus,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   FileText,
   Link as LinkIcon,
   Pencil,
@@ -13,8 +18,9 @@ import {
   X,
   Info,
   ThumbsUp,
-  Share2,
-  BookOpen
+  Share,
+  BookOpen,
+  MoreVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryColor } from '@/lib/getCategoryColor';
@@ -114,31 +120,30 @@ export const ClaimCard = ({
   };
 
   return (
-    <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all">
+    <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all overflow-hidden">
+      {/* Evidence Status Header */}
+      {claim.evidence_status && (
+        <div className={`${getEvidenceStatusColor(claim.evidence_status)} px-4 py-3 text-white flex items-center justify-between rounded-t-lg`}>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm uppercase tracking-wide">{claim.evidence_status}</h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowEvidenceInfo(claim.id);
+              }}
+              className="ml-1 hover:opacity-80 transition-opacity"
+              aria-label="Learn about evidence status"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <CardHeader className="pb-2">
-        {/* First row: Category/Status badges */}
+        {/* First row: Category/Labels and Mobile Menu */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex flex-wrap gap-2">
-            <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShowEvidenceInfo(claim.id);
-                  }}
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                  aria-label="Learn about evidence status"
-                >
-                  <Info className="w-4 h-4" />
-                </button>
-
-            {claim.evidence_status && (
-              <div className="flex items-center gap-1">
-
-                <Badge className={`${getEvidenceStatusColor(claim.evidence_status)} pointer-events-none transition-none`}>
-                  {claim.evidence_status}
-                </Badge>
-
-              </div>
-            )}
             {/* Topic Labels */}
             <Badge className={`${getCategoryColor(claim.broad_category)} pointer-events-none transition-none`}>
               {claim.broad_category}
@@ -152,6 +157,33 @@ export const ClaimCard = ({
               </span>
             ))}
           </div>
+          {/* Three-dot menu for mobile - only show if user is logged in */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="sm:hidden h-8 w-8 p-0 touch-manipulation"
+                  aria-label="More options"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onShowPaperForm(claim.id)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Add Paper
+                </DropdownMenuItem>
+                {(isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
+                  <DropdownMenuItem onClick={() => onShowSourceForm(claim.id)}>
+                    <LinkIcon className="w-4 h-4 mr-2" />
+                    Add Source
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Second row: Claim title */}
@@ -259,30 +291,27 @@ export const ClaimCard = ({
                     <span className="sm:hidden">Evidence</span>
                   </Button>
                 )}
+                {/* Desktop: Show individual buttons */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onShowPaperForm(claim.id)}
-                  className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
+                  className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
                 >
-                  <FileText className="hidden sm:inline w-4 h-4" />
-                  <Plus className="sm:hidden w-4 h-4" />
-                  <span className="hidden sm:inline">Add Paper</span>
-                  <span className="sm:hidden">Paper</span>
+                  <FileText className="w-4 h-4" />
+                  <span>Add Paper</span>
                 </Button>
-                {isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed') ? (
+                {(isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onShowSourceForm(claim.id)}
-                    className="flex items-center gap-2 whitespace-nowrap touch-manipulation"
+                    className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
                   >
-                    <LinkIcon className="hidden sm:inline w-4 h-4" />
-                    <Plus className="sm:hidden w-4 h-4" />
-                    <span className="hidden sm:inline">Add Source</span>
-                    <span className="sm:hidden">Source</span>
+                    <LinkIcon className="w-4 h-4" />
+                    <span>Add Source</span>
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
             {/* New row: Vote/Share buttons on left, Date on right */}
@@ -321,7 +350,7 @@ export const ClaimCard = ({
                   className="h-8 px-2"
                   title="Copy link to this claim"
                 >
-                  <Share2 className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
+                  <Share className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">
@@ -340,6 +369,22 @@ export const ClaimCard = ({
                     {claim.votes}
                   </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showShareButton && onShare) {
+                      onShare();
+                    } else {
+                      handleShareClick();
+                    }
+                  }}
+                  className="h-8 px-2"
+                  title="Copy link to this claim"
+                >
+                  <Share className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
+                </Button>
                 <p className="text-sm text-muted-foreground">
                   Sign in to vote and view evidence
                 </p>

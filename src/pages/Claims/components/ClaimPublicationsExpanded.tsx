@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { CardContent } from '@/components/ui/card';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { FileText, ExternalLink, X, Eye } from 'lucide-react';
+import { FileText, ExternalLink, X, MapPin, Clock } from 'lucide-react';
 import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
 import { getCategoryBackgroundColor, getStudyTagColor, getCategoryDescription, getStudyTagDescription } from '@/lib/classification-categories';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import ClaimLinksSection from './ClaimLinksSection';
 import ExpertReviewsReel from './ExpertReviewsReel';
 import type { ExpertReviewCard } from './ExpertReviewsReel';
@@ -36,6 +36,90 @@ interface ExpertProfile {
   display_name?: string | null;
   avatar_url?: string | null;
 }
+
+/* ── Truncatable insight callout ── */
+const ReviewerInsightCallout: React.FC<{ content: string }> = ({ content }) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isClamped, setIsClamped] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const checkClamp = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    setIsClamped(el.scrollHeight > el.clientHeight + 1);
+  }, []);
+
+  useEffect(() => {
+    checkClamp();
+    // Re-check after fonts / images load
+    window.addEventListener('resize', checkClamp);
+    return () => window.removeEventListener('resize', checkClamp);
+  }, [checkClamp, content]);
+
+  return (
+    <div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-400 dark:border-blue-500 rounded-r-md p-3 sm:p-4 mb-4">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+          Reviewer Insight
+        </span>
+      </div>
+      <div
+        ref={contentRef}
+        className={expanded ? '' : 'line-clamp-3'}
+      >
+        <MarkdownRenderer content={content} className="text-foreground/80" />
+      </div>
+      {(isClamped || expanded) && (
+        <button
+          onClick={() => setExpanded(prev => !prev)}
+          className="mt-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </div>
+  );
+};
+
+/* ── Truncated paper title (2-line clamp, tap to expand) ── */
+const TruncatedTitle: React.FC<{ title: string }> = ({ title }) => {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [isClamped, setIsClamped] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const checkClamp = useCallback(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    setIsClamped(el.scrollHeight > el.clientHeight + 1);
+  }, []);
+
+  useEffect(() => {
+    checkClamp();
+    window.addEventListener('resize', checkClamp);
+    return () => window.removeEventListener('resize', checkClamp);
+  }, [checkClamp, title]);
+
+  return (
+    <div className="mb-3">
+      <h5
+        ref={titleRef}
+        onClick={() => isClamped && setExpanded(true)}
+        className={`text-sm sm:text-base text-muted-foreground leading-snug ${!expanded ? 'line-clamp-2' : ''} ${isClamped && !expanded ? 'cursor-pointer' : ''}`}
+      >
+        {title}
+      </h5>
+      {expanded && (
+        <button
+          onClick={() => setExpanded(false)}
+          className="mt-1 text-xs font-medium text-primary hover:underline cursor-pointer"
+        >
+          Show less
+        </button>
+      )}
+    </div>
+  );
+};
 
 const ClaimPublicationsExpanded: React.FC<{
   publications: Publication[];
@@ -119,140 +203,161 @@ const ClaimPublicationsExpanded: React.FC<{
     return reviewCards;
   }, [selectedPublication, expertProfiles]);
 
+  // Extract the first reviewer insight comment for a publication
+  const getReviewerInsight = (pub: Publication): string | null => {
+    if (!pub.rawScores || pub.rawScores.length === 0) return null;
+    // Find the latest review with a comment
+    const withComments = pub.rawScores
+      .filter(rs => rs.comments)
+      .sort((a, b) => {
+        const aTime = a?.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return bTime - aTime;
+      });
+    return withComments.length > 0 ? withComments[0].comments : null;
+  };
+
+  // Get unique expert IDs who reviewed a publication
+  const getReviewerIds = (pub: Publication): string[] => {
+    if (!pub.rawScores) return [];
+    const ids = new Set<string>();
+    pub.rawScores.forEach(rs => {
+      if (rs.expert_user_id) ids.add(rs.expert_user_id);
+    });
+    return Array.from(ids);
+  };
+
   return (
-    <CardContent className="pt-0">
-      <div className="border-t border-border pt-2">
-        {/* Links Section */}
-        {links && links.length > 0 && (
-          <div className="mb-4 flex justify-end">
-            <ClaimLinksSection links={links} />
+    <>
+      {/* Links Section */}
+      {links && links.length > 0 && (
+        <div className="mb-4 flex justify-end">
+          <ClaimLinksSection links={links} />
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {publications.length === 0 ? (
+          <div className="text-center py-6 text-sm text-muted-foreground">
+            No papers yet for this stance
           </div>
-        )}
-
-        <div className="space-y-4">
-          {publications.length === 0 ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">
-              No papers yet for this stance
-            </div>
-          ) : (
-            publications.map((pub, pubIndex) => {
+        ) : (
+          publications.map((pub, pubIndex) => {
             const agg = aggregatePublicationReviewData({ rawScores: pub.rawScores });
-            return (
-              <div key={pubIndex} className="bg-muted/20 rounded-md p-3">
-                <div className="mb-3">
-                  <div className="flex items-start gap-2 mb-3">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-sm mb-1">
-                        {pub.title}
-                        {pub.rawScores && pub.rawScores.length > 0 && (
-                          <button
-                            onClick={() => setSelectedPublication(pub)}
-                            title={`View ${pub.rawScores.length} expert review${pub.rawScores.length === 1 ? '' : 's'}`}
-                            className="inline-flex items-center ml-2 text-muted-foreground hover:text-primary cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        )}
-                        {pub.url && (
-                          <a
-                            href={pub.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Open paper in new tab"
-                            className="inline-flex items-center ml-2 text-muted-foreground hover:text-primary"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                      </h5>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {pub.authors} • {pub.journal} ({pub.year})
-                        {pub.source && (
-                          <>
-                            {' • '}
-                            <a
-                              href={pub.source}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-primary hover:underline"
-                              title="View source"
-                            >
-                              Source <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </>
-                        )}
-                      </p>
-                      {/* Labels: inline on desktop, stacked on mobile */}
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-1.5">
-                        {Object.entries(agg.classificationCounts).map(([label, count]) => (
-                          <Popover key={label}>
-                            <PopoverTrigger asChild>
-                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-lg ${getCategoryBackgroundColor(label)} px-2 sm:px-3 py-1 text-xs font-semibold overflow-hidden cursor-pointer`}>
-                                <span className="break-words">{label}</span>
-                                <span className="ml-1 sm:ml-2 flex-shrink-0">({count})</span>
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                              <div className="font-semibold mb-1">{label}</div>
-                              <div>{getCategoryDescription(label as ReviewCategory)}</div>
-                            </PopoverContent>
-                          </Popover>
-                        ))}
-                        {agg.womenNotIncludedCount > 0 && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('women_not_included')} overflow-hidden cursor-pointer`}>
-                                <span className="break-words">Women Not Included</span>
-                                <span className="ml-1 sm:ml-2 flex-shrink-0">({agg.womenNotIncludedCount})</span>
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                              {getStudyTagDescription('Women Not Included')}
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                        {agg.observationalCount > 0 && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('observational')} overflow-hidden cursor-pointer`}>
-                                <span className="break-words">Observational</span>
-                                <span className="ml-1 sm:ml-2 flex-shrink-0">({agg.observationalCount})</span>
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                              {getStudyTagDescription('Observational')}
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                        {agg.clinicalTrialCount > 0 && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <div className={`mb-1 w-full sm:inline-flex sm:w-auto items-center rounded-xl px-2 sm:px-3 py-1 text-xs font-semibold ${getStudyTagColor('clinical trial')} overflow-hidden cursor-pointer`}>
-                                <span className="break-words">Clinical Trial</span>
-                                <span className="ml-1 sm:ml-2 flex-shrink-0">({agg.clinicalTrialCount})</span>
-                              </div>
-                            </PopoverTrigger>
-                            <PopoverContent side="top" className="max-w-xs text-xs p-2">
-                              {getStudyTagDescription('Clinical Trial')}
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            const reviewerInsight = getReviewerInsight(pub);
+            const reviewerIds = getReviewerIds(pub);
+            const maxAvatars = 3;
+            const visibleReviewers = reviewerIds.slice(0, maxAvatars);
+            const remainingCount = Math.max(0, reviewerIds.length - maxAvatars);
 
-                  <div className="flex items-center gap-2 mt-3">
-                    {pub.rawScores && pub.rawScores.length > 0 && (
-                      <Button
-                        variant="default"
-                        size="sm"
+            return (
+              <div key={pubIndex} className="bg-card rounded-lg border border-border p-4 sm:p-5 shadow-sm">
+                {/* Top: Badges row */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {agg.clinicalTrialCount > 0 && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <span className={`inline-flex items-center rounded-md ${getStudyTagColor('clinical trial')} px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide cursor-pointer`}>
+                          Clinical Trial
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        {getStudyTagDescription('Clinical Trial')}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {agg.observationalCount > 0 && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <span className={`inline-flex items-center rounded-md ${getStudyTagColor('observational')} px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide cursor-pointer`}>
+                          Observational
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        {getStudyTagDescription('Observational')}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {Object.entries(agg.classificationCounts).map(([label]) => (
+                    <Popover key={label}>
+                      <PopoverTrigger asChild>
+                        <span className={`inline-flex items-center rounded-md ${getCategoryBackgroundColor(label)} px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide cursor-pointer`}>
+                          {label}
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        <div className="font-semibold mb-1">{label}</div>
+                        <div>{getCategoryDescription(label as ReviewCategory)}</div>
+                      </PopoverContent>
+                    </Popover>
+                  ))}
+                  {agg.womenNotIncludedCount > 0 && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <span className={`inline-flex items-center rounded-md ${getStudyTagColor('women_not_included')} px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide cursor-pointer`}>
+                          Women Not Included
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="max-w-xs text-xs p-2">
+                        {getStudyTagDescription('Women Not Included')}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {reviewerIds.length === 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                      <Clock className="w-3 h-3" />
+                      Awaiting Review
+                    </span>
+                  )}
+                </div>
+
+                {/* Paper Title */}
+                <TruncatedTitle title={pub.title} />
+
+                {/* Reviewer Insight Callout */}
+                {reviewerInsight && (
+                  <ReviewerInsightCallout content={reviewerInsight} />
+                )}
+
+                {/* Bottom row: Avatars + Read Full Paper */}
+                <div className="flex items-center justify-between">
+                  {/* Left: Expert avatar group */}
+                  <div className="flex items-center gap-2">
+                    {reviewerIds.length > 0 ? (
+                      <button
                         onClick={() => setSelectedPublication(pub)}
-                        className="flex items-center gap-2 shadow-md"
+                        className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+                        title={`View ${reviewerIds.length} expert review${reviewerIds.length === 1 ? '' : 's'}`}
                       >
-                        <Eye className="w-4 h-4" />
-                        View Reviews
-                      </Button>
-                    )}
+                        <div className="flex -space-x-2">
+                          {visibleReviewers.map(expertId => {
+                            const profile = expertProfiles[expertId];
+                            return profile?.avatar_url ? (
+                              <img
+                                key={expertId}
+                                src={profile.avatar_url}
+                                alt={profile.display_name || 'Reviewer'}
+                                className="w-8 h-8 rounded-full border-2 border-background object-cover"
+                              />
+                            ) : (
+                              <div
+                                key={expertId}
+                                className="w-8 h-8 rounded-full border-2 border-background bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary"
+                              >
+                                {(profile?.display_name || '?').charAt(0).toUpperCase()}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {remainingCount > 0 && (
+                          <span className="text-sm text-muted-foreground font-medium">
+                            +{remainingCount}
+                          </span>
+                        )}
+                      </button>
+                    ) : null}
+
+                    {/* Expert review button */}
                     {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (() => {
                       const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
                       const reviewButtonText = existingReview ? 'Update' : 'Review';
@@ -277,12 +382,24 @@ const ClaimPublicationsExpanded: React.FC<{
                       );
                     })()}
                   </div>
+
+                  {/* Right: Read Full Paper link */}
+                  {pub.url && (
+                    <a
+                      href={pub.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    >
+                      Read Full Paper
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
                 </div>
               </div>
             );
           })
-          )}
-        </div>
+        )}
       </div>
 
       {/* Publication Reviews Dialog */}
@@ -319,7 +436,7 @@ const ClaimPublicationsExpanded: React.FC<{
           </DialogContent>
         </Dialog>
       </>
-    </CardContent>
+    </>
   );
 };
 

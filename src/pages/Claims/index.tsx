@@ -4,11 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
 
-import { Plus, Tag, X, Search, Loader2 } from 'lucide-react';
+import { Plus, X, Search, Loader2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import PublicClaimsPreview from '@/components/landing/PublicClaimsPreview';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,9 +21,7 @@ import { ClaimCard } from './components/ClaimCard';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
-import { SortSegmentedControl } from './components/SortSegmentedControl';
 import type { PublicationScoreRow } from './types';
-import { CLAIM_LABELS } from '@/constants/labels';
 import { getEvidenceStatusColor } from './utils/helpers';
 import { useReviewCards } from './hooks/useReviewCards';
 import { useClaimsQuery } from './hooks/useClaimsQuery';
@@ -32,14 +29,31 @@ import { SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
   const [searchParams] = useSearchParams();
-  const [sortBy, setSortBy] = useState<'votes' | 'recent'>('recent');
-  const [filterByLabel, setFilterByLabel] = useState<string>('all');
-  const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>([
-    'Evidence Supports',
-    'Evidence Disproves',
-    'Inconclusive'
-  ]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortBy] = useState<'votes' | 'recent'>('recent');
+
+  // Initialize filters from sessionStorage if available
+  const [filterByLabel, setFilterByLabel] = useState<string>(() => {
+    const saved = sessionStorage.getItem('claimsFilterByLabel');
+    return saved || 'all';
+  });
+
+  const [selectedEvidenceStatuses, setSelectedEvidenceStatuses] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('claimsSelectedEvidenceStatuses');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return ['Evidence Supports', 'Evidence Disproves', 'Inconclusive'];
+      }
+    }
+    return ['Evidence Supports', 'Evidence Disproves', 'Inconclusive'];
+  });
+
+  const [searchQuery, setSearchQuery] = useState<string>(() => {
+    const saved = sessionStorage.getItem('claimsSearchQuery');
+    return saved || '';
+  });
+
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
@@ -99,14 +113,17 @@ const Claims = () => {
   }, [handleObserver]);
 
   // Read search and label parameters from URL on mount
+  // URL params take precedence over sessionStorage
   useEffect(() => {
     const searchParam = searchParams.get('search');
     if (searchParam) {
       setSearchQuery(searchParam);
+      sessionStorage.setItem('claimsSearchQuery', searchParam);
     }
     const labelParam = searchParams.get('label');
     if (labelParam) {
       setFilterByLabel(labelParam);
+      sessionStorage.setItem('claimsFilterByLabel', labelParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
@@ -161,6 +178,19 @@ const Claims = () => {
     return () => {
       clearTimeout(handler);
     };
+  }, [searchQuery]);
+
+  // Persist filter state to sessionStorage whenever filters change
+  useEffect(() => {
+    sessionStorage.setItem('claimsFilterByLabel', filterByLabel);
+  }, [filterByLabel]);
+
+  useEffect(() => {
+    sessionStorage.setItem('claimsSelectedEvidenceStatuses', JSON.stringify(selectedEvidenceStatuses));
+  }, [selectedEvidenceStatuses]);
+
+  useEffect(() => {
+    sessionStorage.setItem('claimsSearchQuery', searchQuery);
   }, [searchQuery]);
 
   // Scroll restoration: save scroll position when navigating away
@@ -275,11 +305,10 @@ const Claims = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header Section */}
-          <div className="max-w-4xl mx-auto mb-8 sm:mb-12 text-center px-4">
+          <div className="max-w-4xl mx-auto mb-4 sm:mb-8 text-center px-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
               The Health Integrity Project
             </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto mb-8"></div>
             {/* <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Community-driven claims about products and services for women's health conditions.
               Upvote Claims to prioritize them for expert review.
@@ -297,89 +326,41 @@ const Claims = () => {
             <TabsContent value="claims" className="space-y-6">
               {/* Claims Controls */}
               <div className="flex flex-col gap-4 mb-8 w-full max-w-3xl mx-auto px-4">
-                {/* Top row: New Claim button and Search */}
-                <div className="flex flex-row gap-2 sm:gap-4 items-center justify-center">
-                  {user && (
-                    <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="gap-2 whitespace-nowrap h-9 px-2 sm:px-4">
-                          <Plus className="w-4 h-4" />
-                          <span className="hidden sm:inline">Add Claim</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
-                        <DialogTitle>Submit a new claim</DialogTitle>
-                        <ClaimSubmissionForm
-                          onSuccess={() => {
-                            setShowSubmissionForm(false);
-                            refetch();
-                          }}
-                          onCancel={() => setShowSubmissionForm(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
+                {/* Search Input */}
+                <div className="relative w-full">
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Search claims..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-9 h-9"
+                    aria-label="Search claims by title"
+                    role="searchbox"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Clear search"
+                      type="button"
+                    >
+                      <X className="w-4 h-4" aria-hidden="true" />
+                    </button>
                   )}
-
-                  {/* Search Input */}
-                  <div className="relative flex-1 max-w-[280px]">
-                    <Search
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
-                      aria-hidden="true"
-                    />
-                    <Input
-                      type="text"
-                      placeholder="Search claims..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-9 h-9"
-                      aria-label="Search claims by title"
-                      role="searchbox"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Clear search"
-                        type="button"
-                      >
-                        <X className="w-4 h-4" aria-hidden="true" />
-                      </button>
-                    )}
-                  </div>
                 </div>
 
-                {/* Filter dropdowns: Evidence Status on first row (mobile), Topics and Sort on second row (mobile), flex row on desktop */}
-                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 justify-center">
-                  {/* First row on mobile: Evidence Status (full width) */}
-                  <div className="w-full sm:w-auto">
-                    <EvidenceStatusFilter
-                      selectedStatuses={selectedEvidenceStatuses}
-                      onStatusChange={setSelectedEvidenceStatuses}
-                    />
-                  </div>
-
-                  {/* Second row on mobile: Topics and Sort side by side */}
-                  <div className="grid grid-cols-2 sm:contents gap-2 sm:gap-3">
-                    <Select value={filterByLabel} onValueChange={setFilterByLabel}>
-                      <SelectTrigger className="w-full sm:w-[160px] h-9">
-                        <div className="flex items-center gap-2">
-                          <Tag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <SelectValue placeholder="Topic" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        <SelectItem value="all">All Topics</SelectItem>
-                        {CLAIM_LABELS.map((label) => (
-                          <SelectItem key={label.value} value={label.value}>
-                            {label.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <SortSegmentedControl value={sortBy} onChange={setSortBy} />
-                  </div>
+                {/* Evidence Status Filter Chips */}
+                <div className="w-full">
+                  <EvidenceStatusFilter
+                    selectedStatuses={selectedEvidenceStatuses}
+                    onStatusChange={setSelectedEvidenceStatuses}
+                  />
                 </div>
+
               </div>
 
               {loading && (
@@ -571,6 +552,30 @@ const Claims = () => {
                     </div>
                   </div>
                 </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Floating Action Button */}
+          {user && (
+            <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
+              <DialogTrigger asChild>
+                <button
+                  className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+                  aria-label="Add new claim"
+                >
+                  <Plus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-screen h-screen max-w-none max-h-none p-4 sm:p-6 m-0 rounded-none sm:w-auto sm:h-auto sm:max-w-[90vw] md:max-w-4xl sm:max-h-[90vh] sm:rounded-lg overflow-y-auto">
+                <DialogTitle>Submit a new claim</DialogTitle>
+                <ClaimSubmissionForm
+                  onSuccess={() => {
+                    setShowSubmissionForm(false);
+                    refetch();
+                  }}
+                  onCancel={() => setShowSubmissionForm(false)}
+                />
               </DialogContent>
             </Dialog>
           )}

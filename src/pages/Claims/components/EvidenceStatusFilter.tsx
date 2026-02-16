@@ -1,14 +1,6 @@
-import { useState } from 'react';
-import { Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import { EVIDENCE_STATUS_OPTIONS } from '../constants';
+import { getEvidenceStatusColor } from '../utils/helpers';
+import { cn } from '@/lib/utils';
 
 interface EvidenceStatusFilterProps {
   selectedStatuses: string[];
@@ -19,91 +11,55 @@ export const EvidenceStatusFilter = ({
   selectedStatuses,
   onStatusChange
 }: EvidenceStatusFilterProps) => {
-  const [open, setOpen] = useState(false);
-
   const handleToggle = (status: string) => {
     const isSelected = selectedStatuses.includes(status);
 
     if (isSelected) {
-      // Prevent deselecting all - must have at least one selected
-      if (selectedStatuses.length > 1) {
-        onStatusChange(selectedStatuses.filter(s => s !== status));
-      }
+      onStatusChange(selectedStatuses.filter(s => s !== status));
     } else {
       onStatusChange([...selectedStatuses, status]);
     }
   };
 
-  const handleSelectAll = () => {
+  const handleShowAll = () => {
     onStatusChange([...EVIDENCE_STATUS_OPTIONS]);
   };
 
-  const handleClearAll = () => {
-    // Keep at least one selected (default to first option)
-    onStatusChange([EVIDENCE_STATUS_OPTIONS[0]]);
-  };
-
-  const getDisplayText = () => {
-    if (selectedStatuses.length === EVIDENCE_STATUS_OPTIONS.length) {
-      return 'All Evidence Status';
-    }
-    if (selectedStatuses.length === 1) {
-      return selectedStatuses[0];
-    }
-    return `(${selectedStatuses.length}) Evidence Status`;
-  };
+  const isAllSelected = selectedStatuses.length === 0 || selectedStatuses.length === EVIDENCE_STATUS_OPTIONS.length;
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full sm:w-[200px] h-9 justify-between"
-          aria-label="Filter by evidence status"
-        >
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="truncate">{getDisplayText()}</span>
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[240px]" align="start">
-        <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
-          Evidence Status
-        </div>
-        <DropdownMenuSeparator />
-        {EVIDENCE_STATUS_OPTIONS.map((status) => (
-          <DropdownMenuCheckboxItem
+    <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+      {/* All button */}
+      <button
+        onClick={handleShowAll}
+        className={cn(
+          "rounded-full h-8 px-4 text-xs font-medium transition-all",
+          isAllSelected
+            ? "bg-gray-900 text-white dark:bg-gray-700"
+            : "bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+        )}
+      >
+        All
+      </button>
+
+      {/* Status chips */}
+      {EVIDENCE_STATUS_OPTIONS.map((status) => {
+        const isSelected = selectedStatuses.includes(status);
+        const colorClass = getEvidenceStatusColor(status);
+
+        return (
+          <button
             key={status}
-            checked={selectedStatuses.includes(status)}
-            onCheckedChange={() => handleToggle(status)}
-            onSelect={(e) => e.preventDefault()}
-            className="cursor-pointer"
+            onClick={() => handleToggle(status)}
+            className={cn(
+              "rounded-full h-8 px-4 text-xs font-medium transition-all text-white",
+              isSelected ? colorClass : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-400 opacity-60 hover:opacity-80"
+            )}
           >
-            <span className="flex-1">{status}</span>
-          </DropdownMenuCheckboxItem>
-        ))}
-        <DropdownMenuSeparator />
-        <div className="flex gap-2 px-2 py-1.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSelectAll}
-            className="flex-1 h-7 text-xs"
-          >
-            Select All
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearAll}
-            className="flex-1 h-7 text-xs"
-            disabled={selectedStatuses.length === 1}
-          >
-            Clear
-          </Button>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {status.replace('Evidence ', '')}
+          </button>
+        );
+      })}
+    </div>
   );
 };
