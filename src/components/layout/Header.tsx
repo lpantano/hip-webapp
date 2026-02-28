@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/auth/UserMenu';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Menu } from 'lucide-react';
 
@@ -78,6 +79,9 @@ const Header = () => {
                 </svg>
               </a>
             </div>
+
+{/* Notification Bell - authenticated users only */}
+            {user && <NotificationBell />}
 
 {/* Mobile Hamburger Menu */}
             <DropdownMenu>

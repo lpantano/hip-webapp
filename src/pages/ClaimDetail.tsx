@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { ArrowLeft, ExternalLink, X, Share, LogIn } from 'lucide-react';
+import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
 import { ClaimCard } from '@/pages/Claims/components/ClaimCard';
@@ -280,10 +281,13 @@ const ClaimDetail = () => {
                 All Claims
               </Link>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="flex items-center gap-2">
-              <Share className="w-4 h-4" />
-              <span className="hidden sm:inline">Share</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              {user && claim && <SubscribeButton claimId={claim.id} />}
+              <Button variant="outline" size="sm" onClick={handleShare} className="flex items-center gap-2">
+                <Share className="w-4 h-4" />
+                <span className="hidden sm:inline">Share</span>
+              </Button>
+            </div>
           </div>
 
           {/* Info Section */}

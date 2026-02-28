@@ -263,6 +263,8 @@ toast.error("Error message")
 ## Active Technologies
 - TypeScript 5.8 (React 18.3, Vite 7.2) + React Router v6.30, Supabase 2.55, TanStack Query 5.83, shadcn/ui (Radix UI), Tailwind CSS (001-simplify-claim-card)
 - Supabase (PostgreSQL database), existing tables: claims, publications, publication_scores, claim_votes (001-simplify-claim-card)
+- TypeScript 5.8 (React 18.3, Vite 7.2) + Supabase 2.55, TanStack Query 5.83, shadcn/ui (Radix UI Popover + Badge), lucide-react (Bell icon), sonner (toast feedback) (002-claim-notifications)
+- PostgreSQL via Supabase — two new tables, one new enum, three new trigger functions (002-claim-notifications)
 
 ## Recent Changes
 - 001-simplify-claim-card: Added TypeScript 5.8 (React 18.3, Vite 7.2) + React Router v6.30, Supabase 2.55, TanStack Query 5.83, shadcn/ui (Radix UI), Tailwind CSS

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ExternalLink, Info, ChevronDown } from 'lucide-react';
+import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -288,14 +289,17 @@ const ClaimEvidencePage = () => {
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8 pt-24 max-w-4xl" role="main" aria-labelledby="claim-title">
         <nav aria-label="Breadcrumb" className="flex items-center justify-between mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            aria-label="Return to claims list"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              aria-label="Return to claims list"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            {claim && <SubscribeButton claimId={claim.id} />}
+          </div>
           <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
             Learn how we review information and science
             <ExternalLink className="w-4 h-4" />

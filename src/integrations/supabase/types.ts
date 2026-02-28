@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      claim_subscriptions: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          recipient_user_id: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          recipient_user_id: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          recipient_user_id?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: []
+      }
       claim_comments: {
         Row: {
           claim_id: string
@@ -960,6 +1011,7 @@ export type Database = {
         | "Endocrinology"
         | "Oncology"
       member_type: "expert" | "researcher"
+      notification_type: "new_paper" | "new_review" | "status_changed"
       publication_stance: "supporting" | "contradicting" | "neutral" | "mixed"
       source_type:
         | "webpage"
