@@ -22,6 +22,7 @@ import {
   BookOpen,
   MoreVertical
 } from 'lucide-react';
+import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import { toast } from 'sonner';
 import { getCategoryColor } from '@/lib/getCategoryColor';
 import { getEvidenceStatusColor } from '../utils/helpers';
@@ -352,6 +353,7 @@ export const ClaimCard = ({
                 >
                   <Share className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
                 </Button>
+                <SubscribeButton claimId={claim.id} />
               </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
