@@ -63,7 +63,15 @@ export type Database = {
           recipient_user_id?: string
           type?: Database["public"]["Enums"]["notification_type"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       claim_comments: {
         Row: {
