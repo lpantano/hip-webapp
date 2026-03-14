@@ -144,6 +144,7 @@ src/
 
   Co-Authored-By: Claude <noreply@anthropic.com>
   ```
+- **NEVER interact with the upstream remote (`Health-Integrity-Project/webapp`) unless explicitly asked. All git operations (push, PR creation, etc.) default to `origin` (`lpantano/hip-webapp`).**
 
 ## Component Guidelines
 
