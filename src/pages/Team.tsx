@@ -4,15 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Header from '@/components/layout/Header';
 
-interface Founder {
+interface TeamMember {
   name: string;
   role: string;
   bio: string;
   avatar_url: string;
+  linkedin_url?: string;
 }
 
 const Team = () => {
-  const founders: Founder[] = [
+  const founders: TeamMember[] = [
     {
       name: "Lorena Pantano",
       role: "CEO / Chief Product Officer",
@@ -36,6 +37,16 @@ const Team = () => {
       role: "Chief Technology Officer",
       bio: "Full-stack engineer with expertise in scalable health platforms and AI integration.",
       avatar_url: "/team/lina-faller.jpg"
+    }
+  ];
+
+  const contributors: TeamMember[] = [
+    {
+      name: "Viveka Patil",
+      role: "Science Communication",
+      bio: "MS in Bioinformatics with focus on genomics data analysis; passionate about healthcare access and transparency.",
+      avatar_url: "/team/viveka.png",
+      linkedin_url: "https://www.linkedin.com/in/viveka-patil-934b3123b/"
     }
   ];
 
@@ -78,6 +89,50 @@ const Team = () => {
                   <CardContent>
                     <CardDescription className="text-center text-sm leading-relaxed">
                       {founder.bio}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* Contributors Section */}
+          <section className="mb-20">
+            <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              Contributors
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {contributors.map((contributor, index) => (
+                <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
+                  <CardHeader className="text-center pb-4">
+                    {contributor.linkedin_url ? (
+                      <a href={contributor.linkedin_url} target="_blank" rel="noopener noreferrer" className="block">
+                        <Avatar className="w-24 h-24 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
+                          <AvatarImage src={contributor.avatar_url} alt={contributor.name} />
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-2xl font-bold text-primary">
+                            {contributor.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <CardTitle className="text-xl hover:text-primary transition-colors">{contributor.name}</CardTitle>
+                      </a>
+                    ) : (
+                      <>
+                        <Avatar className="w-24 h-24 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
+                          <AvatarImage src={contributor.avatar_url} alt={contributor.name} />
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-2xl font-bold text-primary">
+                            {contributor.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <CardTitle className="text-xl">{contributor.name}</CardTitle>
+                      </>
+                    )}
+                    <Badge variant="secondary" className="mx-auto">{contributor.role}</Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-center text-sm leading-relaxed">
+                      {contributor.bio}
                     </CardDescription>
                   </CardContent>
                 </Card>
