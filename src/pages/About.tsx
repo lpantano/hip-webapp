@@ -18,25 +18,25 @@ const About = () => {
   const founders: Founder[] = [
     {
       name: "Lorena Pantano",
-      role: "CEO / Chief Product Officer",
+      role: "Founder",
       bio: "Leading product strategy and company vision with 10+ years in life science innovation.",
       avatar_url: "/team/lorena-pantano.jpg"
     },
     {
       name: "Meeta Mistry",
-      role: "Chief Scientific Officer",
+      role: "Founder",
       bio: "PhD in Data Science, specializing in data analysis and biology research.",
       avatar_url: "/team/meeta-mistry.jpg"
     },
     {
       name: "Judit Flo Gaya",
-      role: "Chief Security Officer",
+      role: "Founder",
       bio: "Cybersecurity expert ensuring the highest standards of data protection and privacy.",
       avatar_url: "/team/judit-flo.png"
     },
     {
       name: "Lina Faller",
-      role: "Chief Technology Officer",
+      role: "Founder",
       bio: "Full-stack engineer with expertise in scalable health platforms and AI integration.",
       avatar_url: "/team/lina-faller.jpg"
     }
@@ -45,7 +45,7 @@ const About = () => {
   const contributors: Founder[] = [
     {
       name: "Viveka Patil",
-      role: "Science Communication",
+      role: "Contributor",
       bio: "MS in Bioinformatics with focus on genomics data analysis; passionate about healthcare access and transparency.",
       avatar_url: "/team/viveka.png",
       linkedin_url: "https://www.linkedin.com/in/viveka-patil-934b3123b/"
@@ -159,63 +159,36 @@ const About = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {founders.map((founder, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...founders, ...contributors].map((person, index) => (
                 <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
                   <CardHeader className="text-center pb-4">
-                    <Avatar className="w-24 h-24 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
-                      <AvatarImage src={founder.avatar_url} alt={founder.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-2xl font-bold text-primary">
-                        {founder.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <CardTitle className="text-xl">{founder.name}</CardTitle>
-                    <Badge variant="secondary" className="mx-auto">{founder.role}</Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-center text-sm leading-relaxed">
-                      {founder.bio}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center mt-16 mb-8">
-              <h3 className="text-2xl font-bold mb-2">Contributors</h3>
-              <div className="w-16 h-1 bg-gradient-to-r from-primary to-secondary mx-auto"></div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {contributors.map((contributor, index) => (
-                <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
-                  <CardHeader className="text-center pb-4">
-                    {contributor.linkedin_url ? (
-                      <a href={contributor.linkedin_url} target="_blank" rel="noopener noreferrer" className="block">
+                    {person.linkedin_url ? (
+                      <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer" className="block">
                         <Avatar className="w-24 h-24 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
-                          <AvatarImage src={contributor.avatar_url} alt={contributor.name} />
+                          <AvatarImage src={person.avatar_url} alt={person.name} />
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-2xl font-bold text-primary">
-                            {contributor.name.split(' ').map(n => n[0]).join('')}
+                            {person.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <CardTitle className="text-xl hover:text-primary transition-colors">{contributor.name}</CardTitle>
+                        <CardTitle className="text-xl hover:text-primary transition-colors">{person.name}</CardTitle>
                       </a>
                     ) : (
                       <>
                         <Avatar className="w-24 h-24 mx-auto mb-4 group-hover:scale-105 transition-transform duration-300">
-                          <AvatarImage src={contributor.avatar_url} alt={contributor.name} />
+                          <AvatarImage src={person.avatar_url} alt={person.name} />
                           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-2xl font-bold text-primary">
-                            {contributor.name.split(' ').map(n => n[0]).join('')}
+                            {person.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <CardTitle className="text-xl">{contributor.name}</CardTitle>
+                        <CardTitle className="text-xl">{person.name}</CardTitle>
                       </>
                     )}
-                    <Badge variant="secondary" className="mx-auto">{contributor.role}</Badge>
+                    <Badge variant="secondary" className="mx-auto">{person.role}</Badge>
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-center text-sm leading-relaxed">
-                      {contributor.bio}
+                      {person.bio}
                     </CardDescription>
                   </CardContent>
                 </Card>
