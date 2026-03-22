@@ -74,6 +74,7 @@ export const useClaimData = (claimId: string | null): UseClaimDataResult => {
         url: p.url || p.doi || '',
         source: p.source || null,
         stance: p.stance,
+        submitted_by: p.submitted_by || null,
         rawScores: []
       }));
 

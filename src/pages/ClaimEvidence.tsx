@@ -11,6 +11,7 @@ import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import ClaimPublicationsExpanded from './Claims/components/ClaimPublicationsExpanded';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import CategoriesLegend from './Claims/components/Legend';
@@ -31,6 +32,7 @@ interface Publication {
   url: string;
   source: string | null;
   stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  submitted_by?: string | null;
   rawScores: PublicationScoreRow[];
 }
 
@@ -116,6 +118,7 @@ const useClaimEvidence = (claimId: string | undefined) => {
         url: pub.url || pub.doi || '',
         source: pub.source,
         stance: pub.stance as Publication['stance'],
+        submitted_by: pub.submitted_by || null,
         rawScores: scoresByPub[pub.id] || []
       }));
 
@@ -232,6 +235,31 @@ const ClaimEvidencePage = () => {
     };
     checkExpertStatus();
   }, [user]);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) { setIsAdmin(false); return; }
+      try {
+        const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        setIsAdmin(data || false);
+      } catch { setIsAdmin(false); }
+    };
+    checkAdminStatus();
+  }, [user]);
+
+  const handleDeletePublication = async (publicationId: string) => {
+    const { error } = await supabase
+      .from('publications')
+      .delete()
+      .eq('id', publicationId);
+    if (error) {
+      toast.error('Failed to delete paper', { description: error.message });
+      throw error;
+    }
+    toast.success('Paper deleted successfully');
+    refetch();
+  };
 
   if (isLoading) {
     return (
@@ -374,10 +402,12 @@ const ClaimEvidencePage = () => {
                         publications={supportingPapers}
                         links={links}
                         isExpert={isExpert}
+                        isAdmin={isAdmin}
                         user={user}
                         setReviewPublication={setReviewPublication}
                         getStanceIcon={getStanceIcon}
                         expertProfiles={expertProfiles}
+                        onDeletePublication={handleDeletePublication}
                       />
                     )}
                   </div>
@@ -412,10 +442,12 @@ const ClaimEvidencePage = () => {
                         publications={contradictingPapers}
                         links={[]}
                         isExpert={isExpert}
+                        isAdmin={isAdmin}
                         user={user}
                         setReviewPublication={setReviewPublication}
                         getStanceIcon={getStanceIcon}
                         expertProfiles={expertProfiles}
+                        onDeletePublication={handleDeletePublication}
                       />
                     )}
                   </div>
