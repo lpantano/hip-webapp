@@ -29,16 +29,16 @@ const Header = () => {
 
           {/* Desktop Navigation - Show all items */}
           <nav className="hidden text-lg md:flex items-center gap-6">
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">
+            <Link to="/" className="text-white font-bold hover:text-white/80 transition-colors">
               Health Claims
             </Link>
-            <Link to="/project" className="text-white/80 hover:text-white transition-colors">
+            <Link to="/project" className="text-white font-bold hover:text-white/80 transition-colors">
               The Project
             </Link>
-            <Link to="/about" className="text-white/80 hover:text-white transition-colors">
+            <Link to="/about" className="text-white font-bold hover:text-white/80 transition-colors">
               About
             </Link>
-            <Link to="/community" className="text-white/80 hover:text-white transition-colors">
+            <Link to="/community" className="text-white font-bold hover:text-white/80 transition-colors">
               Community
             </Link>
 
@@ -60,7 +60,7 @@ const Header = () => {
                 href="https://www.linkedin.com/company/health-integrity-project"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+                className="text-white hover:text-white/80 transition-colors p-2 rounded-md hover:bg-white/10"
                 aria-label="Visit us on LinkedIn"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -71,7 +71,7 @@ const Header = () => {
                 href="https://www.instagram.com/health.integrity.project"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/80 hover:text-white transition-colors p-2 rounded-md hover:bg-white/10"
+                className="text-white hover:text-white/80 transition-colors p-2 rounded-md hover:bg-white/10"
                 aria-label="Follow us on Instagram"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
