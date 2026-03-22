@@ -1,9 +1,9 @@
+/* Markdown editor styles */
+@import '@uiw/react-md-editor/markdown-editor.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Markdown editor styles */
-@import '@uiw/react-md-editor/markdown-editor.css';
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
