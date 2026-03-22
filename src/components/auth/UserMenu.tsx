@@ -1,4 +1,4 @@
-import { User, LogOut, Settings, Shield, Scale, Zap } from 'lucide-react';
+import { User, LogOut, Settings, Shield, Scale, Zap, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,10 +13,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { OptimizedAvatar } from '@/components/ui/optimized-avatar';
+import { useState } from 'react';
+import ExpertOnboardingDialog from '@/components/forms/ExpertOnboardingDialog';
+import CommunityApplicationForm from '@/components/forms/CommunityApplicationForm';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showExpertForm, setShowExpertForm] = useState(false);
 
   // Check if user is admin
   const { data: isAdmin = false } = useQuery({
@@ -28,8 +33,25 @@ const UserMenu = () => {
       return data || false;
     },
     enabled: !!user,
-    // Reduce noisy refetches that cause extra renders
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
+
+  // Check if user is already an expert or researcher
+  const { data: isExpertOrResearcher = false } = useQuery({
+    queryKey: ['user-expert-status', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const [{ data: expertData }, { data: researcherData }] = await Promise.all([
+        supabase.rpc('has_role', { _user_id: user.id, _role: 'expert' }),
+        supabase.rpc('has_role', { _user_id: user.id, _role: 'researcher' }),
+      ]);
+      return (expertData || researcherData) || false;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
@@ -68,6 +90,7 @@ const UserMenu = () => {
   const initials = displayName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U';
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -108,6 +131,12 @@ const UserMenu = () => {
             <span>Admin Dashboard</span>
           </DropdownMenuItem>
         )}
+        {!isExpertOrResearcher && (
+          <DropdownMenuItem onClick={() => setShowOnboarding(true)}>
+            <Award className="mr-2 h-4 w-4" />
+            <span>Apply as Expert</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut} className="text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
@@ -115,6 +144,18 @@ const UserMenu = () => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <ExpertOnboardingDialog
+      open={showOnboarding}
+      onOpenChange={setShowOnboarding}
+      onApply={() => setShowExpertForm(true)}
+    />
+    <CommunityApplicationForm
+      open={showExpertForm}
+      onOpenChange={setShowExpertForm}
+      memberType="expert"
+    />
+    </>
   );
 };
 

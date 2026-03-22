@@ -334,8 +334,15 @@ const ClaimEvidencePage = () => {
           {hasNoPapers ? (
             <div className="text-center py-12 bg-card/50 rounded-lg border">
               <p className="text-muted-foreground">
-                No expert evidence has been added for this claim yet.
+                {!user
+                  ? 'Sign in to view the evidence for this claim.'
+                  : 'No expert evidence has been added for this claim yet.'}
               </p>
+              {!user && (
+                <Button className="mt-4" onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-8">

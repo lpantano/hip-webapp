@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Health Claim Card - Desktop</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3b82f6",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                        amber: {
+                            500: "#f59e0b",
+                        }
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+            vertical-align: middle;
+            font-size: 20px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-6">
+<div class="max-w-4xl w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+<div class="bg-amber-500 px-6 py-3 flex items-center gap-2">
+<span class="text-white font-bold tracking-wider text-sm">INCONCLUSIVE</span>
+<span class="material-symbols-outlined text-white text-[18px]">info</span>
+</div>
+<div class="p-8">
+<div class="flex flex-wrap items-center gap-4 mb-6">
+<span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-1.5 rounded-full text-sm font-semibold text-slate-900 dark:text-white">
+                    Health
+                </span>
+<span class="text-green-600 dark:text-green-400 text-sm font-medium cursor-pointer hover:underline">Nutrition</span>
+<span class="text-purple-600 dark:text-purple-400 text-sm font-medium cursor-pointer hover:underline">Immunity</span>
+<span class="text-indigo-600 dark:text-indigo-400 text-sm font-medium cursor-pointer hover:underline">Inflammation</span>
+</div>
+<div class="flex items-start justify-between mb-8">
+<div class="space-y-1">
+<h1 class="text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                        Manuka honey has real medicinal properties
+                        <span class="ml-3 text-sm font-normal text-slate-500 dark:text-slate-400 align-middle">1 paper</span>
+</h1>
+</div>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+<hr class="border-slate-100 dark:border-slate-800 mb-8"/>
+<div class="flex flex-wrap items-center gap-3 mb-10">
+<button class="bg-primary hover:bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm shadow-blue-200 dark:shadow-none">
+<span class="material-symbols-outlined">menu_book</span>
+                    View Evidence
+                </button>
+<button class="border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined">description</span>
+                    Add Paper
+                </button>
+<button class="border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined">link</span>
+                    Add Source
+                </button>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors group">
+<span class="material-symbols-outlined group-hover:fill-current">thumb_up</span>
+<span class="font-medium">0</span>
+</button>
+<button class="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button class="flex items-center gap-2 border border-slate-200 dark:border-slate-700 px-5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-medium">
+<span class="material-symbols-outlined text-[18px]">notifications_off</span>
+                        Unsubscribe
+                    </button>
+</div>
+<div class="text-slate-400 dark:text-slate-500 text-sm font-medium">
+                    2/24/2026
+                </div>
+</div>
+</div>
+</div>
+<div class="fixed bottom-6 right-6">
+<button class="p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined">dark_mode</span>
+</button>
+</div>
+
+</body></html>
