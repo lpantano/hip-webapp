@@ -120,8 +120,23 @@ export const ClaimCard = ({
     }
   };
 
+  const handleCardClick = () => {
+    if (editingClaimId === claim.id) return;
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    if (claim.publications.length > 0) {
+      sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
+      navigate(`/claims/${claim.id}/evidence`);
+    }
+  };
+
   return (
-    <Card className="group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all overflow-hidden">
+    <Card
+      className={`group bg-card/50 backdrop-blur-sm [@media(hover:hover)]:hover:shadow-lg transition-all overflow-hidden ${editingClaimId !== claim.id && (!user || claim.publications.length > 0) ? 'cursor-pointer' : ''}`}
+      onClick={handleCardClick}
+    >
       {/* Evidence Status Header */}
       {claim.evidence_status && (
         <div className={`${getEvidenceStatusColor(claim.evidence_status)} px-4 py-3 text-white flex items-center justify-between rounded-t-lg`}>
@@ -165,6 +180,7 @@ export const ClaimCard = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={(e) => e.stopPropagation()}
                   className="sm:hidden h-8 w-8 p-0 touch-manipulation"
                   aria-label="More options"
                 >
@@ -195,6 +211,7 @@ export const ClaimCard = ({
               <Input
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 className="flex-1 text-lg"
                 autoFocus
                 onKeyDown={(e) => {
@@ -212,7 +229,7 @@ export const ClaimCard = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={saveTitle}
+                  onClick={(e) => { e.stopPropagation(); saveTitle(); }}
                   disabled={updatingTitle === claim.id}
                   className="h-8"
                 >
@@ -225,7 +242,7 @@ export const ClaimCard = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={cancelEditing}
+                  onClick={(e) => { e.stopPropagation(); cancelEditing(); }}
                   disabled={updatingTitle === claim.id}
                   className="h-8"
                 >
@@ -280,8 +297,8 @@ export const ClaimCard = ({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => {
-                      // Save scroll position before navigating
+                    onClick={(e) => {
+                      e.stopPropagation();
                       sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
                       navigate(`/claims/${claim.id}/evidence`);
                     }}
@@ -296,7 +313,7 @@ export const ClaimCard = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onShowPaperForm(claim.id)}
+                  onClick={(e) => { e.stopPropagation(); onShowPaperForm(claim.id); }}
                   className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
                 >
                   <FileText className="w-4 h-4" />
@@ -306,7 +323,7 @@ export const ClaimCard = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onShowSourceForm(claim.id)}
+                    onClick={(e) => { e.stopPropagation(); onShowSourceForm(claim.id); }}
                     className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
                   >
                     <LinkIcon className="w-4 h-4" />
@@ -319,7 +336,7 @@ export const ClaimCard = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => onVote(claim.id)}
+                  onClick={(e) => { e.stopPropagation(); onVote(claim.id); }}
                   disabled={!user}
                   title={!user ? "Sign in to vote" : undefined}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all touch-manipulation ${
@@ -353,7 +370,9 @@ export const ClaimCard = ({
                 >
                   <Share className="h-4 w-4 text-muted-foreground [@media(hover:hover)]:hover:text-primary" />
                 </Button>
-                <SubscribeButton claimId={claim.id} />
+                <div onClick={(e) => e.stopPropagation()}>
+                  <SubscribeButton claimId={claim.id} />
+                </div>
               </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(claim.created_at).toLocaleDateString()}
