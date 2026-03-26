@@ -20,6 +20,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ClaimCard } from './components/ClaimCard';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
+import { EditLabelsDialog } from './components/EditLabelsDialog';
 import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
 import type { PublicationScoreRow } from './types';
 import { getEvidenceStatusColor } from './utils/helpers';
@@ -61,6 +62,8 @@ const Claims = () => {
   const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
+  const [editLabelsClaim, setEditLabelsClaim] = useState<{ id: string; labels: string[] } | null>(null);
+  const [savingLabels, setSavingLabels] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -280,6 +283,25 @@ const Claims = () => {
     }
   };
 
+  // Update claim labels
+  const updateClaimLabels = async (labels: string[]) => {
+    if (!editLabelsClaim) return;
+    try {
+      setSavingLabels(true);
+      const { error } = await sb.from('claims').update({ labels }).eq('id', editLabelsClaim.id);
+      if (error) throw error;
+      await refetch();
+      setEditLabelsClaim(null);
+      toast.success('Labels updated', { description: 'Claim labels have been updated successfully.' });
+    } catch (e: unknown) {
+      console.error('Failed to update claim labels', e);
+      const msg = e instanceof Error ? e.message : 'Failed to update labels';
+      toast.error('Update failed', { description: msg });
+    } finally {
+      setSavingLabels(false);
+    }
+  };
+
   // Claims are now filtered and sorted by the database query
   // Only show special claim if running on localhost
   let filteredAndSortedClaims = claims;
@@ -395,6 +417,10 @@ const Claims = () => {
                 onShowPaperForm={setShowPaperForm}
                 onShowSourceForm={setShowSourceForm}
                 onShowEvidenceInfo={setShowEvidenceInfo}
+                onEditLabels={(claimId) => {
+                  const c = filteredAndSortedClaims.find((cl) => cl.id === claimId);
+                  setEditLabelsClaim({ id: claimId, labels: c?.labels || [] });
+                }}
                 editingClaimId={editingClaimId}
                 setEditingClaimId={setEditingClaimId}
                 updatingTitle={updatingTitle}
@@ -457,6 +483,15 @@ const Claims = () => {
               onSuccess={() => refetch()}
             />
           )}
+
+          {/* Edit Labels Dialog */}
+          <EditLabelsDialog
+            open={!!editLabelsClaim}
+            onOpenChange={(open) => { if (!open) setEditLabelsClaim(null); }}
+            currentLabels={editLabelsClaim?.labels || []}
+            onSave={updateClaimLabels}
+            isSaving={savingLabels}
+          />
 
           {/* Expert Reviews Reel Dialog */}
           {user && (
