@@ -20,7 +20,8 @@ import {
   ThumbsUp,
   Share,
   BookOpen,
-  MoreVertical
+  MoreVertical,
+  Tags
 } from 'lucide-react';
 import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import { toast } from 'sonner';
@@ -52,6 +53,7 @@ interface ClaimCardProps {
   onShowPaperForm: (claimId: string) => void;
   onShowSourceForm: (claimId: string) => void;
   onShowEvidenceInfo: (claimId: string) => void;
+  onEditLabels?: (claimId: string) => void;
   expandedStance?: { claimId: string; stance: 'supporting' | 'contradicting' } | null;
   editingClaimId: string | null;
   setEditingClaimId: (id: string | null) => void;
@@ -72,6 +74,7 @@ export const ClaimCard = ({
   onShowPaperForm,
   onShowSourceForm,
   onShowEvidenceInfo,
+  onEditLabels,
   editingClaimId,
   setEditingClaimId,
   updatingTitle,
@@ -196,6 +199,12 @@ export const ClaimCard = ({
                   <DropdownMenuItem onClick={() => onShowSourceForm(claim.id)}>
                     <LinkIcon className="w-4 h-4 mr-2" />
                     Add Source
+                  </DropdownMenuItem>
+                )}
+                {canEditClaim() && onEditLabels && (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditLabels(claim.id); }}>
+                    <Tags className="w-4 h-4 mr-2" />
+                    Edit Labels
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -328,6 +337,17 @@ export const ClaimCard = ({
                   >
                     <LinkIcon className="w-4 h-4" />
                     <span>Add Source</span>
+                  </Button>
+                )}
+                {canEditClaim() && onEditLabels && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onEditLabels(claim.id); }}
+                    className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
+                  >
+                    <Tags className="w-4 h-4" />
+                    <span>Edit Labels</span>
                   </Button>
                 )}
               </div>
