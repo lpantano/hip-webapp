@@ -198,12 +198,12 @@ export const ClaimCard = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onShowPaperForm(claim.id)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowPaperForm(claim.id); }}>
                   <FileText className="w-4 h-4 mr-2" />
                   Add Paper
                 </DropdownMenuItem>
                 {(isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
-                  <DropdownMenuItem onClick={() => onShowSourceForm(claim.id)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowSourceForm(claim.id); }}>
                     <LinkIcon className="w-4 h-4 mr-2" />
                     Add Source
                   </DropdownMenuItem>
