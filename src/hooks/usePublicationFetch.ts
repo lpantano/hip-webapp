@@ -62,6 +62,7 @@ export const usePublicationFetch = (options: UsePublicationFetchOptions = {}) =>
       const pubData = await DOIService.fetchPublicationData(doi.trim());
 
       if (pubData) {
+        toast.dismiss();
         toast.success('Publication Data Retrieved', {
           description: `Successfully fetched details for: ${pubData.title?.substring(0, 50)}...`,
         });
@@ -69,18 +70,24 @@ export const usePublicationFetch = (options: UsePublicationFetchOptions = {}) =>
         return pubData;
       } else {
         const errorMsg = 'Could not retrieve publication data. Please enter details manually.';
-        toast.error('Publication Fetch Error', {
-          description: errorMsg,
-        });
+        if (!onError) {
+          toast.dismiss();
+          toast.error('Publication Fetch Error', {
+            description: errorMsg,
+          });
+        }
         onError?.(errorMsg, index);
         return null;
       }
     } catch (error) {
       console.error('Error fetching publication data:', error);
       const errorMsg = 'Failed to fetch publication data. Please enter details manually.';
-      toast.error('Publication Fetch Error', {
-        description: errorMsg,
-      });
+      if (!onError) {
+        toast.dismiss();
+        toast.error('Publication Fetch Error', {
+          description: errorMsg,
+        });
+      }
       onError?.(errorMsg, index);
       return null;
     } finally {
