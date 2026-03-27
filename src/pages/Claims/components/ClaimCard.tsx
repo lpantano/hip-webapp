@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +83,7 @@ export const ClaimCard = ({
 }: ClaimCardProps) => {
   const [editedTitle, setEditedTitle] = useState('');
   const navigate = useNavigate();
+  const menuJustClosedRef = useRef(false);
 
   // Permission check for editing claim titles
   const canEditClaim = () => {
@@ -125,6 +126,7 @@ export const ClaimCard = ({
 
   const handleCardClick = () => {
     if (editingClaimId === claim.id) return;
+    if (menuJustClosedRef.current) return;
     if (!user) {
       navigate('/auth');
       return;
@@ -178,7 +180,12 @@ export const ClaimCard = ({
           </div>
           {/* Three-dot menu for mobile - only show if user is logged in */}
           {user && (
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => {
+              if (!open) {
+                menuJustClosedRef.current = true;
+                setTimeout(() => { menuJustClosedRef.current = false; }, 300);
+              }
+            }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
