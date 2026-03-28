@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 const HeroSection = () => {
   const { user, loading } = useAuth();
   return (
-    <section className="relative pt-12 pb-10 md:pt-32 md:pb-8 flex items-center justify-center bg-hero-gradient">
+    <section className="relative pt-6 pb-10 md:pt-32 md:pb-8 flex items-center justify-center bg-hero-gradient">
       <div className="absolute inset-0 bg-black/5"></div>
       <div className="relative z-10 container mx-auto px-6 text-center">
         <div className="max-w-4xl mx-auto animate-fade-in">
@@ -15,7 +15,7 @@ const HeroSection = () => {
               <div className="w-full flex justify-end">
                 <span className="text-sm sm:text-base md:text-xl  text-muted font-bold m-3 sm:m-2">Women Edition</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight m-1 p-2">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#0496ff] leading-tight m-1 p-2">
                 The Health Integrity Project
               </h1>
 
