@@ -80,8 +80,8 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('Precaching complete');
-        // Force the waiting service worker to become the active service worker
-        return self.skipWaiting();
+        // Do NOT call skipWaiting() here - let the UI prompt the user to update.
+        // skipWaiting is sent via postMessage from UpdateNotificationManager.
       })
       .catch(error => {
         console.error('Precaching failed:', error);

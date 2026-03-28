@@ -26,8 +26,9 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
-// Custom event for SW registration updates
-const SW_REGISTRATION_EVENT = 'sw-registration-ready';
+// Module-level registration reference to avoid race condition between
+// SW registration (resolves on load) and React useEffect (runs after first render).
+let _swRegistration: ServiceWorkerRegistration | undefined;
 
 // Service worker registration and update management
 if ('serviceWorker' in navigator) {
@@ -36,6 +37,8 @@ if ('serviceWorker' in navigator) {
       .then((registration) => {
         logger.log('SW registered: ', registration);
 
+        _swRegistration = registration;
+
         // Check for updates immediately
         registration.update();
 
@@ -43,9 +46,6 @@ if ('serviceWorker' in navigator) {
         setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
-
-        // Dispatch custom event with registration
-        window.dispatchEvent(new CustomEvent(SW_REGISTRATION_EVENT, { detail: registration }));
       })
       .catch((registrationError) => {
         logger.log('SW registration failed: ', registrationError);
@@ -57,16 +57,21 @@ function AppWithUpdateNotification() {
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | undefined>(undefined);
 
   useEffect(() => {
-    const handleRegistration = (event: Event) => {
-      const customEvent = event as CustomEvent<ServiceWorkerRegistration>;
-      setSwRegistration(customEvent.detail);
-    };
+    // If registration already resolved before this effect ran, use it directly.
+    if (_swRegistration) {
+      setSwRegistration(_swRegistration);
+      return;
+    }
 
-    window.addEventListener(SW_REGISTRATION_EVENT, handleRegistration);
+    // Otherwise poll until it's available (register() is async on load).
+    const interval = setInterval(() => {
+      if (_swRegistration) {
+        setSwRegistration(_swRegistration);
+        clearInterval(interval);
+      }
+    }, 100);
 
-    return () => {
-      window.removeEventListener(SW_REGISTRATION_EVENT, handleRegistration);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   return (
