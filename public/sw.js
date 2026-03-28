@@ -80,7 +80,7 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('Precaching complete');
-        // Force the waiting service worker to become the active service worker
+        // Activate immediately so the new version takes over as soon as possible.
         return self.skipWaiting();
       })
       .catch(error => {
