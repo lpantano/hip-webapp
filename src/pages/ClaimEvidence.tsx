@@ -329,7 +329,8 @@ const ClaimEvidencePage = () => {
             {claim && <SubscribeButton claimId={claim.id} />}
           </div>
           <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-            Learn how we review information and science
+            <span className="hidden sm:inline">Learn how we review information and science</span>
+            <span className="sm:hidden">Our review process</span>
             <ExternalLink className="w-4 h-4" />
           </a>
         </nav>
