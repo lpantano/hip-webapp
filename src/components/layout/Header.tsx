@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/auth/UserMenu';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Menu } from 'lucide-react';
+import MobileMenuSheet from '@/components/layout/MobileMenuSheet';
+import { Button } from '@/components/ui/button';
 
 const Header = () => {
   const { user, loading } = useAuth();
@@ -21,13 +20,9 @@ const Header = () => {
             <div className="w-10 h-10 md:w-16 md:h-16 rounded-full overflow-hidden">
               <img src="/logo2.png" alt="The Health Integrity Project logo" className="w-full h-full object-cover" />
             </div>
-            {/* <div className="leading-none">
-              <span className="text-3xl md:text-4xl font-extrabold text-white/80 -mt-1">W</span>
-            </div> */}
           </Link>
 
-
-          {/* Desktop Navigation - Show all items */}
+          {/* Desktop Navigation */}
           <nav className="hidden text-lg md:flex items-center gap-6">
             <Link to="/" className="text-white font-bold hover:text-white/80 transition-colors">
               Health Claims
@@ -41,26 +36,16 @@ const Header = () => {
             <Link to="/community" className="text-white font-bold hover:text-white/80 transition-colors">
               Community
             </Link>
-
-            {/* <Link to="/games" className="text-white/80 hover:text-white transition-colors">
-              Games
-            </Link> */}
-            {/* <Link to="/features" className="text-white/80 hover:text-white transition-colors">
-              Features
-            </Link>
-            <Link to="/legal" className="text-white/80 hover:text-white transition-colors">
-              Legal
-            </Link> */}
           </nav>
 
           <div className="flex items-center gap-1 md:gap-4">
-            {/* Social Media Links */}
-            <div className="flex items-center gap-0.5 md:gap-2">
+            {/* Social icons — desktop only */}
+            <div className="hidden md:flex items-center gap-2">
               <a
                 href="https://www.linkedin.com/company/health-integrity-project"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white hover:text-white/80 transition-colors p-1 md:p-2 rounded-md hover:bg-white/10"
+                className="text-white hover:text-white/80 transition-colors p-2 rounded-md hover:bg-white/10"
                 aria-label="Visit us on LinkedIn"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -71,7 +56,7 @@ const Header = () => {
                 href="https://www.instagram.com/health.integrity.project"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white hover:text-white/80 transition-colors p-1 md:p-2 rounded-md hover:bg-white/10"
+                className="text-white hover:text-white/80 transition-colors p-2 rounded-md hover:bg-white/10"
                 aria-label="Follow us on Instagram"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -80,43 +65,21 @@ const Header = () => {
               </a>
             </div>
 
-{/* Notification Bell - authenticated users only */}
+            {/* Notification Bell */}
             {user && <NotificationBell />}
 
-{/* Mobile Hamburger Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/" className="cursor-pointer">Health Claims</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/project" className="cursor-pointer">The Project</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/community" className="cursor-pointer">Community</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/about" className="cursor-pointer">About</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/legal" className="cursor-pointer">Legal</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Mobile: unified sheet (nav + account + social) */}
+            <MobileMenuSheet />
 
-            {/* User Menu / Auth Button */}
+            {/* Desktop: user menu / sign in */}
             {loading ? (
-              <div className="w-10 h-10 bg-white/20 rounded-full animate-pulse" />
+              <div className="hidden md:block w-10 h-10 bg-white/20 rounded-full animate-pulse" />
             ) : user ? (
-              <UserMenu />
+              <div className="hidden md:block">
+                <UserMenu />
+              </div>
             ) : (
-              <Button asChild variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20">
+              <Button asChild variant="outline" className="hidden md:flex bg-white/10 text-white border-white/30 hover:bg-white/20">
                 <Link to="/auth">Sign In</Link>
               </Button>
             )}
