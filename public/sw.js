@@ -80,8 +80,8 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('Precaching complete');
-        // Do NOT call skipWaiting() here - let the UI prompt the user to update.
-        // skipWaiting is sent via postMessage from UpdateNotificationManager.
+        // Activate immediately so the new version takes over as soon as possible.
+        return self.skipWaiting();
       })
       .catch(error => {
         console.error('Precaching failed:', error);

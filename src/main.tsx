@@ -2,8 +2,6 @@ import { createRoot } from 'react-dom/client'
 import { logger } from '@/lib/logger';
 import App from './App.tsx'
 import './index.css'
-import { UpdateNotificationManager } from '@/components/UpdateNotification'
-import { useState, useEffect } from 'react';
 
 // Request persistent storage for PWA to prevent session loss
 if (navigator.storage && navigator.storage.persist) {
@@ -26,26 +24,29 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
-// Module-level registration reference to avoid race condition between
-// SW registration (resolves on load) and React useEffect (runs after first render).
-let _swRegistration: ServiceWorkerRegistration | undefined;
-
-// Service worker registration and update management
+// Service worker: register, keep updated, and silently reload when a new version activates.
 if ('serviceWorker' in navigator) {
+  // Track whether a SW was already in control before this page load.
+  // If not, this is a first install and we skip the reload to avoid
+  // reloading a page that was never controlled.
+  const hadController = !!navigator.serviceWorker.controller;
+
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    logger.log('SW updated, reloading page for new version');
+    window.location.reload();
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         logger.log('SW registered: ', registration);
 
-        _swRegistration = registration;
-
-        // Check for updates immediately
+        // Check for updates immediately and every hour.
         registration.update();
-
-        // Check for updates periodically (every hour)
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
+        setInterval(() => registration.update(), 60 * 60 * 1000);
       })
       .catch((registrationError) => {
         logger.log('SW registration failed: ', registrationError);
@@ -54,32 +55,7 @@ if ('serviceWorker' in navigator) {
 }
 
 function AppWithUpdateNotification() {
-  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | undefined>(undefined);
-
-  useEffect(() => {
-    // If registration already resolved before this effect ran, use it directly.
-    if (_swRegistration) {
-      setSwRegistration(_swRegistration);
-      return;
-    }
-
-    // Otherwise poll until it's available (register() is async on load).
-    const interval = setInterval(() => {
-      if (_swRegistration) {
-        setSwRegistration(_swRegistration);
-        clearInterval(interval);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <>
-      <App />
-      <UpdateNotificationManager serviceWorkerRegistration={swRegistration} />
-    </>
-  );
+  return <App />;
 }
 
 // Single render
