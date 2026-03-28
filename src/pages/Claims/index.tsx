@@ -328,7 +328,7 @@ const Claims = () => {
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header Section */}
           <div className="max-w-4xl mx-auto mb-4 sm:mb-8 text-center px-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible bg-hero-gradient bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible text-[#0496ff]">
               The Health Integrity Project
             </h1>
             {/* <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
