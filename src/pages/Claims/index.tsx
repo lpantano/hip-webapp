@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
@@ -326,35 +326,15 @@ const Claims = () => {
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 sm:px-6">
-          {/* Hero — desktop only */}
-          <div className="hidden sm:flex flex-col items-center max-w-4xl mx-auto mb-6 text-center px-4">
-            <img src="/logo2.png" alt="The Health Integrity Project logo" className="w-20 h-20 rounded-full mb-4" />
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 leading-[1.15] text-[#0496ff]">
+          {/* Header Section */}
+          <div className="max-w-4xl mx-auto mb-4 sm:mb-8 text-center px-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 pb-2 leading-[1.15] overflow-visible text-[#0496ff]">
               The Health Integrity Project
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground mb-4">
-              Expert-Reviewed Evidence for Health Claims that matter to you
-            </p>
-            {!user && (
-              <Button asChild size="lg" className="rounded-full px-8 bg-accent text-accent-foreground hover:bg-accent/90">
-                <Link to="/auth?tab=signup">Join the community</Link>
-              </Button>
-            )}
-          </div>
-
-          {/* Mobile subtitle + CTA (no full hero layout) */}
-          <div className="sm:hidden max-w-4xl mx-auto mb-4 text-center px-4">
-            <h1 className="text-2xl font-bold mb-2 leading-tight text-[#0496ff]">
-              The Health Integrity Project
-            </h1>
-            <p className="text-sm text-muted-foreground mb-3">
-              Expert-Reviewed Evidence for Health Claims that matter to you
-            </p>
-            {!user && (
-              <Button asChild size="sm" className="rounded-full px-6 mb-2 bg-accent text-accent-foreground hover:bg-accent/90">
-                <Link to="/auth?tab=signup">Join the community</Link>
-              </Button>
-            )}
+            {/* <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
+              Community-driven claims about products and services for women's health conditions.
+              Upvote Claims to prioritize them for expert review.
+            </p> */}
           </div>
 
           {/* Tabs Navigation */}
@@ -368,25 +348,6 @@ const Claims = () => {
             <TabsContent value="claims" className="space-y-6">
               {/* Claims Controls */}
               <div className="flex flex-col gap-4 mb-8 w-full max-w-3xl mx-auto px-4">
-                {user ? (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Don't see the health claim you are looking for?{" "}
-                    <button
-                      onClick={() => setShowSubmissionForm(true)}
-                      className="text-primary underline font-medium hover:text-primary/80 transition-colors"
-                    >
-                      Submit it yourself for review!
-                    </button>
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Don't see the health claim you are looking for?{" "}
-                    <Link to="/auth" className="text-primary underline font-medium hover:text-primary/80 transition-colors">
-                      Submit it yourself for review!
-                    </Link>{" "}
-                    All you need to do is sign in.
-                  </p>
-                )}
                 {/* Search Input */}
                 <div className="relative w-full">
                   <Search
