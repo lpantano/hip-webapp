@@ -316,7 +316,7 @@ const ClaimEvidencePage = () => {
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8 pt-24 max-w-4xl" role="main" aria-labelledby="claim-title">
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between mb-6">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center justify-between gap-y-2 mb-6">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
