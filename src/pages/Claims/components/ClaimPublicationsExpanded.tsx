@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { FileText, ExternalLink, X, MapPin, Clock } from 'lucide-react';
+import { FileText, ExternalLink, X, MapPin, Clock, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
 import { getCategoryBackgroundColor, getStudyTagColor, getCategoryDescription, getStudyTagDescription } from '@/lib/classification-categories';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
@@ -22,6 +23,7 @@ type Publication = {
   url: string;
   source?: string | null;
   stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  submitted_by?: string | null;
   rawScores?: PublicationScoreRow[];
 };
 
@@ -125,12 +127,21 @@ const ClaimPublicationsExpanded: React.FC<{
   publications: Publication[];
   links?: LinkRow[];
   isExpert: boolean;
+  isAdmin: boolean;
   user: { id?: string; role?: string } | null;
   setReviewPublication: (p: { id: string; title: string; journal: string; publication_year: number; authors?: string; url?: string; existingReview?: PublicationScoreRow | null } | null) => void;
   getStanceIcon: (stance: Publication['stance']) => React.ReactNode;
   expertProfiles: Record<string, ExpertProfile>;
-}> = ({ publications, links, isExpert, user, setReviewPublication, getStanceIcon, expertProfiles }) => {
+  onDeletePublication: (publicationId: string) => Promise<void>;
+}> = ({ publications, links, isExpert, isAdmin, user, setReviewPublication, getStanceIcon, expertProfiles, onDeletePublication }) => {
   const [selectedPublication, setSelectedPublication] = useState<Publication | null>(null);
+  const [pubToDelete, setPubToDelete] = useState<Publication | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canDelete = (pub: Publication): boolean => {
+    if (!user?.id) return false;
+    return isAdmin || isExpert || pub.submitted_by === user.id;
+  };
 
   // Transform publication's rawScores into ExpertReviewCard format
   const publicationReviewCards = useMemo((): ExpertReviewCard[] => {
@@ -381,6 +392,19 @@ const ClaimPublicationsExpanded: React.FC<{
                         </Button>
                       );
                     })()}
+
+                    {/* Delete button */}
+                    {canDelete(pub) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPubToDelete(pub)}
+                        className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Delete paper"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Right: Read Full Paper link */}
@@ -401,6 +425,37 @@ const ClaimPublicationsExpanded: React.FC<{
           })
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!pubToDelete} onOpenChange={(open) => { if (!open) setPubToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this paper?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove &ldquo;{pubToDelete?.title}&rdquo; from this claim. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!pubToDelete) return;
+                setIsDeleting(true);
+                try {
+                  await onDeletePublication(pubToDelete.id);
+                  setPubToDelete(null);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Publication Reviews Dialog */}
       <>

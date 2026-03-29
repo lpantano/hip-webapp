@@ -28,6 +28,7 @@ interface PublicationRow {
   source?: string | null;
   authors?: string | null;
   stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  submitted_by?: string | null;
   created_at: string;
 }
 
@@ -96,6 +97,7 @@ interface ClaimUI {
     url: string;
     source?: string | null;
     stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+    submitted_by?: string | null;
     // raw individual score rows so we can detect if current expert already reviewed
     rawScores?: PublicationScoreRow[];
   }[];

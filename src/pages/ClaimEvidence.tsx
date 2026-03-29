@@ -11,6 +11,7 @@ import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import ClaimPublicationsExpanded from './Claims/components/ClaimPublicationsExpanded';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import CategoriesLegend from './Claims/components/Legend';
@@ -31,6 +32,7 @@ interface Publication {
   url: string;
   source: string | null;
   stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  submitted_by?: string | null;
   rawScores: PublicationScoreRow[];
 }
 
@@ -116,6 +118,7 @@ const useClaimEvidence = (claimId: string | undefined) => {
         url: pub.url || pub.doi || '',
         source: pub.source,
         stance: pub.stance as Publication['stance'],
+        submitted_by: pub.submitted_by || null,
         rawScores: scoresByPub[pub.id] || []
       }));
 
@@ -233,6 +236,31 @@ const ClaimEvidencePage = () => {
     checkExpertStatus();
   }, [user]);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) { setIsAdmin(false); return; }
+      try {
+        const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        setIsAdmin(data || false);
+      } catch { setIsAdmin(false); }
+    };
+    checkAdminStatus();
+  }, [user]);
+
+  const handleDeletePublication = async (publicationId: string) => {
+    const { error } = await supabase
+      .from('publications')
+      .delete()
+      .eq('id', publicationId);
+    if (error) {
+      toast.error('Failed to delete paper', { description: error.message });
+      throw error;
+    }
+    toast.success('Paper deleted successfully');
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
@@ -288,7 +316,7 @@ const ClaimEvidencePage = () => {
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8 pt-24 max-w-4xl" role="main" aria-labelledby="claim-title">
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between mb-6">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center justify-between gap-y-2 mb-6">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -301,7 +329,8 @@ const ClaimEvidencePage = () => {
             {claim && <SubscribeButton claimId={claim.id} />}
           </div>
           <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-            Learn how we review information and science
+            <span className="hidden sm:inline">Learn how we review information and science</span>
+            <span className="sm:hidden">Our review process</span>
             <ExternalLink className="w-4 h-4" />
           </a>
         </nav>
@@ -374,10 +403,12 @@ const ClaimEvidencePage = () => {
                         publications={supportingPapers}
                         links={links}
                         isExpert={isExpert}
+                        isAdmin={isAdmin}
                         user={user}
                         setReviewPublication={setReviewPublication}
                         getStanceIcon={getStanceIcon}
                         expertProfiles={expertProfiles}
+                        onDeletePublication={handleDeletePublication}
                       />
                     )}
                   </div>
@@ -412,10 +443,12 @@ const ClaimEvidencePage = () => {
                         publications={contradictingPapers}
                         links={[]}
                         isExpert={isExpert}
+                        isAdmin={isAdmin}
                         user={user}
                         setReviewPublication={setReviewPublication}
                         getStanceIcon={getStanceIcon}
                         expertProfiles={expertProfiles}
+                        onDeletePublication={handleDeletePublication}
                       />
                     )}
                   </div>

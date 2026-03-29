@@ -8,6 +8,7 @@ import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import Header from '@/components/layout/Header';
 import { SEO } from '@/components/SEO';
 import { ClaimCard } from '@/pages/Claims/components/ClaimCard';
+import { EditLabelsDialog } from '@/pages/Claims/components/EditLabelsDialog';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
 import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import ExpertReviewsReel from '@/pages/Claims/components/ExpertReviewsReel';
@@ -49,6 +50,8 @@ const ClaimDetail = () => {
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
   const [updatingTitle, setUpdatingTitle] = useState<string | null>(null);
   const [isExpert, setIsExpert] = useState(false);
+  const [showEditLabels, setShowEditLabels] = useState(false);
+  const [savingLabels, setSavingLabels] = useState(false);
 
   // Create a claims array for useOptimisticVote (it expects an array)
   const [claims, setClaims] = useState<ClaimUI[]>([]);
@@ -194,6 +197,25 @@ const ClaimDetail = () => {
     }
   };
 
+  // Handle label update
+  const handleSaveLabels = async (labels: string[]) => {
+    if (!claim) return;
+    try {
+      setSavingLabels(true);
+      const { error } = await supabase.from('claims').update({ labels }).eq('id', claim.id);
+      if (error) throw error;
+      await refetch();
+      setShowEditLabels(false);
+      toast.success('Labels updated', { description: 'Claim labels have been updated successfully.' });
+    } catch (e) {
+      console.error('Failed to update claim labels', e);
+      const msg = e instanceof Error ? e.message : 'Failed to update labels';
+      toast.error('Update failed', { description: msg });
+    } finally {
+      setSavingLabels(false);
+    }
+  };
+
   // Handle share button
   const handleShare = async () => {
     try {
@@ -265,6 +287,7 @@ const ClaimDetail = () => {
         title={claim.claim}
         description={`Expert-reviewed evidence for: ${claim.claim.substring(0, 150)}${claim.claim.length > 150 ? '...' : ''}`}
         url={`/claims/${claim.id}`}
+        image="/logo-sm-sq.png"
         type="article"
         keywords={`${claim.category}, ${claim.broad_category}, women's health, health claims, scientific evidence`}
         publishedTime={claim.created_at}
@@ -315,6 +338,7 @@ const ClaimDetail = () => {
               onShowPaperForm={() => setShowPaperForm(true)}
               onShowSourceForm={() => setShowSourceForm(true)}
               onShowEvidenceInfo={() => setShowEvidenceInfo(true)}
+              onEditLabels={() => setShowEditLabels(true)}
               expandedStance={expandedStance}
               editingClaimId={editingClaimId}
               setEditingClaimId={setEditingClaimId}
@@ -370,6 +394,17 @@ const ClaimDetail = () => {
           claimId={claim.id}
           userId={user.id}
           onSuccess={() => refetch()}
+        />
+      )}
+
+      {/* Edit Labels Dialog */}
+      {claim && (
+        <EditLabelsDialog
+          open={showEditLabels}
+          onOpenChange={setShowEditLabels}
+          currentLabels={claim.labels || []}
+          onSave={handleSaveLabels}
+          isSaving={savingLabels}
         />
       )}
 

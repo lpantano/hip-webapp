@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,8 @@ import {
   ThumbsUp,
   Share,
   BookOpen,
-  MoreVertical
+  MoreVertical,
+  Tags
 } from 'lucide-react';
 import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import { toast } from 'sonner';
@@ -52,6 +53,7 @@ interface ClaimCardProps {
   onShowPaperForm: (claimId: string) => void;
   onShowSourceForm: (claimId: string) => void;
   onShowEvidenceInfo: (claimId: string) => void;
+  onEditLabels?: (claimId: string) => void;
   expandedStance?: { claimId: string; stance: 'supporting' | 'contradicting' } | null;
   editingClaimId: string | null;
   setEditingClaimId: (id: string | null) => void;
@@ -72,6 +74,7 @@ export const ClaimCard = ({
   onShowPaperForm,
   onShowSourceForm,
   onShowEvidenceInfo,
+  onEditLabels,
   editingClaimId,
   setEditingClaimId,
   updatingTitle,
@@ -80,6 +83,7 @@ export const ClaimCard = ({
 }: ClaimCardProps) => {
   const [editedTitle, setEditedTitle] = useState('');
   const navigate = useNavigate();
+  const menuJustClosedRef = useRef(false);
 
   // Permission check for editing claim titles
   const canEditClaim = () => {
@@ -122,6 +126,7 @@ export const ClaimCard = ({
 
   const handleCardClick = () => {
     if (editingClaimId === claim.id) return;
+    if (menuJustClosedRef.current) return;
     if (!user) {
       navigate('/auth');
       return;
@@ -175,7 +180,12 @@ export const ClaimCard = ({
           </div>
           {/* Three-dot menu for mobile - only show if user is logged in */}
           {user && (
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => {
+              if (!open) {
+                menuJustClosedRef.current = true;
+                setTimeout(() => { menuJustClosedRef.current = false; }, 300);
+              }
+            }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -188,14 +198,20 @@ export const ClaimCard = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onShowPaperForm(claim.id)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowPaperForm(claim.id); }}>
                   <FileText className="w-4 h-4 mr-2" />
                   Add Paper
                 </DropdownMenuItem>
                 {(isExpert || (user.id === claim.user_id && claim.rawStatus === 'proposed')) && (
-                  <DropdownMenuItem onClick={() => onShowSourceForm(claim.id)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowSourceForm(claim.id); }}>
                     <LinkIcon className="w-4 h-4 mr-2" />
                     Add Source
+                  </DropdownMenuItem>
+                )}
+                {canEditClaim() && onEditLabels && (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditLabels(claim.id); }}>
+                    <Tags className="w-4 h-4 mr-2" />
+                    Edit Labels
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -328,6 +344,17 @@ export const ClaimCard = ({
                   >
                     <LinkIcon className="w-4 h-4" />
                     <span>Add Source</span>
+                  </Button>
+                )}
+                {canEditClaim() && onEditLabels && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onEditLabels(claim.id); }}
+                    className="hidden sm:flex items-center gap-2 whitespace-nowrap touch-manipulation"
+                  >
+                    <Tags className="w-4 h-4" />
+                    <span>Edit Labels</span>
                   </Button>
                 )}
               </div>
