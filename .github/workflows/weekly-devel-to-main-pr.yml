@@ -30,6 +30,14 @@ jobs:
         if: steps.check.outputs.ahead != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: |
+            ## Weekly sync
+
+            This PR was automatically created by the weekly sync workflow.
+
+            It merges all changes accumulated in `devel` into `main`.
+
+            Auto-merge is enabled — it will merge automatically once all required checks pass.
         run: |
           EXISTING=$(gh pr list --base main --head devel --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
@@ -40,16 +48,7 @@ jobs:
               --base main \
               --head devel \
               --title "chore: weekly sync devel → main ($(date +'%Y-%m-%d'))" \
-              --body "$(cat <<'EOF'
-## Weekly sync
-
-# This PR was automatically created by the weekly sync workflow.
-
-# It merges all changes accumulated in \`devel\` into \`main\`.
-
-# Auto-merge is enabled — it will merge automatically once all required checks pass.
-# EOF
-# )")
-#             echo "Created $PR_URL — enabling auto-merge."
-#             gh pr merge "$PR_URL" --auto --squash
-#           fi
+              --body "$PR_BODY")
+            echo "Created $PR_URL — enabling auto-merge."
+            gh pr merge "$PR_URL" --auto --squash
+          fi
