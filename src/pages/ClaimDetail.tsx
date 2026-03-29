@@ -22,10 +22,10 @@ import { toast } from 'sonner';
 import type { ClaimUI, PublicationScoreRow } from '@/pages/Claims/types';
 
 const ClaimDetail = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { claim, expertProfiles, loading, error, refetch } = useClaimData(slug || null);
+  const { claim, expertProfiles, loading, error, refetch } = useClaimData(id || null);
 
   // State for dialogs and interactions
   const [showPaperForm, setShowPaperForm] = useState(false);
@@ -286,7 +286,7 @@ const ClaimDetail = () => {
       <SEO
         title={claim.claim}
         description={`Expert-reviewed evidence for: ${claim.claim.substring(0, 150)}${claim.claim.length > 150 ? '...' : ''}`}
-        url={`/claims/${claim.slug}`}
+        url={`/claims/${claim.id}`}
         image="/logo-sm-sq.png"
         type="article"
         keywords={`${claim.category}, ${claim.broad_category}, women's health, health claims, scientific evidence`}
