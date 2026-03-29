@@ -36,8 +36,6 @@ jobs:
             This PR was automatically created by the weekly sync workflow.
 
             It merges all changes accumulated in `devel` into `main`.
-
-            Auto-merge is enabled — it will merge automatically once all required checks pass.
         run: |
           EXISTING=$(gh pr list --base main --head devel --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
