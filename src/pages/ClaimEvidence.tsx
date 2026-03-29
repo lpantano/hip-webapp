@@ -316,7 +316,7 @@ const ClaimEvidencePage = () => {
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8 pt-24 max-w-4xl" role="main" aria-labelledby="claim-title">
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between mb-6">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center justify-between gap-y-2 mb-6">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -329,7 +329,8 @@ const ClaimEvidencePage = () => {
             {claim && <SubscribeButton claimId={claim.id} />}
           </div>
           <a href="/workflow" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-            Learn how we review information and science
+            <span className="hidden sm:inline">Learn how we review information and science</span>
+            <span className="sm:hidden">Our review process</span>
             <ExternalLink className="w-4 h-4" />
           </a>
         </nav>

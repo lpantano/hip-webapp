@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 const HeroSection = () => {
   const { user, loading } = useAuth();
   return (
-    <section className="relative pt-12 pb-10 md:pt-32 md:pb-8 flex items-center justify-center bg-hero-gradient">
+    <section className="relative pt-6 pb-10 md:pt-32 md:pb-8 flex items-center justify-center bg-hero-gradient">
       <div className="absolute inset-0 bg-black/5"></div>
       <div className="relative z-10 container mx-auto px-6 text-center">
         <div className="max-w-4xl mx-auto animate-fade-in">
