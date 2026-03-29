@@ -287,6 +287,7 @@ const ClaimDetail = () => {
         title={claim.claim}
         description={`Expert-reviewed evidence for: ${claim.claim.substring(0, 150)}${claim.claim.length > 150 ? '...' : ''}`}
         url={`/claims/${claim.id}`}
+        image="/logo-sm-sq.png"
         type="article"
         keywords={`${claim.category}, ${claim.broad_category}, women's health, health claims, scientific evidence`}
         publishedTime={claim.created_at}
