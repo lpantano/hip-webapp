@@ -41,14 +41,12 @@ jobs:
         run: |
           EXISTING=$(gh pr list --base main --head devel --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING already exists — enabling auto-merge."
-            gh pr merge "$EXISTING" --auto --squash
+            echo "PR #$EXISTING already exists."
           else
             PR_URL=$(gh pr create \
               --base main \
               --head devel \
               --title "chore: weekly sync devel → main ($(date +'%Y-%m-%d'))" \
               --body "$PR_BODY")
-            echo "Created $PR_URL — enabling auto-merge."
-            gh pr merge "$PR_URL" --auto --squash
+            echo "Created $PR_URL"
           fi
