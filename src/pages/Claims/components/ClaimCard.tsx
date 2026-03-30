@@ -21,7 +21,8 @@ import {
   Share,
   BookOpen,
   MoreVertical,
-  Tags
+  Tags,
+  CalendarDays
 } from 'lucide-react';
 import { SubscribeButton } from '@/components/claims/SubscribeButton';
 import { toast } from 'sonner';
@@ -401,8 +402,9 @@ export const ClaimCard = ({
                   <SubscribeButton claimId={claim.id} />
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {new Date(claim.created_at).toLocaleDateString()}
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CalendarDays className="w-3 h-3" />
+                <span>Submitted {new Date(claim.created_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -437,8 +439,9 @@ export const ClaimCard = ({
                   Sign in to vote and view evidence
                 </p>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {new Date(claim.created_at).toLocaleDateString()}
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CalendarDays className="w-3 h-3" />
+                <span>Submitted {new Date(claim.created_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
