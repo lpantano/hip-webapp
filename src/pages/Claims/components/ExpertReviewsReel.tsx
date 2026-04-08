@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ExternalLink, HelpCircle, Info } from 'lucide-react';
+import { ExternalLink, HelpCircle, Info, CalendarDays } from 'lucide-react';
 import { getCategoryBackgroundColor, getStudyTagDescription, getQualityCheckDescription, getStudyTagColor } from '@/lib/classification-categories';
 import { isProblematicCategory } from '@/lib/classification-categories';
 import { getClassificationReasons } from '@/types/review';
@@ -38,6 +38,7 @@ export type ExpertReviewCard = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reviewData?: any;
     stance?: 'supporting' | 'contradicting' | null;
+    reviewedAt?: string | null;
   };
 };
 
@@ -332,6 +333,12 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ reviewCard, index, totalCards }
                       {reviewCard.expert.display_name || 'Expert Reviewer'}
                     </div>
                     <div className="text-xs text-muted-foreground">Expert Review</div>
+                    {reviewCard.expert.reviewedAt && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <CalendarDays className="w-3 h-3" />
+                        <span>Reviewed {new Date(reviewCard.expert.reviewedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </PopoverTrigger>

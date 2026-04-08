@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
-import { FileText, ExternalLink, X, MapPin, Clock, Trash2 } from 'lucide-react';
+import { FileText, ExternalLink, X, MapPin, Clock, Trash2, CalendarDays } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { aggregatePublicationReviewData } from '@/lib/label-aggregation';
 import { getCategoryBackgroundColor, getStudyTagColor, getCategoryDescription, getStudyTagDescription } from '@/lib/classification-categories';
@@ -40,7 +40,7 @@ interface ExpertProfile {
 }
 
 /* ── Truncatable insight callout ── */
-const ReviewerInsightCallout: React.FC<{ content: string }> = ({ content }) => {
+const ReviewerInsightCallout: React.FC<{ content: string; reviewedAt?: string | null }> = ({ content, reviewedAt }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isClamped, setIsClamped] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -60,11 +60,19 @@ const ReviewerInsightCallout: React.FC<{ content: string }> = ({ content }) => {
 
   return (
     <div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-400 dark:border-blue-500 rounded-r-md p-3 sm:p-4 mb-4">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-          Reviewer Insight
-        </span>
+      <div className="flex items-center justify-between gap-1.5 mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+            Reviewer Insight
+          </span>
+        </div>
+        {reviewedAt && (
+          <div className="flex items-center gap-1 text-xs text-blue-500 dark:text-blue-400">
+            <CalendarDays className="w-3 h-3" />
+            <span>{new Date(reviewedAt).toLocaleDateString()}</span>
+          </div>
+        )}
       </div>
       <div
         ref={contentRef}
@@ -206,7 +214,8 @@ const ClaimPublicationsExpanded: React.FC<{
           tags: latestRow?.review_data?.tags ?? null,
           womenNotIncluded: latestRow?.review_data?.womenNotIncluded ?? false,
           reviewData: latestRow?.review_data ?? null,
-          stance: publicationStance
+          stance: publicationStance,
+          reviewedAt: latestRow?.updated_at ?? latestRow?.created_at ?? null
         }
       });
     });
@@ -214,10 +223,9 @@ const ClaimPublicationsExpanded: React.FC<{
     return reviewCards;
   }, [selectedPublication, expertProfiles]);
 
-  // Extract the first reviewer insight comment for a publication
-  const getReviewerInsight = (pub: Publication): string | null => {
+  // Extract the latest reviewer insight comment + its date for a publication
+  const getReviewerInsight = (pub: Publication): { content: string; reviewedAt: string | null } | null => {
     if (!pub.rawScores || pub.rawScores.length === 0) return null;
-    // Find the latest review with a comment
     const withComments = pub.rawScores
       .filter(rs => rs.comments)
       .sort((a, b) => {
@@ -225,7 +233,9 @@ const ClaimPublicationsExpanded: React.FC<{
         const bTime = b?.updated_at ? new Date(b.updated_at).getTime() : 0;
         return bTime - aTime;
       });
-    return withComments.length > 0 ? withComments[0].comments : null;
+    if (withComments.length === 0) return null;
+    const row = withComments[0];
+    return { content: row.comments, reviewedAt: row.updated_at || row.created_at || null };
   };
 
   // Get unique expert IDs who reviewed a publication
@@ -324,10 +334,16 @@ const ClaimPublicationsExpanded: React.FC<{
 
                 {/* Paper Title */}
                 <TruncatedTitle title={pub.title} />
+                {pub.year && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 mb-2">
+                    <CalendarDays className="w-3 h-3" />
+                    <span>Published {pub.year}</span>
+                  </div>
+                )}
 
                 {/* Reviewer Insight Callout */}
                 {reviewerInsight && (
-                  <ReviewerInsightCallout content={reviewerInsight} />
+                  <ReviewerInsightCallout content={reviewerInsight.content} reviewedAt={reviewerInsight.reviewedAt} />
                 )}
 
                 {/* Bottom row: Avatars + Read Full Paper */}
