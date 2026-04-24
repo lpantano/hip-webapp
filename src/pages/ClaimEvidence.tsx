@@ -52,19 +52,19 @@ interface ClaimEvidenceData {
 }
 
 // Hook for fetching claim with publications and scores
-const useClaimEvidence = (claimId: string | undefined) => {
+const useClaimEvidence = (claimSlug: string | undefined) => {
   const [expertProfiles, setExpertProfiles] = useState<Record<string, ExpertProfile>>({});
 
   const query = useQuery({
-    queryKey: ['claim-evidence', claimId],
+    queryKey: ['claim-evidence', claimSlug],
     queryFn: async (): Promise<ClaimEvidenceData | null> => {
-      if (!claimId) return null;
+      if (!claimSlug) return null;
 
-      // Fetch claim with publications
+      // Fetch claim by slug
       const { data: claimData, error: claimError } = await supabase
         .from('claims')
         .select('id, title, description, broad_category, evidence_status')
-        .eq('id', claimId)
+        .eq('slug', claimSlug)
         .single();
 
       if (claimError) throw claimError;
@@ -74,7 +74,7 @@ const useClaimEvidence = (claimId: string | undefined) => {
       const { data: publicationsData, error: pubError } = await supabase
         .from('publications')
         .select('*')
-        .eq('claim_id', claimId);
+        .eq('claim_id', claimData.id);
 
       if (pubError) throw pubError;
 
@@ -82,7 +82,7 @@ const useClaimEvidence = (claimId: string | undefined) => {
       const { data: linksData } = await supabase
         .from('claim_links')
         .select('id, url, title, description')
-        .eq('claim_id', claimId);
+        .eq('claim_id', claimData.id);
 
       // Fetch publication scores for all publications
       const pubIds = publicationsData?.map(p => p.id) || [];
@@ -137,7 +137,7 @@ const useClaimEvidence = (claimId: string | undefined) => {
         }))
       };
     },
-    enabled: !!claimId
+    enabled: !!claimSlug
   });
 
   // Fetch expert profiles for all reviewers
@@ -183,10 +183,10 @@ const useClaimEvidence = (claimId: string | undefined) => {
 };
 
 const ClaimEvidencePage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: claim, isLoading, error, expertProfiles, refetch } = useClaimEvidence(id);
+  const { data: claim, isLoading, error, expertProfiles, refetch } = useClaimEvidence(slug);
 
   // Scroll to top when page mounts
   useEffect(() => {
@@ -312,7 +312,7 @@ const ClaimEvidencePage = () => {
       <SEO
         title={`Evidence: ${claim.title}`}
         description={`View expert evidence and scientific papers for the claim: ${claim.title}`}
-        url={`/claims/${id}/evidence`}
+        url={`/claims/${slug}/evidence`}
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-8 pt-24 max-w-4xl" role="main" aria-labelledby="claim-title">

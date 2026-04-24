@@ -17,18 +17,18 @@ interface UseClaimDataResult {
 }
 
 /**
- * Custom hook to fetch a single claim by ID with all related data
+ * Custom hook to fetch a single claim by slug with all related data
  */
-export const useClaimData = (claimId: string | null): UseClaimDataResult => {
+export const useClaimData = (claimSlug: string | null): UseClaimDataResult => {
   const [claim, setClaim] = useState<ClaimUI | null>(null);
   const [expertProfiles, setExpertProfiles] = useState<Record<string, ExpertProfile>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchClaim = useCallback(async () => {
-    if (!claimId) {
+    if (!claimSlug) {
       setLoading(false);
-      setError(new Error('No claim ID provided'));
+      setError(new Error('No claim slug provided'));
       return;
     }
 
@@ -36,11 +36,11 @@ export const useClaimData = (claimId: string | null): UseClaimDataResult => {
     setError(null);
 
     try {
-      // Fetch the claim by ID using .maybeSingle() (returns null if not found, doesn't throw)
+      // Fetch the claim by slug using .maybeSingle() (returns null if not found, doesn't throw)
       const { data: claimData, error: claimError } = await supabase
         .from('claims')
         .select('*')
-        .eq('id', claimId)
+        .eq('slug', claimSlug)
         .maybeSingle();
 
       if (claimError) throw claimError;
@@ -55,9 +55,9 @@ export const useClaimData = (claimId: string | null): UseClaimDataResult => {
         { data: commentsData, error: commentsError },
         { data: linksData, error: linksError }
       ] = await Promise.all([
-        supabase.from('publications').select('*').eq('claim_id', claimId),
-        supabase.from('claim_comments').select('*').eq('claim_id', claimId).order('created_at', { ascending: true }),
-        supabase.from('claim_links').select('*').eq('claim_id', claimId)
+        supabase.from('publications').select('*').eq('claim_id', claimData.id),
+        supabase.from('claim_comments').select('*').eq('claim_id', claimData.id).order('created_at', { ascending: true }),
+        supabase.from('claim_links').select('*').eq('claim_id', claimData.id)
       ]);
 
       if (publicationsError) throw publicationsError;
@@ -81,6 +81,7 @@ export const useClaimData = (claimId: string | null): UseClaimDataResult => {
       // Map claim to ClaimUI format
       const mappedClaim: ClaimUI = {
         id: claimData.id,
+        slug: claimData.slug || '',
         claim: claimData.title || claimData.description || '',
         user_id: claimData.user_id,
         category: claimData.category,
@@ -161,9 +162,9 @@ export const useClaimData = (claimId: string | null): UseClaimDataResult => {
     } finally {
       setLoading(false);
     }
-  }, [claimId]);
+  }, [claimSlug]);
 
-  // Fetch on mount and when claimId changes
+  // Fetch on mount and when claimSlug changes
   useEffect(() => {
     fetchClaim();
   }, [fetchClaim]);

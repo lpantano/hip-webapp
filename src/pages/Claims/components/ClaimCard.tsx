@@ -112,7 +112,7 @@ export const ClaimCard = ({
   };
 
   const handleShareClick = async () => {
-    const url = `${window.location.origin}/claims/${claim.id}`;
+    const url = `${window.location.origin}/claims/${claim.slug}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success('Link copied!', {
@@ -134,7 +134,7 @@ export const ClaimCard = ({
     }
     if (claim.publications.length > 0) {
       sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
-      navigate(`/claims/${claim.id}/evidence`);
+      navigate(`/claims/${claim.slug}/evidence`);
     }
   };
 
@@ -317,7 +317,7 @@ export const ClaimCard = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       sessionStorage.setItem('claimsScrollPosition', window.scrollY.toString());
-                      navigate(`/claims/${claim.id}/evidence`);
+                      navigate(`/claims/${claim.slug}/evidence`);
                     }}
                     className="flex items-center gap-2 shadow-md whitespace-nowrap touch-manipulation"
                   >
