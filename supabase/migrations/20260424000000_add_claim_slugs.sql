@@ -62,8 +62,7 @@ FOR EACH ROW
 EXECUTE FUNCTION set_claim_slug();
 
 -- Update recent_claims_public view to expose slug
-DROP VIEW IF EXISTS "public"."recent_claims_public";
-CREATE VIEW "public"."recent_claims_public" AS
+CREATE OR REPLACE VIEW "public"."recent_claims_public" AS
  SELECT "c"."id",
     "c"."title",
     "c"."description",
