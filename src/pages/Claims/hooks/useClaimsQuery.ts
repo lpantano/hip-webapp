@@ -153,6 +153,7 @@ export const useClaimsQuery = ({
 
         return {
           id: c.id,
+          slug: c.slug || '',
           claim: c.title || c.description || '',
           user_id: c.user_id,
           category: c.category,

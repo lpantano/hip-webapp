@@ -946,6 +946,7 @@ export type Database = {
           links: Json | null
           publication_count: number | null
           publications: Json | null
+          slug: string | null
           status: Database["public"]["Enums"]["claim_status"] | null
           title: string | null
           user_id: string | null
