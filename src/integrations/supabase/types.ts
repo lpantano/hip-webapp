@@ -224,6 +224,7 @@ export type Database = {
             | null
           id: string
           labels: string[]
+          slug: string
           status: Database["public"]["Enums"]["claim_status"]
           title: string
           updated_at: string
@@ -242,6 +243,7 @@ export type Database = {
             | null
           id?: string
           labels?: string[]
+          slug?: string
           status?: Database["public"]["Enums"]["claim_status"]
           title: string
           updated_at?: string
@@ -260,6 +262,7 @@ export type Database = {
             | null
           id?: string
           labels?: string[]
+          slug?: string
           status?: Database["public"]["Enums"]["claim_status"]
           title?: string
           updated_at?: string
