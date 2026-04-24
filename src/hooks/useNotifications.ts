@@ -16,7 +16,7 @@ export function useNotifications(page = 0) {
       const to = from + PAGE_SIZE - 1
       const { data, error } = await supabase
         .from('notifications')
-        .select('id, claim_id, type, message, read, created_at, recipient_user_id, claims(title)')
+        .select('id, claim_id, type, message, read, created_at, recipient_user_id, claims(title, slug)')
         .eq('recipient_user_id', user.id)
         .order('created_at', { ascending: false })
         .range(from, to)

@@ -31,7 +31,7 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
 
   const handleClick = () => {
     onRead(notification.id)
-    navigate(`/claims/${notification.claim_id}`)
+    navigate(`/claims/${notification.claims?.slug ?? notification.claim_id}`)
   }
 
   return (

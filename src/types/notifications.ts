@@ -8,7 +8,7 @@ export interface Notification {
   message: string
   read: boolean
   created_at: string
-  claims?: { title: string }
+  claims?: { title: string; slug: string }
 }
 
 export interface ClaimSubscription {
