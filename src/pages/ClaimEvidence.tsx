@@ -74,7 +74,7 @@ const useClaimEvidence = (claimSlug: string | undefined) => {
       const { data: publicationsData, error: pubError } = await supabase
         .from('publications')
         .select('*')
-        .eq('claim_id', claimId);
+        .eq('claim_id', claimData.id);
 
       if (pubError) throw pubError;
 
@@ -82,7 +82,7 @@ const useClaimEvidence = (claimSlug: string | undefined) => {
       const { data: linksData } = await supabase
         .from('claim_links')
         .select('id, url, title, description')
-        .eq('claim_id', claimId);
+        .eq('claim_id', claimData.id);
 
       // Fetch publication scores for all publications
       const pubIds = publicationsData?.map(p => p.id) || [];
@@ -137,7 +137,7 @@ const useClaimEvidence = (claimSlug: string | undefined) => {
         }))
       };
     },
-    enabled: !!claimId
+    enabled: !!claimSlug
   });
 
   // Fetch expert profiles for all reviewers

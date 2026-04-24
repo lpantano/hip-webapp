@@ -55,9 +55,9 @@ export const useClaimData = (claimSlug: string | null): UseClaimDataResult => {
         { data: commentsData, error: commentsError },
         { data: linksData, error: linksError }
       ] = await Promise.all([
-        supabase.from('publications').select('*').eq('claim_id', claimId),
-        supabase.from('claim_comments').select('*').eq('claim_id', claimId).order('created_at', { ascending: true }),
-        supabase.from('claim_links').select('*').eq('claim_id', claimId)
+        supabase.from('publications').select('*').eq('claim_id', claimData.id),
+        supabase.from('claim_comments').select('*').eq('claim_id', claimData.id).order('created_at', { ascending: true }),
+        supabase.from('claim_links').select('*').eq('claim_id', claimData.id)
       ]);
 
       if (publicationsError) throw publicationsError;
