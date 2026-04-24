@@ -13,6 +13,7 @@ interface ClaimRow {
   stage?: string | null;
   vote_count: number;
   status: string;
+  slug?: string;
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +80,7 @@ interface ClaimCommentRow {
 
 interface ClaimUI {
   id: string;
+  slug: string;
   claim: string;
   user_id?: string;
   rawStatus?: string;

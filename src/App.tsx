@@ -54,8 +54,8 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/team" element={<Team />} />
               <Route path="/community" element={<Community />} />
-              <Route path="/claims/:id" element={<ClaimDetail />} />
-              <Route path="/claims/:id/evidence" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><ClaimEvidence /></Suspense>} />
+              <Route path="/claims/:slug" element={<ClaimDetail />} />
+              <Route path="/claims/:slug/evidence" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><ClaimEvidence /></Suspense>} />
               <Route path="/legal" element={<Legal />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/features" element={<FeatureRequests />} />

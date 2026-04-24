@@ -1,0 +1,61 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonicalUrl?: string;
+  ogType?: string;
+}
+
+const { title, description, canonicalUrl, ogType = 'article' } = Astro.props;
+const siteUrl = 'https://archive.healthintegrityproject.org';
+const appUrl = 'https://healthintegrityproject.org';
+const canonical = canonicalUrl ? `${siteUrl}${canonicalUrl}` : siteUrl;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | Evidence Decoded Archive</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta name="robots" content="index, follow" />
+  </head>
+  <body class="bg-gray-950 text-gray-100 min-h-screen">
+    <header class="border-b border-gray-800 px-6 py-4">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-lg font-semibold text-white hover:text-teal-400 transition-colors">
+          Evidence Decoded Archive
+        </a>
+        <a
+          href={appUrl}
+          class="text-sm text-gray-400 hover:text-white transition-colors"
+          target="_blank"
+          rel="noopener"
+        >
+          Live App →
+        </a>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-12">
+      <slot />
+    </main>
+
+    <footer class="border-t border-gray-800 px-6 py-8 mt-16">
+      <div class="max-w-4xl mx-auto text-center text-sm text-gray-500">
+        <p>
+          This archive is rebuilt daily from <a href={appUrl} class="text-teal-400 hover:underline">Evidence Decoded</a>.
+          For interactive features, visit the live app.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

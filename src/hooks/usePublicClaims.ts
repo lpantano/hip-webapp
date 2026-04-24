@@ -84,6 +84,7 @@ async function fetchPublicClaims(): Promise<{
 
     return {
       id: String(row.id || ''),
+      slug: String(row.slug || ''),
       claim: String(row.title || row.description || ''),
       user_id: String(row.user_id || ''),
       category: row.category!,

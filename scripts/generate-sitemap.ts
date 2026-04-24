@@ -51,7 +51,7 @@ async function generateSitemap() {
     try {
       const { data: claims, error } = await supabase
         .from('claims')
-        .select('id, created_at, updated_at')
+        .select('slug, created_at, updated_at')
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -59,12 +59,19 @@ async function generateSitemap() {
         console.log('Continuing with static routes only...');
       } else if (claims) {
         claims.forEach(claim => {
+          if (!claim.slug) return;
           const lastmod = claim.updated_at || claim.created_at;
           entries.push({
-            loc: `${SITE_URL}/claims/${claim.id}`,
+            loc: `${SITE_URL}/claims/${claim.slug}`,
             lastmod: new Date(lastmod).toISOString().split('T')[0],
             priority: 0.7,
             changefreq: 'weekly',
+          });
+          entries.push({
+            loc: `${SITE_URL}/claims/${claim.slug}/evidence`,
+            lastmod: new Date(lastmod).toISOString().split('T')[0],
+            priority: 0.8,
+            changefreq: 'daily',
           });
         });
         console.log(`✓ Added ${claims.length} claim pages to sitemap`);
