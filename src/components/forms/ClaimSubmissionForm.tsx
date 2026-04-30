@@ -219,16 +219,20 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
 
         console.log('Inserting claim_links:', linksToInsert);
 
-        const { error: linksError } = await supabase
-          .from('claim_links')
-          .insert(linksToInsert);
+        try {
+          const { error: linksError } = await supabase
+            .from('claim_links')
+            .insert(linksToInsert);
 
-        if (linksError) {
-          console.error('claim_links insert error:', linksError);
-          throw linksError;
+          if (linksError) {
+            console.error('claim_links insert error:', linksError);
+          } else {
+            console.log('claim_links inserted successfully');
+          }
+        } catch (linksErr) {
+          // Non-fatal: claim was already saved; sources can be added later
+          console.error('claim_links insert failed:', linksErr);
         }
-
-        console.log('claim_links inserted successfully');
       }
 
       toast.success("Claim Submitted Successfully", {
