@@ -17,7 +17,7 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, User, X, Check, ChevronsUpDown, HelpCircle } from 'lucide-react';
+import { FileText, User, X, Check, ChevronsUpDown, HelpCircle, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -242,6 +242,27 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
     return errors;
   };
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!existingReview?.id) throw new Error('No review to delete');
+      const { error } = await supabase
+        .from('publication_scores')
+        .delete()
+        .eq('id', existingReview.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Review deleted');
+      queryClient.invalidateQueries({ queryKey: ['publication-review', publication?.id, user?.id] });
+      handleClose();
+      if (onReviewSubmitted) setTimeout(() => onReviewSubmitted(), 400);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error('Error deleting review', { description: message });
+    }
+  });
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
@@ -1311,6 +1332,17 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           <Button variant="outline" onClick={handleClose} className="px-3 sm:px-4 text-xs sm:text-sm flex-1 sm:flex-initial">
             Cancel
           </Button>
+          {isUpdate && (
+            <Button
+              variant="destructive"
+              onClick={() => deleteReviewMutation.mutate()}
+              disabled={deleteReviewMutation.isPending}
+              className="px-3 sm:px-4 text-xs sm:text-sm"
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              {deleteReviewMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          )}
           <Button
             onClick={() => submitReviewMutation.mutate()}
             disabled={submitReviewMutation.isPending}

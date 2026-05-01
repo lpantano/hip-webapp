@@ -10,6 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 
 const formSchema = z.object({
   supports: z.enum(["true", "false"]),
@@ -27,6 +29,44 @@ interface ResourceReviewFormProps {
 export const ResourceReviewForm = ({ resourceId, resourceName, onReviewSubmitted }: ResourceReviewFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: existingReview } = useQuery({
+    queryKey: ['resource-review', resourceId, user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('resource_reviews')
+        .select('id, supports, comments')
+        .eq('resource_id', resourceId)
+        .eq('reviewer_user_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data || null;
+    },
+    enabled: !!user?.id
+  });
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!existingReview?.id) throw new Error('No review to delete');
+      const { error } = await supabase
+        .from('resource_reviews')
+        .delete()
+        .eq('id', existingReview.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Review deleted');
+      queryClient.invalidateQueries({ queryKey: ['resource-review', resourceId, user?.id] });
+      onReviewSubmitted?.();
+    },
+    onError: (error: unknown) => {
+      toast.error('Error deleting review', {
+        description: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -61,6 +101,7 @@ export const ResourceReviewForm = ({ resourceId, resourceName, onReviewSubmitted
         description: "Your review has been recorded."
       });
 
+      queryClient.invalidateQueries({ queryKey: ['resource-review', resourceId, user?.id] });
       form.reset();
       onReviewSubmitted?.();
     } catch (error: unknown) {
@@ -135,9 +176,22 @@ export const ResourceReviewForm = ({ resourceId, resourceName, onReviewSubmitted
               )}
             />
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Submitting Review..." : "Submit Review"}
-            </Button>
+            <div className="flex gap-2">
+              {existingReview && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => deleteReviewMutation.mutate()}
+                  disabled={deleteReviewMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  {deleteReviewMutation.isPending ? "Deleting..." : "Delete Review"}
+                </Button>
+              )}
+              <Button type="submit" disabled={isSubmitting} className="flex-1">
+                {isSubmitting ? "Submitting Review..." : existingReview ? "Update Review" : "Submit Review"}
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>
