@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import ClaimPublicationsExpanded from './Claims/components/ClaimPublicationsExpanded';
-import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import CategoriesLegend from './Claims/components/Legend';
 import { getStanceIcon, getEvidenceStatusColor } from './Claims/utils/helpers';
 import type { PublicationScoreRow } from './Claims/types';
@@ -193,23 +192,13 @@ const ClaimEvidencePage = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  // State for publication review dialog
-  const [reviewPublication, setReviewPublication] = useState<{
-    id: string;
-    title: string;
-    journal: string;
-    publication_year: number;
-    authors?: string;
-    url?: string;
-    existingReview?: PublicationScoreRow | null;
-  } | null>(null);
-
   // State for evidence info dialog
   const [showEvidenceInfo, setShowEvidenceInfo] = useState(false);
 
   // State for collapsible sections
   const [supportingOpen, setSupportingOpen] = useState(true);
   const [contradictingOpen, setContradictingOpen] = useState(true);
+  const [awaitingOpen, setAwaitingOpen] = useState(false);
 
   // Check if user is expert
   const [isExpert, setIsExpert] = useState(false);
@@ -297,6 +286,7 @@ const ClaimEvidencePage = () => {
   // Filter publications by stance
   const supportingPapers = claim.publications.filter(p => p.stance === 'supporting');
   const contradictingPapers = claim.publications.filter(p => p.stance === 'contradicting');
+  const awaitingPapers = claim.publications.filter(p => p.stance == null);
   const hasNoPapers = claim.publications.length === 0;
 
   // Get links for display (if any)
@@ -401,11 +391,11 @@ const ClaimEvidencePage = () => {
                     ) : (
                       <ClaimPublicationsExpanded
                         publications={supportingPapers}
+                        claimId={claim.id}
                         links={links}
                         isExpert={isExpert}
                         isAdmin={isAdmin}
                         user={user}
-                        setReviewPublication={setReviewPublication}
                         getStanceIcon={getStanceIcon}
                         expertProfiles={expertProfiles}
                         onDeletePublication={handleDeletePublication}
@@ -441,11 +431,11 @@ const ClaimEvidencePage = () => {
                     ) : (
                       <ClaimPublicationsExpanded
                         publications={contradictingPapers}
+                        claimId={claim.id}
                         links={[]}
                         isExpert={isExpert}
                         isAdmin={isAdmin}
                         user={user}
-                        setReviewPublication={setReviewPublication}
                         getStanceIcon={getStanceIcon}
                         expertProfiles={expertProfiles}
                         onDeletePublication={handleDeletePublication}
@@ -454,6 +444,41 @@ const ClaimEvidencePage = () => {
                   </div>
                 )}
               </section>
+
+              {/* Awaiting Review Section — papers without expert review (stance = null) */}
+              {awaitingPapers.length > 0 && (
+                <section aria-labelledby="awaiting-heading" className="space-y-4">
+                  <button
+                    onClick={() => setAwaitingOpen(prev => !prev)}
+                    className="flex items-center gap-3 text-xl sm:text-2xl font-bold w-full text-left cursor-pointer"
+                    aria-expanded={awaitingOpen}
+                    aria-controls="awaiting-content"
+                  >
+                    <span className="w-1 self-stretch rounded-full bg-slate-400" aria-hidden="true" />
+                    <span id="awaiting-heading">Awaiting Review</span>
+                    <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 rounded-full bg-slate-400 text-white text-sm font-semibold px-2">
+                      {awaitingPapers.length}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 ml-auto text-muted-foreground transition-transform duration-200 ${awaitingOpen ? 'rotate-0' : '-rotate-90'}`} />
+                  </button>
+                  {awaitingOpen && (
+                    <div id="awaiting-content">
+                      <ClaimPublicationsExpanded
+                        publications={awaitingPapers}
+                        claimId={claim.id}
+                        links={[]}
+                        isExpert={isExpert}
+                        isAdmin={isAdmin}
+                        user={user}
+                        getStanceIcon={getStanceIcon}
+                        expertProfiles={expertProfiles}
+                        onDeletePublication={handleDeletePublication}
+                      />
+                    </div>
+                  )}
+                </section>
+              )}
+
               {/* Study Quality Legend */}
               <div className="w-full max-w-3xl mx-auto mb-8">
                 <CategoriesLegend />
@@ -462,18 +487,6 @@ const ClaimEvidencePage = () => {
           )}
         </article>
       </main>
-
-      {/* Publication Review Dialog */}
-      {user && (
-        <PublicationReviewForm
-          publication={reviewPublication}
-          isOpen={!!reviewPublication}
-          onClose={() => setReviewPublication(null)}
-          onReviewSubmitted={() => {
-            refetch();
-          }}
-        />
-      )}
 
       {/* Evidence Info Dialog */}
       {showEvidenceInfo && (
@@ -498,6 +511,10 @@ const ClaimEvidencePage = () => {
                   <div>
                     <strong>Reported to Disprove:</strong> Papers that have been reported by sources to
                     disprove or contradict this claim.
+                  </div>
+                  <div>
+                    <strong>Awaiting Review:</strong> Papers without an assigned stance are awaiting
+                    expert review and do not count toward the evidence verdict.
                   </div>
                 </div>
               </div>

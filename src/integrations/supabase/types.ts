@@ -966,6 +966,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_claims_semantic: {
+        Args: {
+          query_vector: string
+          match_count?: number
+        }
+        Returns: {
+          claim_id: string
+          title: string
+          description: string
+          similarity: number
+          source: string
+          matched_text: string | null
+        }[]
+      }
     }
     Enums: {
       app_role:

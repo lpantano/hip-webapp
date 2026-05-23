@@ -10,7 +10,6 @@ import { SEO } from '@/components/SEO';
 import { ClaimCard } from '@/pages/Claims/components/ClaimCard';
 import { EditLabelsDialog } from '@/pages/Claims/components/EditLabelsDialog';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
-import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import ExpertReviewsReel from '@/pages/Claims/components/ExpertReviewsReel';
 import { SourceFormDialog } from '@/pages/Claims/components/SourceFormDialog';
 import { useClaimData } from '@/pages/Claims/hooks/useClaimData';
@@ -19,7 +18,7 @@ import { useReviewCards } from '@/pages/Claims/hooks/useReviewCards';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { ClaimUI, PublicationScoreRow } from '@/pages/Claims/types';
+import type { ClaimUI } from '@/pages/Claims/types';
 
 const ClaimDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -32,17 +31,6 @@ const ClaimDetail = () => {
   const [showSourceForm, setShowSourceForm] = useState(false);
   const [showReelClaim, setShowReelClaim] = useState(false);
   const [showEvidenceInfo, setShowEvidenceInfo] = useState(false);
-  const [reviewPublication, setReviewPublication] = useState<{
-    id: string;
-    title: string;
-    journal: string;
-    publication_year: number;
-    authors?: string;
-    abstract?: string;
-    doi?: string;
-    url?: string;
-    existingReview?: PublicationScoreRow | null;
-  } | null>(null);
   const [expandedStance, setExpandedStance] = useState<{
     claimId: string;
     stance: 'supporting' | 'contradicting';
@@ -343,7 +331,6 @@ const ClaimDetail = () => {
               editingClaimId={editingClaimId}
               setEditingClaimId={setEditingClaimId}
               updatingTitle={updatingTitle}
-              setReviewPublication={setReviewPublication}
               showShareButton={true}
               onShare={handleShare}
             />
@@ -431,16 +418,6 @@ const ClaimDetail = () => {
             </DialogContent>
           </Dialog>
         </>
-      )}
-
-      {/* Publication Review Form */}
-      {user && (
-        <PublicationReviewForm
-          publication={reviewPublication}
-          isOpen={!!reviewPublication}
-          onClose={() => setReviewPublication(null)}
-          onReviewSubmitted={() => refetch()}
-        />
       )}
 
       {/* Evidence Info Dialog */}

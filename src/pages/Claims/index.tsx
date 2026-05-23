@@ -15,14 +15,12 @@ import { ClaimSubmissionForm } from '@/components/forms/ClaimSubmissionForm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { PaperSubmissionForm } from '@/components/forms/PaperSubmissionForm';
-import PublicationReviewForm from '@/components/forms/PublicationReviewForm';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ClaimCard } from './components/ClaimCard';
 import ExpertReviewsReel from './components/ExpertReviewsReel';
 import { SourceFormDialog } from './components/SourceFormDialog';
 import { EditLabelsDialog } from './components/EditLabelsDialog';
 import { EvidenceStatusFilter } from './components/EvidenceStatusFilter';
-import type { PublicationScoreRow } from './types';
 import { getEvidenceStatusColor } from './utils/helpers';
 import { useReviewCards } from './hooks/useReviewCards';
 import { useClaimsQuery } from './hooks/useClaimsQuery';
@@ -59,7 +57,6 @@ const Claims = () => {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showPaperForm, setShowPaperForm] = useState<string | null>(null);
   const [showSourceForm, setShowSourceForm] = useState<string | null>(null);
-  const [reviewPublication, setReviewPublication] = useState<{ id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null>(null);
   const [showReelClaim, setShowReelClaim] = useState<string | null>(null);
   const [showEvidenceInfo, setShowEvidenceInfo] = useState<string | null>(null);
   const [editLabelsClaim, setEditLabelsClaim] = useState<{ id: string; labels: string[] } | null>(null);
@@ -560,19 +557,6 @@ const Claims = () => {
               </DialogContent>
             </Dialog>
             </>
-          )}
-
-          {/* Publication Review Dialog */}
-          {user && (
-            <PublicationReviewForm
-              publication={reviewPublication}
-              isOpen={!!reviewPublication}
-              onClose={() => setReviewPublication(null)}
-              onReviewSubmitted={() => {
-                // refresh claims and expert distributions after an expert submits/updates a review
-                refetch();
-              }}
-            />
           )}
 
           {/* Evidence Info Dialog */}
