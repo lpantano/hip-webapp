@@ -30,7 +30,7 @@ import { getCategoryColor } from '@/lib/getCategoryColor';
 import { getEvidenceStatusColor } from '../utils/helpers';
 import { getLabelDisplay, getLabelColor } from '@/constants/labels';
 import { cn } from '@/lib/utils';
-import type { ClaimUI, PublicationScoreRow } from '../types';
+import type { ClaimUI } from '../types';
 
 interface ExpertProfile {
   display_name?: string | null;
@@ -59,7 +59,6 @@ interface ClaimCardProps {
   editingClaimId: string | null;
   setEditingClaimId: (id: string | null) => void;
   updatingTitle: string | null;
-  setReviewPublication?: (pub: { id: string; title: string; journal: string; publication_year: number; authors?: string; abstract?: string; doi?: string; url?: string; existingReview?: PublicationScoreRow | null } | null) => void;
   showShareButton?: boolean;
   onShare?: () => void;
 }

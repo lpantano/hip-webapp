@@ -123,7 +123,6 @@ const PublicClaimsPreview = () => {
               editingClaimId={null}
               setEditingClaimId={() => {}}
               updatingTitle={null}
-              setReviewPublication={undefined}
               showShareButton={false}
             />
           ))}

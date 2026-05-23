@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { FileText, ExternalLink, X, MapPin, Clock, Trash2, CalendarDays } from 'lucide-react';
@@ -133,15 +134,15 @@ const TruncatedTitle: React.FC<{ title: string }> = ({ title }) => {
 
 const ClaimPublicationsExpanded: React.FC<{
   publications: Publication[];
+  claimId: string;
   links?: LinkRow[];
   isExpert: boolean;
   isAdmin: boolean;
   user: { id?: string; role?: string } | null;
-  setReviewPublication: (p: { id: string; title: string; journal: string; publication_year: number; authors?: string; url?: string; existingReview?: PublicationScoreRow | null } | null) => void;
   getStanceIcon: (stance: Publication['stance']) => React.ReactNode;
   expertProfiles: Record<string, ExpertProfile>;
   onDeletePublication: (publicationId: string) => Promise<void>;
-}> = ({ publications, links, isExpert, isAdmin, user, setReviewPublication, getStanceIcon, expertProfiles, onDeletePublication }) => {
+}> = ({ publications, claimId, links, isExpert, isAdmin, user, getStanceIcon, expertProfiles, onDeletePublication }) => {
   const [selectedPublication, setSelectedPublication] = useState<Publication | null>(null);
   const [pubToDelete, setPubToDelete] = useState<Publication | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -384,30 +385,24 @@ const ClaimPublicationsExpanded: React.FC<{
                       </button>
                     ) : null}
 
-                    {/* Expert review button */}
-                    {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (() => {
-                      const existingReview = pub.rawScores?.find(rs => rs.expert_user_id === user?.id) || null;
-                      const reviewButtonText = existingReview ? 'Update' : 'Review';
-                      return (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setReviewPublication({
-                            id: pub.id || '',
-                            title: pub.title,
-                            journal: pub.journal,
-                            publication_year: pub.year,
-                            authors: pub.authors,
-                            url: pub.url,
-                            existingReview
-                          })}
-                          className="text-xs"
-                        >
-                          <FileText className="w-3 h-3 mr-1" />
-                          {reviewButtonText}
-                        </Button>
-                      );
-                    })()}
+                    {/* Expert review button — disabled during transition to new review workflow */}
+                    {(isExpert || user?.role === 'admin' || user?.role === 'researcher') && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span tabIndex={0}>
+                              <Button variant="outline" size="sm" className="text-xs" disabled>
+                                <FileText className="w-3 h-3 mr-1" />
+                                Review
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Review system in transition — coming back soon.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
 
                     {/* Delete button */}
                     {canDelete(pub) && (
