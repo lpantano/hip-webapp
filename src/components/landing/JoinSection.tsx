@@ -7,12 +7,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import CommunityApplicationForm from "@/components/forms/CommunityApplicationForm";
-import ExpertOnboardingDialog from "@/components/forms/ExpertOnboardingDialog";
 
 const JoinSection = () => {
   const [email, setEmail] = useState("");
   const [showExpertForm, setShowExpertForm] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const { user } = useAuth();
   const { isExpertOrResearcher } = useUserRole();
 
@@ -48,10 +46,6 @@ const JoinSection = () => {
               <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>Create account with Gmail, or email</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Browse expert reviews and ratings</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -60,15 +54,7 @@ const JoinSection = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>Access educational materials</span>
-                </div>
-                {/* <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>Voting rights</span>
-                </div> */}
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>Learn how we review science</span>
+                  <span>Access educational materials and learn how we review science</span>
                 </div>
               </div>
               <Button
@@ -104,30 +90,14 @@ const JoinSection = () => {
                 </div> */}
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Free membership</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Data insights</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Promote services</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span>Voting rights and Distribution profit</span>
+                  <span>Participate in community decisions and governance</span>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-muted-foreground text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => setShowOnboarding(true)}
-
-                >
-                {isExpertOrResearcher ? 'How it works' : 'Learn How It Works'}
-                </Button>
                 <Button
                   variant="outline"
                   className="flex-1 border-accent text-accent hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
@@ -141,12 +111,6 @@ const JoinSection = () => {
           </Card>
         </div>
       </div>
-
-      <ExpertOnboardingDialog
-        open={showOnboarding}
-        onOpenChange={setShowOnboarding}
-        onApply={() => setShowExpertForm(true)}
-      />
 
       <CommunityApplicationForm
         open={showExpertForm}

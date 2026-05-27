@@ -133,8 +133,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    // Use window.location.origin to preserve the current domain (devel vs production)
-    const redirectUrl = `${window.location.origin}/claims`;
+    const params = new URLSearchParams(window.location.search);
+    const rawNext = params.get('next') || '/';
+    const safeNext = rawNext.startsWith('/') ? rawNext : '/';
+    const redirectUrl = `${window.location.origin}${safeNext}`;
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -158,13 +160,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signInWithGoogle = async () => {
-    // Note: error object here is only returned if the initial redirect fails
-    // The server-side error is handled in useEffect via URL parsing.
-    // Use window.location.origin to preserve the current domain (devel vs production)
+    const params = new URLSearchParams(window.location.search);
+    const rawNext = params.get('next') || '/';
+    const safeNext = rawNext.startsWith('/') ? rawNext : '/';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`
+        redirectTo: `${window.location.origin}${safeNext}`
       }
     });
 
@@ -178,8 +180,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signInWithMagicLink = async (email: string) => {
-    // Use window.location.origin to preserve the current domain (devel vs production)
-    const redirectUrl = `${window.location.origin}/claims`;
+    const params = new URLSearchParams(window.location.search);
+    const rawNext = params.get('next') || '/';
+    const safeNext = rawNext.startsWith('/') ? rawNext : '/';
+    const redirectUrl = `${window.location.origin}${safeNext}`;
 
     const { error } = await supabase.auth.signInWithOtp({
       email,

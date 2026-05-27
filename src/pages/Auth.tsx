@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,12 +55,15 @@ const Auth = () => {
     setShowLegalSummary(false);
   };
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      const rawNext = searchParams.get('next') || '/';
+      const next = rawNext.startsWith('/') ? rawNext : '/';
+      navigate(next);
     }
-  }, [user, navigate]);
+  }, [user, navigate, searchParams]);
 
   const handleEmailAuth = async (isSignUp: boolean) => {
     if (!email || !password) return;
