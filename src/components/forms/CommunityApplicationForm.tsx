@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, X } from "lucide-react";
+import { CheckCircle, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 // Form validation schema
 const communityApplicationSchema = z.object({
-  role: z.enum(["expert", "researcher"], { required_error: "Please select a role to continue." }),
+  role: z.enum(["expert", "researcher"], { error: "Please select a role to continue." }),
   education: z.string().min(10, "Please provide detailed education (minimum 10 characters)"),
   expertiseText: z.string()
     .min(10, "Please provide at least 10 characters")
@@ -42,6 +42,7 @@ interface CommunityApplicationFormProps {
 const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityApplicationFormProps) => {
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const { user } = useAuth();
 
   const {
@@ -67,6 +68,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
   useEffect(() => {
     if (open) {
       reset({ memberType });
+      setSubmitted(false);
     }
   }, [open]);
 
@@ -145,10 +147,9 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
         description: "Thank you for your interest. We'll review your application and get back to you soon."
       });
 
-      // Reset form and close dialog
       reset();
       setSocialLinks([]);
-      onOpenChange(false);
+      setSubmitted(true);
 
     } catch (error) {
       console.error("Error submitting application:", error);
@@ -167,6 +168,21 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
           <DialogTitle className="text-2xl text-accent">{memberType === 'expert' ? 'Expert Application' : 'Researcher Application'}</DialogTitle>
         </DialogHeader>
 
+        {submitted ? (
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-4">
+            <CheckCircle className="h-16 w-16 text-accent" />
+            <h2 className="text-2xl font-semibold">Application Received!</h2>
+            <p className="text-muted-foreground max-w-sm">
+              We've received your {memberType === 'expert' ? 'Expert' : 'Researcher'} application and will review it carefully. We'll be in touch within 3–5 business days.
+            </p>
+            <Button
+              className="mt-4 bg-accent hover:bg-accent/90 text-black"
+              onClick={() => onOpenChange(false)}
+            >
+              Close
+            </Button>
+          </div>
+        ) : (
         <Card className="border-0 shadow-none">
           <CardHeader>
             <p className="text-muted-foreground">
@@ -405,6 +421,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
             </form>
           </CardContent>
         </Card>
+        )}
       </DialogContent>
     </Dialog>
   );
