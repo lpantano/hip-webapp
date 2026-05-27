@@ -18,6 +18,7 @@ import { CLAIM_LABEL_GROUPS } from '@/constants/labels';
 import { usePublicationFetch } from '@/hooks/usePublicationFetch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { normalizeUrl } from '@/pages/Claims/utils/helpers';
 
 const formSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters'),
@@ -26,7 +27,7 @@ const formSchema = z.object({
   broad_category: z.enum(['Health', 'Wellness', 'Mind']).optional(),
   labels: z.array(z.string()).optional(),
   sources: z.array(z.object({
-    source_url: z.string().url('Please enter a valid URL'),
+    source_url: z.string().refine((val) => !val || !!normalizeUrl(val), 'Please enter a valid URL'),
     source_type: z.string().optional(),
     source_title: z.string().optional(),
     source_description: z.string().optional(),
@@ -128,8 +129,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
     if (!url) return;
 
     try {
-      // Ensure the field is set (the input is already controlled, but this guarantees the form value)
-      form.setValue(`sources.${index}.source_url`, url);
+      const normalized = normalizeUrl(url) || url;
+      form.setValue(`sources.${index}.source_url`, normalized);
       toast.success("URL Saved", {
         description: `Saved source URL.`,
       });
@@ -415,10 +416,14 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
                               <div className="flex gap-2">
                                 <FormControl>
                                   <Input
-                                    type="url"
-                                    placeholder="https://..."
+                                    type="text"
+                                    placeholder="e.g. instagram.com"
                                     {...field}
-                                    onBlur={() => form.trigger(`sources.${index}.source_url`)}
+                                    onBlur={() => {
+                                      const normalized = normalizeUrl(field.value);
+                                      if (normalized) form.setValue(`sources.${index}.source_url`, normalized);
+                                      form.trigger(`sources.${index}.source_url`);
+                                    }}
                                   />
                                 </FormControl>
                                 <Button

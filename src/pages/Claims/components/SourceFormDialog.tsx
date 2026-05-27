@@ -78,7 +78,7 @@ export const SourceFormDialog: React.FC<SourceFormDialogProps> = ({
             <Input
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="e.g. instagram.com"
             />
           </div>
           <div>
