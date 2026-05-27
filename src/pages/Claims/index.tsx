@@ -27,7 +27,7 @@ import { useClaimsQuery } from './hooks/useClaimsQuery';
 import { SPECIAL_CLAIM_ID, SEARCH_DEBOUNCE_MS } from './constants';
 
 const Claims = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sortBy] = useState<'votes' | 'recent'>('recent');
 
   // Initialize filters from sessionStorage if available
@@ -63,6 +63,16 @@ const Claims = () => {
   const [savingLabels, setSavingLabels] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && searchParams.get('openCreate') === 'true') {
+      setShowSubmissionForm(true);
+      setSearchParams(prev => {
+        prev.delete('openCreate');
+        return prev;
+      }, { replace: true });
+    }
+  }, [user, searchParams]);
 
   // Fetch claims using TanStack Query with infinite scroll
   const {
@@ -378,7 +388,7 @@ const Claims = () => {
                 ) : (
                   <p className="text-sm text-muted-foreground text-center">
                     Don't see the health claim you are looking for?{" "}
-                    <Link to="/auth" className="text-primary underline font-medium hover:text-primary/80 transition-colors">
+                    <Link to={`/auth?next=${encodeURIComponent('/?openCreate=true')}`} className="text-primary underline font-medium hover:text-primary/80 transition-colors">
                       Submit it yourself for review!
                     </Link>{" "}
                     All you need to do is sign in.
