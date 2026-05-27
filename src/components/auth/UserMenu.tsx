@@ -14,13 +14,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { OptimizedAvatar } from '@/components/ui/optimized-avatar';
 import { useState } from 'react';
-import ExpertOnboardingDialog from '@/components/forms/ExpertOnboardingDialog';
 import CommunityApplicationForm from '@/components/forms/CommunityApplicationForm';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showExpertForm, setShowExpertForm] = useState(false);
 
   // Check if user is admin
@@ -132,7 +130,7 @@ const UserMenu = () => {
           </DropdownMenuItem>
         )}
         {!isExpertOrResearcher && (
-          <DropdownMenuItem onClick={() => setShowOnboarding(true)}>
+          <DropdownMenuItem onClick={() => setShowExpertForm(true)}>
             <Award className="mr-2 h-4 w-4" />
             <span>Apply as Expert</span>
           </DropdownMenuItem>
@@ -145,11 +143,6 @@ const UserMenu = () => {
       </DropdownMenuContent>
     </DropdownMenu>
 
-    <ExpertOnboardingDialog
-      open={showOnboarding}
-      onOpenChange={setShowOnboarding}
-      onApply={() => setShowExpertForm(true)}
-    />
     <CommunityApplicationForm
       open={showExpertForm}
       onOpenChange={setShowExpertForm}

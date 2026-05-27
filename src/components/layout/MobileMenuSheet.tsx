@@ -8,7 +8,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { OptimizedAvatar } from '@/components/ui/optimized-avatar';
-import ExpertOnboardingDialog from '@/components/forms/ExpertOnboardingDialog';
 import CommunityApplicationForm from '@/components/forms/CommunityApplicationForm';
 
 const navLinks = [
@@ -23,7 +22,6 @@ const rowClass = 'flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg
 const MobileMenuSheet = () => {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showExpertForm, setShowExpertForm] = useState(false);
 
   const close = () => setOpen(false);
@@ -168,7 +166,7 @@ const MobileMenuSheet = () => {
                 {!isExpertOrResearcher && (
                   <button
                     className={rowClass}
-                    onClick={() => { close(); setShowOnboarding(true); }}
+                    onClick={() => { close(); setShowExpertForm(true); }}
                   >
                     <Award className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     Apply as Expert
@@ -230,11 +228,6 @@ const MobileMenuSheet = () => {
         </SheetContent>
       </Sheet>
 
-      <ExpertOnboardingDialog
-        open={showOnboarding}
-        onOpenChange={setShowOnboarding}
-        onApply={() => setShowExpertForm(true)}
-      />
       <CommunityApplicationForm
         open={showExpertForm}
         onOpenChange={setShowExpertForm}

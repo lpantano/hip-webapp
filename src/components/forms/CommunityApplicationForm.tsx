@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 // Form validation schema
 const communityApplicationSchema = z.object({
-  role: z.enum(["expert", "researcher"]),
+  role: z.enum(["expert", "researcher"], { required_error: "Please select a role to continue." }),
   education: z.string().min(10, "Please provide detailed education (minimum 10 characters)"),
   expertiseText: z.string()
     .min(10, "Please provide at least 10 characters")
@@ -58,13 +57,18 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     reValidateMode: "onChange",
     criteriaMode: "all",
     defaultValues: {
-      role: memberType,
       memberType: memberType,
     }
   });
 
   const watchedExpertiseText = watch("expertiseText");
   const watchedRole = watch("role");
+
+  useEffect(() => {
+    if (open) {
+      reset({ memberType });
+    }
+  }, [open]);
 
   // Debug: Log errors when they change
   useEffect(() => {
@@ -170,47 +174,60 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
             </p>
           </CardHeader>
           <CardContent>
+            {/* Onboarding info */}
+            <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30 space-y-3 text-sm text-muted-foreground">
+              <p>
+                <strong className="text-foreground">Our mission:</strong> Help ensure the quality and trustworthiness of health claims. Your reviews directly shape how users understand the evidence.
+              </p>
+              <p>
+                <strong className="text-foreground">Contribution credits:</strong> Every review earns you credits, tracked publicly as part of your contributor profile.
+              </p>
+              <p>
+                <strong className="text-foreground">How reviews work:</strong> You'll assess each publication's validity and quality — covering study design, population representation, system studied (cell/animal/human), and study size.
+              </p>
+            </div>
             <form onSubmit={handleSubmit(onSubmit, (errors) => {
               console.log("Form validation failed:", errors);
               // Errors should already be in the errors object from formState
             })} className="space-y-6">
               {/* Role Selection */}
-              <div className="space-y-4">
-                <Label htmlFor="role">I am applying as a: *</Label>
-                <Select
-                  defaultValue={memberType}
-                  onValueChange={(value) => setValue("role", value as "expert" | "researcher", { shouldDirty: true, shouldTouch: true })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expert">Expert</SelectItem>
-                    <SelectItem value="researcher">Researcher</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2">
+                <Label>Select your role <span className="text-muted-foreground font-normal">(required)</span></Label>
+                <div className="grid md:grid-cols-2 gap-4 pt-1">
+                  {([
+                    {
+                      value: "expert" as const,
+                      label: "Expert",
+                      labelClass: "text-primary",
+                      ringClass: "ring-primary",
+                      description: "Healthcare professionals and practitioners who provide services directly to clients. Examples: fitness coaches, gynecologists for endometriosis, nutritionists, mental health therapists.",
+                    },
+                    {
+                      value: "researcher" as const,
+                      label: "Researcher",
+                      labelClass: "text-accent",
+                      ringClass: "ring-accent",
+                      description: "Scientists and academics who evaluate research and add expert information to the platform. You know how to evaluate papers and understand what experts are saying, but may not provide direct services yourself.",
+                    },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setValue("role", opt.value, { shouldDirty: true, shouldTouch: true, shouldValidate: true })}
+                      className={`text-left p-4 rounded-lg border bg-muted/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                        watchedRole === opt.value
+                          ? `border-current ${opt.ringClass} ring-2`
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <h4 className={`font-semibold mb-2 ${opt.labelClass}`}>{opt.label}</h4>
+                      <p className="text-sm text-muted-foreground">{opt.description}</p>
+                    </button>
+                  ))}
+                </div>
                 {errors.role && (
                   <p className="text-sm text-destructive font-medium">{errors.role.message}</p>
                 )}
-                
-                {/* Role Explanations */}
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  <div className="p-4 bg-muted/50 rounded-lg border">
-                    <h4 className="font-semibold text-primary mb-2">Expert</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Healthcare professionals and practitioners who provide services directly to clients. 
-                      Examples: fitness coaches, gynecologists for endometriosis, nutritionists, mental health therapists. 
-                      You will include content about the services you already provide.
-                    </p>
-                  </div>
-                  <div className="p-4 bg-muted/50 rounded-lg border">
-                    <h4 className="font-semibold text-accent mb-2">Researcher</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Scientists and academics who evaluate research and add expert information to the platform. 
-                      You know how to evaluate papers and understand what experts are saying, but may not provide direct services yourself.
-                    </p>
-                  </div>
-                </div>
               </div>
               {/* Expertise Area */}
               <div className="space-y-2">
