@@ -153,9 +153,18 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
     } catch (error) {
       console.error("Error submitting application:", error);
-      toast.error("Submission Failed", {
-        description: "There was an error submitting your application. Please try again."
-      });
+      const pgError = error as { code?: string };
+      if (pgError.code === '23505') {
+        toast.info("Already Applied", {
+          description: "You've already submitted an application. We'll be in touch soon."
+        });
+        setSubmitted(true);
+      } else {
+        const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
+        toast.error("Submission Failed", {
+          description: message || "There was an error submitting your application. Please try again."
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

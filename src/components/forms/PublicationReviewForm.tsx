@@ -77,6 +77,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
   const [ethnicityOpen, setEthnicityOpen] = useState(false);
   const [ageRangeOpen, setAgeRangeOpen] = useState(false);
   const [studyTagsHelpOpen, setStudyTagsHelpOpen] = useState(false);
+  const [categoryOverride, setCategoryOverride] = useState<'Invalid' | 'Inconclusive' | null>(null);
 
   // Mobile keyboard fix: scroll inputs into view when focused
   const isMobile = useIsMobile();
@@ -180,7 +181,20 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
             loadedData.validation = validationWithDefaults;
 
             // Recompute category based on decision tree
-            loadedData.category = computeCategory(loadedData);
+            const computed = computeCategory(loadedData);
+            const stored = loadedData.category;
+            loadedData.category = computed;
+
+            // Restore override if reviewer previously disagreed with system suggestion
+            if (
+              stored !== computed &&
+              (computed === 'Invalid' || computed === 'Inconclusive') &&
+              (stored === 'Invalid' || stored === 'Inconclusive')
+            ) {
+              setCategoryOverride(stored);
+            } else {
+              setCategoryOverride(null);
+            }
 
             setReviewData(loadedData);
           } else {
@@ -198,6 +212,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
       // Reset to empty when no existing review
       setReviewData(createEmptyReviewData());
       setComment('');
+      setCategoryOverride(null);
     }
   }, [existingReview]);
 
@@ -277,10 +292,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
 
       setValidationErrors([]); // Clear any previous errors
 
+      const finalReviewData = { ...reviewData, category: effectiveCategory() };
       const payload = {
         publication_id: publication.id,
         expert_user_id: user.id,
-        review_data: JSON.parse(JSON.stringify(reviewData)), // Ensure proper JSON serialization
+        review_data: JSON.parse(JSON.stringify(finalReviewData)),
         comments: comment || null
       };
 
@@ -381,9 +397,18 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
     }
   });
 
-  const updateCategory = (category: ReviewCategory) => {
-    // Categories are now automatically computed, manual changes not allowed
+  const updateCategory = (_category: ReviewCategory) => {
+    // Categories are automatically computed; override handled separately
     return;
+  };
+
+  // Returns the effective category shown and saved: override takes precedence when applicable
+  const effectiveCategory = (): ReviewCategory => {
+    const computed = reviewData.category;
+    if ((computed === 'Invalid' || computed === 'Inconclusive') && categoryOverride !== null) {
+      return categoryOverride;
+    }
+    return computed;
   };
 
   const updateSystemUsed = (system: keyof ReviewData['systemUsed'], value: boolean) => {
@@ -401,9 +426,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
         systemUsed: newSystemUsed
       };
 
+      const newCategory = computeCategory(newData);
+      if (newCategory !== 'Invalid' && newCategory !== 'Inconclusive') setCategoryOverride(null);
+
       return {
         ...newData,
-        category: computeCategory(newData)
+        category: newCategory
       };
     });
   };
@@ -494,9 +522,12 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
         validation: newValidation
       };
 
+      const newCategory = computeCategory(newData);
+      if (newCategory !== 'Invalid' && newCategory !== 'Inconclusive') setCategoryOverride(null);
+
       return {
         ...newData,
-        category: computeCategory(newData)
+        category: newCategory
       };
     });
   };
@@ -555,9 +586,11 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
           [field]: value
         }
       };
+      const newCategory = computeCategory(newData);
+      if (newCategory !== 'Invalid' && newCategory !== 'Inconclusive') setCategoryOverride(null);
       return {
         ...newData,
-        category: computeCategory(newData)
+        category: newCategory
       };
     });
   };
@@ -600,18 +633,51 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
               </div>
               {/* Category Display */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <Label className="text-xs sm:text-sm font-semibold text-gray-800">Computed Category</Label>
-                <div className="mt-2">
+                <Label className="text-xs sm:text-sm font-semibold text-gray-800">Category</Label>
+                <div className="mt-2 space-y-2">
                   {reviewData.category ? (
                     <>
-                      <Badge
-                        className={`text-xs sm:text-sm ${getCategoryBackgroundColor(reviewData.category)}`}
-                      >
-                        {reviewData.category}
-                      </Badge>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Category automatically determined based on your responses above.
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge
+                          className={`text-xs sm:text-sm ${getCategoryBackgroundColor(effectiveCategory())}`}
+                        >
+                          {effectiveCategory()}
+                        </Badge>
+                        {(reviewData.category === 'Invalid' || reviewData.category === 'Inconclusive') && categoryOverride === null && (
+                          <span className="text-xs text-gray-500">suggested by system</span>
+                        )}
+                        {categoryOverride !== null && (
+                          <span className="text-xs text-blue-600 font-medium">overridden by reviewer</span>
+                        )}
+                      </div>
+                      {(reviewData.category === 'Invalid' || reviewData.category === 'Inconclusive') && (
+                        <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                          <p className="text-xs text-blue-800 mb-2">
+                            System suggests <strong>{reviewData.category}</strong>. You may disagree and choose the other option:
+                          </p>
+                          <div className="flex gap-2 flex-wrap">
+                            {(['Invalid', 'Inconclusive'] as const).map(opt => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => setCategoryOverride(categoryOverride === opt ? null : opt)}
+                                className={`px-3 py-1 text-xs font-medium rounded-full border-2 transition-all ${
+                                  effectiveCategory() === opt
+                                    ? `${getCategoryBackgroundColor(opt)} border-current shadow-sm`
+                                    : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {!(reviewData.category === 'Invalid' || reviewData.category === 'Inconclusive') && (
+                        <p className="text-xs text-gray-600">
+                          Category automatically determined based on your responses above.
+                        </p>
+                      )}
                     </>
                   ) : (
                     <p className="text-xs text-gray-500 italic">
