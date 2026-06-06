@@ -8,10 +8,25 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, Plus, X } from "lucide-react";
+import { CheckCircle, Globe } from "lucide-react";
+import { SiGithub, SiInstagram, SiYoutube, SiResearchgate, SiOrcid, SiGooglescholar, SiBluesky } from "@icons-pack/react-simple-icons";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+
+const SOCIAL_PLATFORMS = [
+  { id: "linkedin",      label: "LinkedIn",       icon: null,            iconImg: "/icons8-linkedin-24.png", baseUrl: "https://linkedin.com/in/",               placeholder: "yourname",           handlePrefix: "linkedin.com/in/" },
+  { id: "github",        label: "GitHub",         icon: SiGithub,        iconImg: null, baseUrl: "https://github.com/",                        placeholder: "username",           handlePrefix: "github.com/" },
+  { id: "bluesky",       label: "Bluesky",        icon: SiBluesky,       iconImg: null, baseUrl: "https://bsky.app/profile/",                  placeholder: "you.bsky.social",    handlePrefix: "bsky.app/profile/" },
+  { id: "instagram",     label: "Instagram",      icon: SiInstagram,     iconImg: null, baseUrl: "https://instagram.com/",                     placeholder: "username",           handlePrefix: "instagram.com/" },
+  { id: "youtube",       label: "YouTube",        icon: SiYoutube,       iconImg: null, baseUrl: "https://youtube.com/@",                      placeholder: "yourchannel",        handlePrefix: "youtube.com/@" },
+  { id: "researchgate",  label: "ResearchGate",   icon: SiResearchgate,  iconImg: null, baseUrl: "https://researchgate.net/profile/",          placeholder: "Your_Name",          handlePrefix: "researchgate.net/profile/" },
+  { id: "orcid",         label: "ORCID",          icon: SiOrcid,         iconImg: null, baseUrl: "https://orcid.org/",                         placeholder: "0000-0000-0000-0000", handlePrefix: "orcid.org/" },
+  { id: "googlescholar", label: "Google Scholar", icon: SiGooglescholar, iconImg: null, baseUrl: "https://scholar.google.com/citations?user=", placeholder: "userID",             handlePrefix: "scholar.google.com/citations?user=" },
+  { id: "other",         label: "Other",          icon: Globe,           iconImg: null, baseUrl: "",                                           placeholder: "https://...",        handlePrefix: "" },
+] as const;
+
+type PlatformId = typeof SOCIAL_PLATFORMS[number]["id"];
 
 // Form validation schema
 const communityApplicationSchema = z.object({
@@ -41,6 +56,7 @@ interface CommunityApplicationFormProps {
 
 const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityApplicationFormProps) => {
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Record<PlatformId, string>>({} as Record<PlatformId, string>);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { user } = useAuth();
@@ -66,9 +82,10 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
   const watchedRole = watch("role");
 
   useEffect(() => {
-    if (open) {
+    if (open && !submitted) {
       reset({ memberType });
-      setSubmitted(false);
+      setSocialLinks([]);
+      setSelectedPlatforms({} as Record<PlatformId, string>);
     }
   }, [open]);
 
@@ -79,20 +96,42 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
     }
   }, [errors]);
 
-  const addSocialLink = () => {
-    setSocialLinks([...socialLinks, { platform: "", url: "" }]);
+  const normalizeUrl = (url: string) => {
+    if (!url || url.match(/^https?:\/\//)) return url;
+    return `https://${url}`;
   };
 
-  const removeSocialLink = (index: number) => {
-    setSocialLinks(socialLinks.filter((_, i) => i !== index));
+  const togglePlatform = (platformId: PlatformId) => {
+    setSelectedPlatforms(prev => {
+      const next = { ...prev };
+      if (platformId in next) {
+        delete next[platformId];
+      } else {
+        next[platformId] = "";
+      }
+      syncSocialLinks(next);
+      return next;
+    });
   };
 
-  const updateSocialLink = (index: number, field: "platform" | "url", value: string) => {
-    const updated = socialLinks.map((link, i) =>
-      i === index ? { ...link, [field]: value } : link
-    );
-    setSocialLinks(updated);
-    setValue("socialLinks", updated, { shouldDirty: true, shouldTouch: true });
+  const updateHandle = (platformId: PlatformId, handle: string) => {
+    setSelectedPlatforms(prev => {
+      const next = { ...prev, [platformId]: handle };
+      syncSocialLinks(next);
+      return next;
+    });
+  };
+
+  const syncSocialLinks = (platforms: Record<PlatformId, string>) => {
+    const links = Object.entries(platforms)
+      .filter(([, handle]) => handle.trim())
+      .map(([id, handle]) => {
+        const p = SOCIAL_PLATFORMS.find(p => p.id === id)!;
+        const url = p.baseUrl ? `${p.baseUrl}${handle.replace(/^@/, "")}` : normalizeUrl(handle);
+        return { platform: p.label, url };
+      });
+    setSocialLinks(links);
+    setValue("socialLinks", links, { shouldDirty: true, shouldTouch: true });
   };
 
   const onSubmit = async (data: CommunityApplicationForm) => {
@@ -107,7 +146,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
     try {
       // Insert expert application
-      const { data: applicationData, error: applicationError } = await supabase
+      const { error: applicationError } = await supabase
         .from("experts")
         .insert({
           user_id: user.id,
@@ -116,11 +155,9 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
           expertise_text: data.expertiseText,
           years_of_experience: data.yearsOfExperience,
           motivation: data.motivation,
-          website: data.website || null,
+          website: normalizeUrl(data.website || "") || null,
           location: data.location || null,
-        })
-        .select()
-        .single();
+        });
 
       if (applicationError) throw applicationError;
 
@@ -129,9 +166,9 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
         const socialLinksData = socialLinks
           .filter(link => link.platform && link.url)
           .map(link => ({
-            expert_id: applicationData.id,
+            expert_id: user.id,
             platform: link.platform,
-            url: link.url,
+            url: normalizeUrl(link.url),
           }));
 
         if (socialLinksData.length > 0) {
@@ -221,18 +258,18 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                 <div className="grid md:grid-cols-2 gap-4 pt-1">
                   {([
                     {
-                      value: "expert" as const,
-                      label: "Expert",
-                      labelClass: "text-primary",
-                      ringClass: "ring-primary",
-                      description: "Healthcare professionals and practitioners who provide services directly to clients. Examples: fitness coaches, gynecologists for endometriosis, nutritionists, mental health therapists.",
-                    },
-                    {
                       value: "researcher" as const,
                       label: "Researcher",
                       labelClass: "text-accent",
                       ringClass: "ring-accent",
                       description: "Scientists and academics who evaluate research and add expert information to the platform. You know how to evaluate papers and understand what experts are saying, but may not provide direct services yourself.",
+                    },
+                    {
+                      value: "expert" as const,
+                      label: "Expert",
+                      labelClass: "text-primary",
+                      ringClass: "ring-primary",
+                      description: "Healthcare professionals and practitioners who provide services directly to clients. Examples: fitness coaches, gynecologists for endometriosis, nutritionists, mental health therapists.",
                     },
                   ] as const).map((opt) => (
                     <button
@@ -325,8 +362,13 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                 <Label htmlFor="website">Professional Website (Optional)</Label>
                 <Input
                   id="website"
-                  {...register("website")}
-                  placeholder="https://www.drjanesmith.com"
+                  {...register("website", {
+                    onBlur: (e) => {
+                      const normalized = normalizeUrl(e.target.value);
+                      if (normalized !== e.target.value) setValue("website", normalized, { shouldValidate: true });
+                    }
+                  })}
+                  placeholder="linkedin.com/in/yourname or https://yoursite.com"
                 />
                 {errors.website && (
                   <p className="text-sm text-destructive">{errors.website.message}</p>
@@ -348,45 +390,63 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
 
               {/* Social Media Links */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Social Media Links (Optional)</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addSocialLink}
-                    className="text-sm"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Link
-                  </Button>
+                <Label>Social Profiles (Optional)</Label>
+                <p className="text-xs text-muted-foreground">Select a platform and enter your username or handle.</p>
+
+                {/* Platform toggle pills */}
+                <div className="flex flex-wrap gap-2">
+                  {SOCIAL_PLATFORMS.map(({ id, label, icon: Icon, iconImg }) => {
+                    const active = id in selectedPlatforms;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => togglePlatform(id as PlatformId)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-all ${
+                          active
+                            ? "bg-accent text-black border-accent"
+                            : "border-border text-muted-foreground hover:border-accent/50 hover:text-foreground"
+                        }`}
+                      >
+                        {iconImg
+                          ? <img src={iconImg} alt={label} className="h-3.5 w-3.5" />
+                          : Icon && <Icon className="h-3.5 w-3.5" />
+                        }
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-                
-                {socialLinks.map((link, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="flex-1">
+
+                {/* Handle inputs for selected platforms */}
+                {SOCIAL_PLATFORMS.filter(p => p.id in selectedPlatforms).map(({ id, label, icon: Icon, iconImg, handlePrefix, placeholder }) => (
+                  <div key={id} className="flex items-center gap-2">
+                    {iconImg
+                      ? <img src={iconImg} alt={label} className="h-4 w-4 shrink-0 opacity-70" />
+                      : Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    }
+                    {handlePrefix ? (
+                      <div className="flex flex-1 items-center rounded-md border border-input bg-muted/30 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+                        <span className="px-3 py-2 text-sm text-muted-foreground border-r border-input whitespace-nowrap select-none">
+                          {handlePrefix}
+                        </span>
+                        <Input
+                          className="border-0 bg-transparent focus-visible:ring-0 rounded-none"
+                          placeholder={placeholder}
+                          value={selectedPlatforms[id as PlatformId] || ""}
+                          onChange={(e) => updateHandle(id as PlatformId, e.target.value)}
+                          aria-label={`${label} username`}
+                        />
+                      </div>
+                    ) : (
                       <Input
-                        placeholder="Platform (e.g., LinkedIn, Twitter)"
-                        value={link.platform}
-                        onChange={(e) => updateSocialLink(index, "platform", e.target.value)}
+                        className="flex-1"
+                        placeholder={placeholder}
+                        value={selectedPlatforms[id as PlatformId] || ""}
+                        onChange={(e) => updateHandle(id as PlatformId, e.target.value)}
+                        aria-label={`${label} URL`}
                       />
-                    </div>
-                    <div className="flex-2">
-                      <Input
-                        placeholder="https://..."
-                        value={link.url}
-                        onChange={(e) => updateSocialLink(index, "url", e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeSocialLink(index)}
-                      className="shrink-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -405,6 +465,7 @@ const CommunityApplicationForm = ({ open, onOpenChange, memberType }: CommunityA
                     {errors.motivation && <li>{errors.motivation.message}</li>}
                     {errors.website && <li>{errors.website.message}</li>}
                     {errors.location && <li>{errors.location.message}</li>}
+                    {errors.socialLinks && <li>Social profiles: please check your entries</li>}
                   </ul>
                 </div>
               )}
