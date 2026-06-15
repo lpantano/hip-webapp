@@ -24,6 +24,9 @@ import NotFound from "./pages/NotFound";
 import ResearchWorkflow from "./pages/ResearchWorkflow";
 import Footer from "./components/layout/Footer";
 import PWAInstallPrompt from "./components/ui/PWAInstallPrompt";
+import { ConsentProvider } from "./components/consent/ConsentProvider";
+import ConsentBanner from "./components/consent/ConsentBanner";
+import { useAnalytics } from "./hooks/useAnalytics";
 
 // Lazy load evidence page for code splitting
 const ClaimEvidence = lazy(() => import('./pages/ClaimEvidence'));
@@ -39,38 +42,48 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppRoutes = () => {
+  useAnalytics();
+  return (
+    <Routes>
+      <Route path="/" element={<Claims />} />
+      <Route path="/project" element={<Index />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/team" element={<Team />} />
+      <Route path="/community" element={<Community />} />
+      <Route path="/claims/:slug" element={<ClaimDetail />} />
+      <Route path="/claims/:slug/evidence" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><ClaimEvidence /></Suspense>} />
+      <Route path="/legal" element={<Legal />} />
+      <Route path="/roadmap" element={<Roadmap />} />
+      <Route path="/features" element={<FeatureRequests />} />
+      {/* <Route path="/games" element={<Games />} /> */}
+      <Route path="/admin" element={<Admin />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/workflow" element={<ResearchWorkflow />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Claims />} />
-              <Route path="/project" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/claims/:slug" element={<ClaimDetail />} />
-              <Route path="/claims/:slug/evidence" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><ClaimEvidence /></Suspense>} />
-              <Route path="/legal" element={<Legal />} />
-              <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/features" element={<FeatureRequests />} />
-              {/* <Route path="/games" element={<Games />} /> */}
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/workflow" element={<ResearchWorkflow />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <DevRoleSelector />
-            <PWAInstallPrompt floating />
-            <Footer />
-          </BrowserRouter>
-        </TooltipProvider>
+        <ConsentProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+              <DevRoleSelector />
+              <PWAInstallPrompt floating />
+              <Footer />
+              <ConsentBanner />
+            </BrowserRouter>
+          </TooltipProvider>
+        </ConsentProvider>
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>

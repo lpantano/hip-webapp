@@ -87,11 +87,51 @@ const Privacy = () => {
                 Metadata collection helps improve your user experience, but you may remove or disable some or all locally stored data through your browser settings.
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Cookies:</strong> We use cookies to understand how you use the HIP Sites, make our services safer and easier to use, and create a better experience. See our Cookie Policy for more information.</li>
+                <li><strong>Cookies:</strong> We use cookies to understand how you use the HIP Sites, make our services safer and easier to use, and create a better experience. See the Cookies We Use table below.</li>
                 <li><strong>IP Addresses:</strong> When you visit our website, we automatically receive your device's IP address, which could determine your geographical location.</li>
                 <li><strong>Browser Data:</strong> We receive information including device type, unique device IDs, browser type and version, language preference, operating system, internet service provider, referring website, pages visited, and timestamps.</li>
                 <li><strong>Local Storage:</strong> We use technologies like local storage and session storage to deliver our services. This may include text, Personal Information (like your IP address), and usage information (like your username or visit time).</li>
               </ul>
+
+              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Cookies We Use</h3>
+              <p className="mb-4">
+                We only set analytics cookies if you click <strong>"Accept analytics"</strong> in the cookie banner. You can change your choice at any time using the <strong>Cookie Settings</strong> link in the footer. No advertising, remarketing, or cross-site tracking cookies are used.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/20">
+                      <th className="text-left py-2 pr-4 font-semibold">Cookie</th>
+                      <th className="text-left py-2 pr-4 font-semibold">Provider</th>
+                      <th className="text-left py-2 pr-4 font-semibold">Purpose</th>
+                      <th className="text-left py-2 font-semibold">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    <tr>
+                      <td className="py-2 pr-4 align-top"><code>_ga</code></td>
+                      <td className="py-2 pr-4 align-top">Google Analytics</td>
+                      <td className="py-2 pr-4 align-top">Distinguishes unique visitors anonymously</td>
+                      <td className="py-2 align-top">2 years</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4 align-top"><code>_ga_&lt;ID&gt;</code></td>
+                      <td className="py-2 pr-4 align-top">Google Analytics</td>
+                      <td className="py-2 pr-4 align-top">Persists session state for the GA4 property</td>
+                      <td className="py-2 align-top">2 years</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4 align-top"><code>hip-consent-v1</code></td>
+                      <td className="py-2 pr-4 align-top">HIP (local storage)</td>
+                      <td className="py-2 pr-4 align-top">Remembers your cookie banner choice</td>
+                      <td className="py-2 align-top">Until cleared</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-sm text-white/70">
+                Google Analytics is configured with IP anonymization, Google signals disabled, ad personalization disabled, and a 2-month data retention window.
+              </p>
             </section>
 
             {/* 3. Personal Information We Collect */}
@@ -189,6 +229,11 @@ const Privacy = () => {
                       <td className="py-2 pr-4">Netlify</td>
                       <td className="py-2 pr-4">Website hosting</td>
                       <td className="py-2"><a href="https://www.netlify.com/privacy/" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">netlify.com/privacy</a></td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">Google Analytics</td>
+                      <td className="py-2 pr-4">Aggregated, anonymous traffic measurement (only with your consent)</td>
+                      <td className="py-2"><a href="https://policies.google.com/privacy" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a></td>
                     </tr>
                     <tr>
                       <td className="py-2 pr-4">Buttondown</td>

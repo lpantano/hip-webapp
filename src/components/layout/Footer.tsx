@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useConsent } from '@/components/consent/ConsentProvider';
 
 const Footer = () => {
   const year = new Date().getFullYear();
+  const { openSettings } = useConsent();
 
   return (
     <footer className="mt-12 border-t border-border bg-background/60">
@@ -44,6 +46,13 @@ const Footer = () => {
             {/* Links */}
             <nav className="flex items-center gap-4 text-sm">
               <Link to="/legal" className="text-muted-foreground hover:text-primary underline">Terms & Privacy</Link>
+              <button
+                type="button"
+                onClick={openSettings}
+                className="text-muted-foreground hover:text-primary underline"
+              >
+                Cookie Settings
+              </button>
               <a href="mailto:hello@healthintegrityproject.org" className="text-muted-foreground hover:text-primary underline">Contact</a>
             </nav>
           </div>
