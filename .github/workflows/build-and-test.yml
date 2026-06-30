@@ -264,6 +264,10 @@ jobs:
         run: npm ci
 
       - name: Build (production on main, dev otherwise)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             npm run build
