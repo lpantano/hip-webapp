@@ -10,6 +10,6 @@ export type {
   TablesUpdate,
   Enums,
   CompositeTypes,
-} from "../../../../supabase/db/types/database";
+} from "../../../supabase/db/types/database";
 
-export { Constants } from "../../../../supabase/db/types/database";
+export { Constants } from "../../../supabase/db/types/database";
