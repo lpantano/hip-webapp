@@ -30,7 +30,7 @@ interface PublicationScore {
 
 interface Publication {
   id: string;
-  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed';
+  stance?: 'supporting' | 'contradicting';
   rawScores?: PublicationScore[];
 }
 

@@ -51,7 +51,7 @@ async function fetchPublicClaims(): Promise<{
         year: Number(pub.publication_year || (pub.created_at ? new Date(String(pub.created_at)).getFullYear() : new Date().getFullYear())),
         url: String(pub.url || pub.doi || ''),
         source: pub.source ? String(pub.source) : undefined,
-        stance: pub.stance as 'supporting' | 'contradicting' | 'neutral' | 'mixed' | undefined,
+        stance: pub.stance as 'supporting' | 'contradicting' | undefined,
         rawScores: [] as PublicationScoreRow[]
       };
     });

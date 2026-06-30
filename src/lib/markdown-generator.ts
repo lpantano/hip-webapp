@@ -1,12 +1,11 @@
 import type { RankedPaper } from './paper-ranker';
 import { getStudyDesignLabel } from './paper-ranker';
 
-function formatStance(stance: string): string {
+function formatStance(stance: string | null): string {
+  if (!stance) return '⚪ Undetermined';
   const stanceMap = {
     supporting: '✅ Supporting',
-    contradicting: '❌ Contradicting',
-    neutral: '⚪ Neutral',
-    mixed: '🔄 Mixed Results'
+    contradicting: '❌ Contradicting'
   };
   return stanceMap[stance as keyof typeof stanceMap] || stance;
 }
@@ -136,14 +135,12 @@ export function generateSummaryMarkdown(
   const stanceCounts = {
     supporting: papers.filter(p => p.analysis.stance === 'supporting').length,
     contradicting: papers.filter(p => p.analysis.stance === 'contradicting').length,
-    neutral: papers.filter(p => p.analysis.stance === 'neutral').length,
-    mixed: papers.filter(p => p.analysis.stance === 'mixed').length
+    undetermined: papers.filter(p => !p.analysis.stance).length
   };
 
   lines.push(`- **Supporting**: ${stanceCounts.supporting}`);
   lines.push(`- **Contradicting**: ${stanceCounts.contradicting}`);
-  lines.push(`- **Neutral**: ${stanceCounts.neutral}`);
-  lines.push(`- **Mixed**: ${stanceCounts.mixed}`);
+  lines.push(`- **Undetermined**: ${stanceCounts.undetermined}`);
   lines.push('');
 
   lines.push('## Top Papers');

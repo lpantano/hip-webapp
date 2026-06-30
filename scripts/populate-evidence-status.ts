@@ -76,7 +76,7 @@ async function populateEvidenceStatus() {
       // Define the publication type from the database query
       type PublicationFromDB = {
         id: string;
-        stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+        stance: 'supporting' | 'contradicting' | null;
         publication_scores: Array<{
           review_data: {
             category?: string;

@@ -63,7 +63,7 @@ export function aggregatePublicationReviewData(
  * rendering code can be changed without touching the aggregation.
  */
 type PublicationMinimal = {
-  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  stance?: 'supporting' | 'contradicting' | null;
   rawScores?: Array<{
     review_data?: unknown | null;
     // other fields intentionally omitted

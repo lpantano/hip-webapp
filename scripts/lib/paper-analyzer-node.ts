@@ -1,6 +1,6 @@
 import type { PubMedPaper } from './pubmed-search-node';
 
-export type PaperStance = 'supporting' | 'contradicting' | 'neutral' | 'mixed';
+export type PaperStance = 'supporting' | 'contradicting' | null;
 
 export interface StanceAnalysis {
   stance: PaperStance;
@@ -45,7 +45,7 @@ PAPER METADATA:
 Analyze this paper's stance towards the claim. Respond in JSON format:
 
 {
-  "stance": "supporting" | "contradicting" | "neutral" | "mixed",
+  "stance": "supporting" | "contradicting" | null,
   "confidence": 0.0-1.0,
   "reasoning": "Brief explanation of why this stance was determined",
   "relevanceScore": 0.0-1.0,
@@ -55,8 +55,7 @@ Analyze this paper's stance towards the claim. Respond in JSON format:
 Guidelines:
 - "supporting": The paper provides evidence that supports the claim
 - "contradicting": The paper provides evidence that contradicts or disproves the claim
-- "neutral": The paper is related but doesn't clearly support or contradict
-- "mixed": The paper has findings both supporting and contradicting the claim
+- null: The paper does not clearly support or contradict the claim
 - Consider the study design, sample size, and methodology strength
 - relevanceScore: How directly related is this paper to the claim (1.0 = highly relevant)
 - confidence: How confident are you in this stance determination (1.0 = very confident)
@@ -134,7 +133,7 @@ function fallbackStanceAnalysis(
   const relevantWords = claimWords.filter(word => paperText.includes(word));
   const relevanceScore = Math.min(1, relevantWords.length / Math.max(claimWords.length, 1));
 
-  let stance: PaperStance = 'neutral';
+  let stance: PaperStance = null;
   let confidence = 0.5;
 
   if (supportScore > contradictScore && supportScore > 0) {
@@ -143,9 +142,6 @@ function fallbackStanceAnalysis(
   } else if (contradictScore > supportScore && contradictScore > 0) {
     stance = 'contradicting';
     confidence = Math.min(0.7, 0.5 + (contradictScore * 0.1));
-  } else if (supportScore > 0 && contradictScore > 0) {
-    stance = 'mixed';
-    confidence = 0.6;
   }
 
   return {
