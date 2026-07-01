@@ -1,0 +1,3 @@
+[submodule "supabase/db"]
+	path = supabase/db
+	url = https://github.com/Health-Integrity-Project/hip-db.git

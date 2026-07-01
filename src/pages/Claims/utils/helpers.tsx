@@ -39,16 +39,12 @@ export const getEvidenceStatusColor = (evidenceStatus: string): string => {
 /**
  * Get icon component for publication stance
  */
-export const getStanceIcon = (stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null | undefined): JSX.Element | null => {
+export const getStanceIcon = (stance: 'supporting' | 'contradicting' | null | undefined): JSX.Element | null => {
   switch (stance) {
     case 'supporting':
       return <div title="Supporting evidence"><Link2 className="w-4 h-4 text-grey-600" /></div>;
     case 'contradicting':
       return <div title="Contradicting evidence"><Unlink2 className="w-4 h-4 text-grey-600" /></div>;
-    case 'neutral':
-      return <div className="w-4 h-4 rounded-full bg-gray-400" title="Neutral evidence" />;
-    case 'mixed':
-      return <div className="w-4 h-4 rounded-full bg-orange-400" title="Mixed evidence" />;
     default:
       return null;
   }

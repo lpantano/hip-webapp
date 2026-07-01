@@ -75,7 +75,7 @@ interface PublicationScore {
 interface PublicationData {
   id: string;
   title?: string;
-  stance?: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  stance?: 'supporting' | 'contradicting' | null;
   publication_scores?: PublicationScore[];
 }
 

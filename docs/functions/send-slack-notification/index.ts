@@ -51,8 +51,6 @@ function stanceEmoji(stance: string | null): string {
   switch (stance) {
     case 'supporting':    return ':white_check_mark:'
     case 'contradicting': return ':x:'
-    case 'neutral':       return ':white_circle:'
-    case 'mixed':         return ':large_yellow_circle:'
     default:              return ':grey_question:'
   }
 }

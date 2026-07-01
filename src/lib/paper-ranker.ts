@@ -101,13 +101,9 @@ export function getStudyDesignLabel(designScore: number): string {
 export function groupPapersByStance(papers: RankedPaper[]): {
   supporting: RankedPaper[];
   contradicting: RankedPaper[];
-  neutral: RankedPaper[];
-  mixed: RankedPaper[];
 } {
   return {
     supporting: papers.filter(p => p.analysis.stance === 'supporting'),
-    contradicting: papers.filter(p => p.analysis.stance === 'contradicting'),
-    neutral: papers.filter(p => p.analysis.stance === 'neutral'),
-    mixed: papers.filter(p => p.analysis.stance === 'mixed')
+    contradicting: papers.filter(p => p.analysis.stance === 'contradicting')
   };
 }

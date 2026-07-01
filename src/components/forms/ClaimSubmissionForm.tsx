@@ -12,6 +12,7 @@ import { Plus, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesInsert } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { BROAD_CATEGORIES, getBroadCategory } from '@/constants/broadCategories';
 import { CLAIM_LABEL_GROUPS } from '@/constants/labels';
@@ -158,6 +159,8 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
       // Insert the claim
       const { data: claimData, error: claimError } = await supabase
         .from('claims')
+        // slug is populated by the claims_set_slug BEFORE INSERT trigger, so it
+        // is intentionally omitted here even though the generated type requires it.
         .insert({
           user_id: user.id,
           title: data.title,
@@ -165,7 +168,7 @@ export const ClaimSubmissionForm = ({ onSuccess, onCancel }: ClaimSubmissionForm
           category: data.category,
           broad_category: data.broad_category || getBroadCategory(data.category),
           labels: data.labels || [],
-        })
+        } as TablesInsert<'claims'>)
         .select()
         .single();
 

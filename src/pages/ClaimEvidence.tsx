@@ -30,7 +30,7 @@ interface Publication {
   year: number;
   url: string;
   source: string | null;
-  stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+  stance: 'supporting' | 'contradicting' | null;
   submitted_by?: string | null;
   rawScores: PublicationScoreRow[];
 }

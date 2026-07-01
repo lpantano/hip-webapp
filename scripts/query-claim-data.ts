@@ -58,7 +58,7 @@ async function queryClaimData() {
     publication: {
       id: string;
       title: string;
-      stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+      stance: 'supporting' | 'contradicting' | null;
       publication_reviews: PublicationReview[];
     };
   }

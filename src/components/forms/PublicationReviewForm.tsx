@@ -342,7 +342,7 @@ const PublicationReviewForm = ({ publication, isOpen, onClose, onReviewSubmitted
             // Transform data to match calculator interface
             type PublicationFromDB = {
               id: string;
-              stance: 'supporting' | 'contradicting' | 'neutral' | 'mixed' | null;
+              stance: 'supporting' | 'contradicting' | null;
               publication_scores: Array<{
                 review_data: {
                   category?: string;
